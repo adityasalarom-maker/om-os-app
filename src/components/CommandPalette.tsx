@@ -109,6 +109,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                   <span>📖 Knowledge Vault</span>
                   <ArrowRight size={13} className="text-gray-500" />
                 </button>
+                <button
+                  onClick={() => handleSelect('sheets')}
+                  className="p-2.5 rounded-xl bg-[#141624] hover:bg-[#202538] border border-[#262b3d] text-left text-xs font-semibold text-emerald-300 flex items-center justify-between"
+                >
+                  <span>📊 Google Sheets Bridge</span>
+                  <ArrowRight size={13} className="text-gray-500" />
+                </button>
               </div>
             </div>
           ) : (

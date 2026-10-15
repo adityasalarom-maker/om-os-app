@@ -116,6 +116,18 @@ export interface SyncSetting {
   updatedAt: number;
 }
 
+export interface SyncQueueItem {
+  id: string;
+  table: string;
+  action: 'insert' | 'update' | 'delete';
+  recordId: string;
+  payload?: any;
+  timestamp: number;
+  status: 'pending' | 'syncing' | 'failed';
+  retries: number;
+  errorMessage?: string;
+}
+
 export interface PdfDocument {
   id: string;
   title: string;
@@ -210,6 +222,7 @@ export class OmKnowledgeDatabase extends Dexie {
   pantry!: Table<PantryItem, string>;
   syncConflicts!: Table<SyncConflict, string>;
   syncSettings!: Table<SyncSetting, string>;
+  syncQueue!: Table<SyncQueueItem, string>;
   pdfDocuments!: Table<PdfDocument, string>;
   pdfReadingStates!: Table<PdfReadingState, string>;
   pdfAnnotations!: Table<PdfAnnotation, string>;
@@ -241,6 +254,25 @@ export class OmKnowledgeDatabase extends Dexie {
       pantry: 'id, itemName, category, status, updatedAt',
       syncConflicts: 'id, table, recordId, resolved, timestamp',
       syncSettings: 'id, value, updatedAt',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+    });
+
+    this.version(5).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
       pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
       pdfReadingStates: 'documentId, lastPage, updatedAt',
       pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',

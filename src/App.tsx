@@ -15,9 +15,10 @@ import { CommandPalette } from './components/CommandPalette';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { DocumentIntelligenceModal } from './components/DocumentIntelligenceModal';
 import { AnalyticsView } from './components/AnalyticsView';
-import { initializeSeedDataIfEmpty } from './db';
+import { db, initializeSeedDataIfEmpty } from './db';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { initializeThemeOnStartup } from './services/themeEngine';
-import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera } from 'lucide-react';
+import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera, Sheet } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
@@ -26,6 +27,9 @@ export function App() {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
+
+  const pendingQueueCount = useLiveQuery(() => db.syncQueue.where('status').equals('pending').count(), []) || 0;
+  const conflictCount = useLiveQuery(() => db.syncConflicts.toArray(), [])?.filter(c => !c.resolved).length || 0;
 
   useEffect(() => {
     // Initialize user's persisted visual theme
@@ -107,6 +111,24 @@ export function App() {
             >
               <Palette size={14} className="text-indigo-400" />
               <span className="hidden sm:inline">Theme</span>
+            </button>
+
+            {/* Quick Google Sheets Sync Button */}
+            <button
+              onClick={() => setCurrentTab('sheets')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer border ${
+                conflictCount > 0 
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-300' 
+                  : pendingQueueCount > 0 
+                  ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' 
+                  : 'bg-[#1c2030] hover:bg-[#23283c] border-[#2d3246] text-emerald-300 hover:text-white'
+              }`}
+              title="Google Sheets Live Automation & Cloud Bridge"
+            >
+              <Sheet size={14} className={conflictCount > 0 ? 'text-amber-400' : pendingQueueCount > 0 ? 'text-cyan-400' : 'text-emerald-400'} />
+              <span className="hidden sm:inline font-medium">
+                {conflictCount > 0 ? `${conflictCount} Conflicts` : pendingQueueCount > 0 ? `${pendingQueueCount} Queued` : 'Sheets'}
+              </span>
             </button>
 
             {/* Offline status badge */}

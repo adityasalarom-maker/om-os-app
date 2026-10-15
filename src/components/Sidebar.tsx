@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -55,6 +57,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pendingQueueCount = useLiveQuery(() => db.syncQueue.where('status').equals('pending').count(), []) || 0;
+  const conflictCount = useLiveQuery(() => db.syncConflicts.toArray(), [])?.filter(c => !c.resolved).length || 0;
 
   const navItems = [
     { id: 'dashboard', label: 'Executive Dashboard', shortLabel: 'Home', icon: LayoutDashboard, category: 'Core OS' },
@@ -151,7 +155,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 title={isCollapsed ? item.label : undefined}
               >
                 <Icon size={18} className={isActive ? 'text-indigo-400' : 'text-gray-400'} />
-                {!isCollapsed && <span>{item.label}</span>}
+                {!isCollapsed && <span className="flex-1 text-left">{item.label}</span>}
+                {!isCollapsed && item.id === 'sheets' && (conflictCount > 0 || pendingQueueCount > 0) && (
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                    conflictCount > 0 
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                      : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                  }`}>
+                    {conflictCount > 0 ? `${conflictCount}!` : `${pendingQueueCount}`}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -316,7 +329,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <Icon size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-semibold truncate leading-tight">{item.label}</div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold truncate leading-tight">{item.label}</span>
+                          {item.id === 'sheets' && (conflictCount > 0 || pendingQueueCount > 0) && (
+                            <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                              conflictCount > 0 
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
+                                : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                            }`}>
+                              {conflictCount > 0 ? `${conflictCount}!` : `${pendingQueueCount}`}
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-gray-400 mt-0.5 truncate">{item.category}</div>
                       </div>
                     </button>
