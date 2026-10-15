@@ -1,0 +1,17 @@
+{
+  "name": "Om Knowledge OS",
+  "short_name": "Om OS",
+  "description": "Unified personal knowledge management system, task intelligence matrix, and personal operating system.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23161822'/><text x='50%' y='55%' text-anchor='middle' dominant-baseline='middle' font-size='60' fill='%23aa3bff'>ॐ</text></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
