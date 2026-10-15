@@ -90,6 +90,63 @@ export interface PantryItem {
   updatedAt: number;
 }
 
+export interface SyncConflict {
+  id: string;
+  table: string;
+  recordId: string;
+  localData: any;
+  remoteData: any;
+  resolved: boolean;
+  resolution?: 'local' | 'remote';
+  timestamp: number;
+}
+
+export interface SyncSetting {
+  id: string;
+  value: string;
+  updatedAt: number;
+}
+
+export interface PdfDocument {
+  id: string;
+  title: string;
+  filename: string;
+  filesize: number;
+  totalPages: number;
+  category: string;
+  tags: string[];
+  dataBlob: Blob;
+  createdAt: number;
+  lastOpenedAt: number;
+}
+
+export interface PdfReadingState {
+  documentId: string;
+  lastPage: number;
+  zoomScale: number;
+  scrollOffsetTop: number;
+  activeThemeId: string;
+  updatedAt: number;
+}
+
+export interface PdfAnnotation {
+  id: string;
+  documentId: string;
+  pageNumber: number;
+  type: 'highlight' | 'bookmark' | 'note';
+  color: string;
+  text?: string;
+  noteText?: string;
+  createdAt: number;
+}
+
+export interface NoteDestination {
+  id: string;
+  title: string;
+  format: 'md' | 'txt';
+  lastUsedAt: number;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -98,10 +155,16 @@ export class OmKnowledgeDatabase extends Dexie {
   inbox!: Table<InboxItem, string>;
   journal!: Table<JournalEntry, string>;
   pantry!: Table<PantryItem, string>;
+  syncConflicts!: Table<SyncConflict, string>;
+  syncSettings!: Table<SyncSetting, string>;
+  pdfDocuments!: Table<PdfDocument, string>;
+  pdfReadingStates!: Table<PdfReadingState, string>;
+  pdfAnnotations!: Table<PdfAnnotation, string>;
+  noteDestinations!: Table<NoteDestination, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
-    this.version(1).stores({
+    this.version(2).stores({
       projects: 'id, name, status, priority, healthStatus, updatedAt',
       tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
       knowledge: 'id, title, type, *tags, projectId, updatedAt',
@@ -109,6 +172,15 @@ export class OmKnowledgeDatabase extends Dexie {
       inbox: 'id, title, type, status, createdAt',
       journal: 'id, date, entryType, moodScore, energyScore, updatedAt',
       pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+    });
+
+    this.version(3).stores({
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
     });
   }
 }
@@ -404,3 +476,5 @@ When integrating personal knowledge into an OS:
     updatedAt: now,
   });
 }
+
+
