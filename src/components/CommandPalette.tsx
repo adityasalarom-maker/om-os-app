@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { Search, BookOpen, CheckSquare, Compass, X, ArrowRight } from 'lucide-react';
+import { Search, BookOpen, CheckSquare, Compass, X, ArrowRight, Zap } from 'lucide-react';
 import { type NavTab } from './Sidebar';
+import { executeHybridSearch } from '../services/semanticVectorEngine';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -46,7 +47,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const q = query.toLowerCase().trim();
 
-  const matchedNotes = q ? notes.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)).slice(0, 4) : [];
+  const hybridNoteResults = q ? executeHybridSearch(query, notes, { limit: 4 }) : [];
+  const matchedNotes = hybridNoteResults.length > 0 
+    ? hybridNoteResults.map(r => r.item)
+    : (q ? notes.filter(n => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)).slice(0, 4) : []);
   const matchedTasks = q ? tasks.filter(t => t.title.toLowerCase().includes(q)).slice(0, 4) : [];
   const matchedProjects = q ? projects.filter(p => p.name.toLowerCase().includes(q)).slice(0, 3) : [];
   const matchedGoals = q ? goals.filter(g => g.title.toLowerCase().includes(q)).slice(0, 3) : [];
@@ -155,26 +159,45 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     Knowledge Vault ({matchedNotes.length})
                   </span>
                   <div className="space-y-1">
-                    {matchedNotes.map(n => (
-                      <div
-                        key={n.id}
-                        onClick={() => handleSelect('knowledge')}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#23283c] cursor-pointer group transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <BookOpen size={16} className="text-indigo-400 shrink-0" />
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-semibold text-white group-hover:text-indigo-300 truncate">
-                              {n.title}
-                            </h4>
-                            <p className="text-[10px] text-gray-400 truncate">
-                              {n.content.replace(/^[#*-\s]+/gm, '')}
-                            </p>
+                    {matchedNotes.map(n => {
+                      const hr = hybridNoteResults.find(h => h.item.id === n.id);
+                      return (
+                        <div
+                          key={n.id}
+                          onClick={() => handleSelect('knowledge')}
+                          className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#23283c] cursor-pointer group transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <BookOpen size={16} className="text-indigo-400 shrink-0" />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-xs font-semibold text-white group-hover:text-indigo-300 truncate">
+                                  {n.title}
+                                </h4>
+                                {hr && (
+                                  <span className="text-[9px] px-1.5 py-0.2 rounded-full font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
+                                    {Math.round(hr.combinedScore * 100)}% Match
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-400 truncate">
+                                {hr?.highlightSnippet || n.content.replace(/^[#*-\s]+/gm, '')}
+                              </p>
+                              {hr && hr.matchedConcepts.length > 0 && (
+                                <div className="flex gap-1 mt-0.5">
+                                  {hr.matchedConcepts.slice(0, 3).map(c => (
+                                    <span key={c} className="text-[8px] bg-[#121520] text-cyan-300/80 px-1 rounded">
+                                      #{c}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
+                          <ArrowRight size={14} className="text-gray-500 group-hover:text-white shrink-0 ml-2" />
                         </div>
-                        <ArrowRight size={14} className="text-gray-500 group-hover:text-white shrink-0 ml-2" />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

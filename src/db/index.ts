@@ -212,6 +212,16 @@ export interface NoteDestination {
   lastUsedAt: number;
 }
 
+export interface SemanticEmbeddingRecord {
+  id: string;
+  itemId: string;
+  itemType: 'knowledge' | 'task' | 'journal' | 'property';
+  textHash: string;
+  vector: number[];
+  topKeywords: string[];
+  updatedAt: number;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -229,6 +239,7 @@ export class OmKnowledgeDatabase extends Dexie {
   noteDestinations!: Table<NoteDestination, string>;
   health!: Table<HealthEntry, string>;
   properties!: Table<PropertyParcel, string>;
+  semanticEmbeddings!: Table<SemanticEmbeddingRecord, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -279,6 +290,26 @@ export class OmKnowledgeDatabase extends Dexie {
       noteDestinations: 'id, title, format, lastUsedAt',
       health: 'id, date, pranaScore, createdAt, updatedAt',
       properties: 'id, title, location, status, updatedAt',
+    });
+
+    this.version(6).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
     });
   }
 }

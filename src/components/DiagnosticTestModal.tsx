@@ -19,6 +19,7 @@ import {
   Award
 } from 'lucide-react';
 import { THEMES } from '../services/themeEngine';
+import { generateVectorEmbedding, cosineSimilarity } from '../services/semanticVectorEngine';
 
 export interface TestResult {
   id: string;
@@ -41,9 +42,10 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
   const [overallScore, setOverallScore] = useState<number | null>(null);
   const [tests, setTests] = useState<TestResult[]>([
     // Database Suite
-    { id: 'db-connect', name: 'Dexie v5 Local-First Database Connection', category: 'Database', status: 'pending' },
-    { id: 'db-tables', name: '15 Schema Table Stores Verification', category: 'Database', status: 'pending' },
+    { id: 'db-connect', name: 'Dexie v6 Local-First Database Connection', category: 'Database', status: 'pending' },
+    { id: 'db-tables', name: '17 Schema Table Stores Verification', category: 'Database', status: 'pending' },
     { id: 'db-acid', name: 'Atomic Transaction & Write-Rollback Integrity', category: 'Database', status: 'pending' },
+    { id: 'db-vector', name: '256-Dim Semantic Vector Engine & Cosine Probe', category: 'Database', status: 'pending' },
     
     // Modules Suite
     { id: 'mod-exec', name: 'Executive Dashboard & KPI Rollup Engine', category: 'Modules', status: 'pending' },
@@ -101,11 +103,11 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
               'tasks', 'projects', 'goals', 'knowledge', 'inbox', 'journal', 
               'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
               'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
-              'noteDestinations', 'health', 'properties'
+              'noteDestinations', 'health', 'properties', 'semanticEmbeddings'
             ];
             const present = expectedTables.filter(name => (db as any)[name] !== undefined);
-            if (present.length < 15) throw new Error(`Missing tables. Found: ${present.length}/15`);
-            t.message = `All 15 Dexie schema tables verified active`;
+            if (present.length < 16) throw new Error(`Missing tables. Found: ${present.length}/17`);
+            t.message = `All 17 Dexie schema tables verified active`;
             break;
           }
           case 'db-acid': {
@@ -127,6 +129,14 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
             if (!fetched) throw new Error('Write verification failed');
             await db.tasks.delete(testId);
             t.message = `ACID write-read-delete cycle verified cleanly`;
+            break;
+          }
+          case 'db-vector': {
+            const v1 = generateVectorEmbedding('Advaita nonduality meditation awareness');
+            const v2 = generateVectorEmbedding('Sakshi witness consciousness stillness');
+            const sim = cosineSimilarity(v1, v2);
+            if (sim < 0.25) throw new Error(`Vector similarity unexpectedly low: ${sim.toFixed(2)}`);
+            t.message = `Cosine dot product verified: ${(sim * 100).toFixed(1)}% semantic proximity`;
             break;
           }
           case 'mod-exec': {

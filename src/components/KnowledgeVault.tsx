@@ -30,8 +30,19 @@ import {
   Link2,
   CornerDownRight,
   Sparkles,
-  Camera
+  Camera,
+  Cpu,
+  Zap,
+  Layers
 } from 'lucide-react';
+import { 
+  executeHybridSearch, 
+  clusterVaultNotes, 
+  synthesizeVaultAnswer, 
+  type HybridSearchResult, 
+  type SemanticCluster, 
+  type SynthesizedAnswer 
+} from '../services/semanticVectorEngine';
 import { 
   isVaultEncrypted, 
   encryptVaultText, 
@@ -50,6 +61,8 @@ import { DocumentIntelligenceModal } from './DocumentIntelligenceModal';
 export const KnowledgeVault: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchMode, setSearchMode] = useState<'hybrid' | 'keyword' | 'ask'>('hybrid');
+  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [activeNote, setActiveNote] = useState<KnowledgeItem | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -112,18 +125,48 @@ export const KnowledgeVault: React.FC = () => {
     return prefix + text.slice(start, end).replace(/\n/g, ' ') + suffix;
   };
 
+  // Semantic Clustering across vault notes
+  const semanticClusters = clusterVaultNotes(notes);
+
+  // Hybrid Search Execution
+  const hybridSearchResults: HybridSearchResult[] = (searchQuery.trim() && searchMode !== 'keyword')
+    ? executeHybridSearch(searchQuery, notes, { semanticWeight: 0.65 })
+    : [];
+
+  // Extractive Direct Q&A Answer Synthesis
+  const synthesizedAnswer: SynthesizedAnswer | null = (searchMode === 'ask' || searchQuery.includes('?')) && searchQuery.trim()
+    ? synthesizeVaultAnswer(searchQuery, notes)
+    : null;
+
   const filteredNotes = notes.filter(note => {
     if (selectedType !== 'All' && note.type !== selectedType) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = note.title.toLowerCase().includes(q);
-      const matchTags = note.tags.some(t => t.toLowerCase().includes(q));
-      const bodyText = getNoteSearchText(note);
-      const matchContent = bodyText.toLowerCase().includes(q);
-      const matchType = note.type.toLowerCase().includes(q);
-      return matchTitle || matchTags || matchContent || matchType;
+
+    if (selectedClusterId) {
+      const cluster = semanticClusters.find(c => c.id === selectedClusterId);
+      if (cluster && !cluster.itemIds.includes(note.id)) return false;
     }
-    return true;
+
+    if (!searchQuery.trim()) return true;
+
+    if (searchMode === 'hybrid') {
+      const match = hybridSearchResults.find(h => h.item.id === note.id);
+      return match !== undefined;
+    }
+
+    const q = searchQuery.toLowerCase();
+    const matchTitle = note.title.toLowerCase().includes(q);
+    const matchTags = note.tags.some(t => t.toLowerCase().includes(q));
+    const bodyText = getNoteSearchText(note);
+    const matchContent = bodyText.toLowerCase().includes(q);
+    const matchType = note.type.toLowerCase().includes(q);
+    return matchTitle || matchTags || matchContent || matchType;
+  }).sort((a, b) => {
+    if (searchQuery.trim() && searchMode === 'hybrid') {
+      const scoreA = hybridSearchResults.find(h => h.item.id === a.id)?.combinedScore || 0;
+      const scoreB = hybridSearchResults.find(h => h.item.id === b.id)?.combinedScore || 0;
+      return scoreB - scoreA;
+    }
+    return b.updatedAt - a.updatedAt;
   });
 
   // Calculate matching blocks in active note for Jump-to-Location Highlighter
@@ -621,11 +664,74 @@ export const KnowledgeVault: React.FC = () => {
               )}
             </div>
 
+            {/* Search Mode Segmented Switcher */}
+            <div className="flex items-center p-1 rounded-xl bg-[#141622] border border-[#272b3b] text-[11px] font-semibold">
+              <button
+                onClick={() => setSearchMode('hybrid')}
+                className={`flex-1 py-1 px-2 rounded-lg flex items-center justify-center gap-1 transition-colors ${
+                  searchMode === 'hybrid' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Zap size={11} className="text-cyan-400" />
+                <span>Hybrid AI</span>
+              </button>
+              <button
+                onClick={() => setSearchMode('keyword')}
+                className={`flex-1 py-1 px-2 rounded-lg flex items-center justify-center gap-1 transition-colors ${
+                  searchMode === 'keyword' ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/30' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Search size={11} className="text-indigo-400" />
+                <span>BM25 Keyword</span>
+              </button>
+              <button
+                onClick={() => setSearchMode('ask')}
+                className={`flex-1 py-1 px-2 rounded-lg flex items-center justify-center gap-1 transition-colors ${
+                  searchMode === 'ask' ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Sparkles size={11} className="text-purple-400" />
+                <span>Ask Vault</span>
+              </button>
+            </div>
+
             {/* Match Counter Badge */}
             {searchQuery.trim() && (
-              <div className="flex items-center justify-between text-[11px] text-indigo-300 font-mono bg-indigo-950/40 border border-indigo-900/50 px-2.5 py-1 rounded-lg">
-                <span>Indexed Search Matches:</span>
-                <span className="font-bold">{filteredNotes.length} notes found</span>
+              <div className="flex items-center justify-between text-[11px] font-mono bg-cyan-950/30 border border-cyan-900/40 text-cyan-300 px-2.5 py-1 rounded-lg">
+                <span className="flex items-center gap-1">
+                  <Zap size={12} className="text-cyan-400" />
+                  <span>{searchMode === 'hybrid' ? 'Semantic Vector Matches:' : 'BM25 Matches:'}</span>
+                </span>
+                <span className="font-bold">{filteredNotes.length} notes</span>
+              </div>
+            )}
+
+            {/* Thematic Semantic Clusters Bar */}
+            {semanticClusters.length > 0 && (
+              <div className="space-y-1 pt-1 border-t border-[#222536]">
+                <div className="flex items-center justify-between text-[10px] text-gray-500 font-medium">
+                  <span className="flex items-center gap-1"><Layers size={10} /> Thematic Clusters:</span>
+                  {selectedClusterId && (
+                    <button onClick={() => setSelectedClusterId(null)} className="text-cyan-400 hover:underline">
+                      Clear Filter
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[10px]">
+                  {semanticClusters.map(cl => (
+                    <button
+                      key={cl.id}
+                      onClick={() => setSelectedClusterId(selectedClusterId === cl.id ? null : cl.id)}
+                      className={`px-2 py-0.5 rounded-full whitespace-nowrap transition-colors border ${
+                        selectedClusterId === cl.id
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 font-bold'
+                          : 'bg-[#12141f] text-gray-400 hover:text-gray-200 border-[#222638]'
+                      }`}
+                    >
+                      {cl.name} ({cl.count})
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -647,6 +753,41 @@ export const KnowledgeVault: React.FC = () => {
             </div>
           </div>
 
+          {/* Extractive Direct Q&A Synthesized Answer Card */}
+          {synthesizedAnswer && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-purple-950/40 to-indigo-950/40 border border-purple-500/40 space-y-2.5 shadow-lg animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-purple-400" />
+                  <span>Synthesized Vault Answer</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  {synthesizedAnswer.confidence}% Confidence
+                </span>
+              </div>
+              <div className="text-xs text-gray-200 whitespace-pre-line leading-relaxed bg-[#10121b]/60 p-3 rounded-xl border border-purple-500/20">
+                {synthesizedAnswer.answer}
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] text-gray-400 uppercase font-semibold tracking-wider">Source Notes:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {synthesizedAnswer.sources.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        const note = notes.find(n => n.id === s.id);
+                        if (note) setActiveNote(note);
+                      }}
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-purple-900/30 text-purple-200 hover:text-white border border-purple-700/40 transition-colors"
+                    >
+                      📄 {s.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Note Cards List */}
           <div className="space-y-2.5 max-h-[680px] overflow-y-auto pr-1">
             {filteredNotes.length === 0 ? (
@@ -659,6 +800,9 @@ export const KnowledgeVault: React.FC = () => {
                 const isSelected = activeNote?.id === note.id;
                 const bodyText = getNoteSearchText(note);
                 const matchedSnippet = searchQuery.trim() ? getMatchedSnippet(bodyText, searchQuery) : null;
+                const hybridMatch = searchQuery.trim() && searchMode === 'hybrid'
+                  ? hybridSearchResults.find(h => h.item.id === note.id)
+                  : null;
 
                 return (
                   <div
@@ -671,10 +815,33 @@ export const KnowledgeVault: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-xs font-bold text-white line-clamp-1">
-                        {renderHighlightedText(note.title, searchQuery)}
-                      </h4>
+                      <div className="space-y-1 min-w-0">
+                        <h4 className="text-xs font-bold text-white line-clamp-1">
+                          {renderHighlightedText(note.title, searchQuery)}
+                        </h4>
+                        {hybridMatch && hybridMatch.matchedConcepts.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {hybridMatch.matchedConcepts.map(c => (
+                              <span key={c} className="text-[9px] bg-cyan-900/30 text-cyan-200 border border-cyan-700/40 px-1.5 py-0.2 rounded font-medium">
+                                🎯 {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        {hybridMatch && (
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-mono font-bold flex items-center gap-1 ${
+                            hybridMatch.matchType === 'hybrid'
+                              ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                              : hybridMatch.matchType === 'semantic'
+                              ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+                              : 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30'
+                          }`}>
+                            <Zap size={10} />
+                            <span>{Math.round(hybridMatch.combinedScore * 100)}% Match</span>
+                          </span>
+                        )}
                         {isEnc && (
                           <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 font-mono">
                             <Lock size={10} />
@@ -692,6 +859,11 @@ export const KnowledgeVault: React.FC = () => {
                       <div className="text-[11px] text-indigo-200/90 bg-[#131623] p-2 rounded-lg border border-indigo-500/20 font-mono leading-relaxed">
                         <span className="text-[9px] uppercase tracking-wider text-indigo-400 font-bold block mb-0.5">Match Snippet:</span>
                         {renderHighlightedText(matchedSnippet, searchQuery)}
+                      </div>
+                    ) : hybridMatch?.highlightSnippet ? (
+                      <div className="text-[11px] text-cyan-200/90 bg-[#111420] p-2 rounded-lg border border-cyan-500/20 font-mono leading-relaxed">
+                        <span className="text-[9px] uppercase tracking-wider text-cyan-400 font-bold block mb-0.5">Semantic Vector Snippet:</span>
+                        <span>{hybridMatch.highlightSnippet}</span>
                       </div>
                     ) : (
                       <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">

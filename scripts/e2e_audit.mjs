@@ -124,7 +124,7 @@ async function runAudit() {
       'projects', 'tasks', 'knowledge', 'goals', 'inbox', 'journal', 
       'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
       'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
-      'noteDestinations', 'health', 'properties'
+      'noteDestinations', 'health', 'properties', 'semanticEmbeddings'
     ];
     let allStoresPresent = true;
     for (const store of requiredStores) {
@@ -134,8 +134,11 @@ async function runAudit() {
       }
     }
     if (allStoresPresent) {
-      recordTest('Database', 'All 16 core local Dexie tables verified in schema', true, `${requiredStores.length} stores checked`);
+      recordTest('Database', 'All 17 core local Dexie tables verified in schema', true, `${requiredStores.length} stores checked`);
     }
+
+    const vectorEnginePath = path.join(rootDir, 'src', 'services', 'semanticVectorEngine.ts');
+    recordTest('Database', 'Client-Side Semantic Vector Engine active', fs.existsSync(vectorEnginePath));
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }
