@@ -1,4 +1,4 @@
-# ??? Om Knowledge OS — Repository Conventions & Agent Execution Rules
+ï»¿# ??? Om Knowledge OS â€” Repository Conventions & Agent Execution Rules
 
 This document establishes persistent repository rules, architecture standards, and execution constraints for all Antigravity agent interactions in this workspace.
 
@@ -22,15 +22,16 @@ This document establishes persistent repository rules, architecture standards, a
 ## 2. Directory Structure Conventions
 ```
 +-- docs/                               # Architecture blueprints & protocols
-¦   +-- ANTIGRAVITY_EXECUTION_PROTOCOL.md
+Â¦   +-- ANTIGRAVITY_EXECUTION_PROTOCOL.md
 +-- .agents/skills/                     # Modular Antigravity Agent Skills
-¦   +-- om-os-sheets-sync/              # Bidirectional Google Sheets sync
-¦   +-- om-os-backup-rollback/          # Safe-proof versioning & physical rollback
-¦   +-- om-os-pwa-mobile-build/         # Responsive PWA & standalone mobile build
-¦   +-- om-os-knowledge-markdown-bridge/# Ingestion & export of .md notes
+Â¦   +-- om-os-sheets-sync/              # Bidirectional Google Sheets sync
+Â¦   +-- om-os-backup-rollback/          # Safe-proof versioning & physical rollback
+Â¦   +-- om-os-pwa-mobile-build/         # Responsive PWA & standalone mobile build
+Â¦   +-- om-os-knowledge-markdown-bridge/# Ingestion & export of .md notes
 +-- notion_os/                          # 24 core Notion OS module specs
 +-- my_notes/                           # Metaphysical and study note archive
 +-- version_backups/                    # Timestamped physical snapshots & manifest
++-- om_os_app/                          # Dedicated Software Clean Room (React 19 + TypeScript + Vite)
 +-- scripts/                            # Automation scripts (backup.ps1, rollback.ps1)
 ```
 
@@ -48,3 +49,4 @@ This document establishes persistent repository rules, architecture standards, a
 ## 4. Platform Deprecation Guard (October 19, 2026 Cutoff)
 - **Zero Legacy Workflows**: No agent dependencies on deprecated `.agents/workflows/` or `.gemini/workflows/`.
 - **Progressive Skill Loading**: All capabilities are encapsulated in `.agents/skills/<name>/SKILL.md` with strict YAML frontmatter.
+
