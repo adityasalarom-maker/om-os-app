@@ -12,8 +12,10 @@ import {
   Calendar,
   Flame,
   ShieldCheck,
-  Utensils
+  Utensils,
+  Compass
 } from 'lucide-react';
+import { calculateLifeEquilibrium } from '../services/predictiveAnalytics';
 
 interface ExecutiveDashboardProps {
   onNavigate: (tab: any) => void;
@@ -29,6 +31,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ onNaviga
   const goals = useLiveQuery(() => db.goals.toArray(), []) || [];
   const pantryLow = useLiveQuery(() => db.pantry.where('status').anyOf('Low', 'Need to Order').toArray(), []) || [];
   const latestJournal = useLiveQuery(() => db.journal.orderBy('createdAt').reverse().first(), []);
+  const health = useLiveQuery(() => db.health.toArray(), []) || [];
+  const journals = useLiveQuery(() => db.journal.toArray(), []) || [];
+
+  const equilibrium = calculateLifeEquilibrium(goals, tasks, health, journals);
 
   const activeTasks = tasks.filter(t => !t.isCompleted);
   const completedToday = tasks.filter(t => t.isCompleted);
@@ -104,6 +110,13 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ onNaviga
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <button 
+              onClick={() => onNavigate('analytics')}
+              className="bg-gradient-to-r from-cyan-600/30 to-indigo-600/30 hover:from-cyan-600/50 hover:to-indigo-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2"
+            >
+              <TrendingUp size={14} className="text-cyan-400" />
+              <span>Life Radar & Runway</span>
+            </button>
             <button 
               onClick={() => onNavigate('tasks')}
               className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2"
@@ -316,6 +329,69 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ onNaviga
                 <span>Save Directly to {quickType === 'task' ? 'Tasks' : 'Universal Inbox'}</span>
               </button>
             </form>
+          </div>
+
+          {/* Life Balance Equilibrium Widget */}
+          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Compass className="text-cyan-400" size={17} />
+                <h3 className="font-semibold text-white text-sm">Life Balance Equilibrium</h3>
+              </div>
+              <button 
+                onClick={() => onNavigate('analytics')}
+                className="text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-medium"
+              >
+                Radar View <ArrowUpRight size={12} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between bg-[#141622] p-3 rounded-xl border border-[#222738] mb-3">
+              <div>
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-semibold">Equilibrium Index</span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-2xl font-black text-cyan-400">{equilibrium.equilibriumIndex}</span>
+                  <span className="text-xs text-gray-500 font-mono">/100</span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium inline-block ${
+                  equilibrium.status === 'Harmonious' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                  equilibrium.status === 'Balanced' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                  'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                }`}>
+                  {equilibrium.status}
+                </span>
+                <span className="text-[10px] text-gray-400 block mt-1">Variance: {equilibrium.variance}</span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              {equilibrium.scores.map(s => (
+                <div key={s.area} className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400 text-[11px]">{s.area}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 bg-[#1d202e] h-1.5 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${
+                          s.score >= 80 ? 'bg-emerald-400' : s.score >= 60 ? 'bg-cyan-400' : 'bg-amber-400'
+                        }`}
+                        style={{ width: `${s.score}%` }}
+                      />
+                    </div>
+                    <span className="text-gray-200 font-mono text-[10px] w-6 text-right">{s.score}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => onNavigate('analytics')}
+              className="mt-4 w-full bg-[#1e2334] hover:bg-cyan-600/20 hover:border-cyan-500/50 border border-[#2e354f] text-cyan-300 text-xs font-semibold py-2 rounded-xl transition-all flex items-center justify-center gap-1.5"
+            >
+              <TrendingUp size={13} />
+              <span>Explore 30-Day Heatmaps & 24-Mo Runway</span>
+            </button>
           </div>
 
           {/* Today's Reflection & Energy */}

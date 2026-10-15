@@ -14,6 +14,7 @@ import { PdfReaderView } from './components/pdf/PdfReaderView';
 import { CommandPalette } from './components/CommandPalette';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { DocumentIntelligenceModal } from './components/DocumentIntelligenceModal';
+import { AnalyticsView } from './components/AnalyticsView';
 import { initializeSeedDataIfEmpty } from './db';
 import { initializeThemeOnStartup } from './services/themeEngine';
 import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera } from 'lucide-react';
@@ -68,7 +69,12 @@ export function App() {
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
               <span className="text-indigo-400">à¥</span>
-              <span className="capitalize">{currentTab === 'inbox' ? 'Universal Inbox & AI' : currentTab === 'sheets' ? 'Google Sheets Bridge' : currentTab.replace('-', ' ')}</span>
+              <span className="capitalize">
+                {currentTab === 'inbox' ? 'Universal Inbox & AI' : 
+                 currentTab === 'sheets' ? 'Google Sheets Bridge' : 
+                 currentTab === 'analytics' ? 'Predictive Analytics & Life Balance' : 
+                 currentTab.replace('-', ' ')}
+              </span>
             </span>
           </div>
 
@@ -124,6 +130,7 @@ export function App() {
             {currentTab === 'inbox' && <UniversalInboxAI />}
             {currentTab === 'goals' && <GoalsPyramid />}
             {currentTab === 'journal' && <JournalView />}
+            {currentTab === 'analytics' && <AnalyticsView />}
             {currentTab === 'pantry' && <PantryView />}
             {currentTab === 'sheets' && <GoogleSheetsSyncModal />}
           </div>

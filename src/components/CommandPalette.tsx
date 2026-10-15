@@ -76,8 +76,40 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
         {/* Results Area */}
         <div className="max-h-[420px] overflow-y-auto p-3 space-y-4">
           {!q ? (
-            <div className="py-8 text-center text-gray-500 text-xs">
-              <span className="font-mono">Quick Navigation:</span> Type any word or concept (e.g. "Vivarta", "Sync", "Land", "Ayurveda").
+            <div className="space-y-2 p-1">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-2 block">
+                Quick Subsystem Navigation
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleSelect('dashboard')}
+                  className="p-2.5 rounded-xl bg-[#141624] hover:bg-[#202538] border border-[#262b3d] text-left text-xs font-semibold text-white flex items-center justify-between"
+                >
+                  <span>📊 Executive Dashboard</span>
+                  <ArrowRight size={13} className="text-gray-500" />
+                </button>
+                <button
+                  onClick={() => handleSelect('analytics')}
+                  className="p-2.5 rounded-xl bg-[#141624] hover:bg-[#202538] border border-[#262b3d] text-left text-xs font-semibold text-indigo-300 flex items-center justify-between"
+                >
+                  <span>📈 Predictive Analytics & Radar</span>
+                  <ArrowRight size={13} className="text-gray-500" />
+                </button>
+                <button
+                  onClick={() => handleSelect('tasks')}
+                  className="p-2.5 rounded-xl bg-[#141624] hover:bg-[#202538] border border-[#262b3d] text-left text-xs font-semibold text-white flex items-center justify-between"
+                >
+                  <span>✅ Task Intelligence</span>
+                  <ArrowRight size={13} className="text-gray-500" />
+                </button>
+                <button
+                  onClick={() => handleSelect('knowledge')}
+                  className="p-2.5 rounded-xl bg-[#141624] hover:bg-[#202538] border border-[#262b3d] text-left text-xs font-semibold text-white flex items-center justify-between"
+                >
+                  <span>📖 Knowledge Vault</span>
+                  <ArrowRight size={13} className="text-gray-500" />
+                </button>
+              </div>
             </div>
           ) : (
             <>

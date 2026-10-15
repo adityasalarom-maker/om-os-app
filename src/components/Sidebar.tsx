@@ -19,7 +19,8 @@ import {
   X,
   Layers,
   Smartphone,
-  Camera
+  Camera,
+  TrendingUp
 } from 'lucide-react';
 
 export type NavTab = 
@@ -33,7 +34,8 @@ export type NavTab =
   | 'health' 
   | 'property' 
   | 'pantry' 
-  | 'sheets';
+  | 'sheets'
+  | 'analytics';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -64,12 +66,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'inbox', label: 'Universal Inbox & AI', shortLabel: 'Capture', icon: Inbox, category: 'Input Hub' },
     { id: 'goals', label: 'Goals (Life Pyramid)', shortLabel: 'Goals', icon: Compass, category: 'Life & Vitality' },
     { id: 'journal', label: 'Journal & Reflection', shortLabel: 'Journal', icon: BookHeart, category: 'Life & Vitality' },
+    { id: 'analytics', label: 'Predictive Analytics & Radar', shortLabel: 'Analytics', icon: TrendingUp, category: 'Intelligence' },
     { id: 'pantry', label: 'Kitchen & Pantry', shortLabel: 'Pantry', icon: UtensilsCrossed, category: 'Household' },
     { id: 'sheets', label: 'Google Sheets Bridge', shortLabel: 'Sheets', icon: Sheet, category: 'Sync Bridge' },
   ];
 
   // Secondary tabs that indicate "More" is active when selected
-  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets'].includes(currentTab);
+  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets', 'analytics'].includes(currentTab);
 
   const handleMobileSelect = (tab: NavTab) => {
     onSelectTab(tab);
