@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type InboxItem } from '../db';
+import { db, type InboxItem, type TaskItem, type KnowledgeItem } from '../db';
 import { 
   Inbox, 
   Sparkles, 
@@ -12,7 +12,11 @@ import {
   Cpu, 
   ListTodo, 
   BookOpen,
-  Copy
+  Copy,
+  Brain,
+  Zap,
+  Edit2,
+  Check
 } from 'lucide-react';
 
 interface ExtractedCandidate {
@@ -20,7 +24,8 @@ interface ExtractedCandidate {
   type: 'task' | 'concept';
   title: string;
   details: string;
-  suggestedQuadrant?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  suggestedQuadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+  conceptType?: 'Concept' | 'Note' | 'Question' | 'Quote';
   selected: boolean;
 }
 
@@ -33,7 +38,7 @@ export const UniversalInboxAI: React.FC = () => {
 
   const inboxItems = useLiveQuery(() => db.inbox.orderBy('createdAt').reverse().toArray(), []) || [];
 
-  // Deterministic AI conversation parser
+  // Deterministic AI conversation parser with code block tokenization
   const handleParseConversation = () => {
     if (!rawText.trim()) return;
     setIsProcessing(true);
@@ -42,43 +47,69 @@ export const UniversalInboxAI: React.FC = () => {
     const lines = rawText.split('\n');
     const newCandidates: ExtractedCandidate[] = [];
 
-    let currentActionBatch: string[] = [];
+    let inCodeBlock = false;
     let currentTopic = '';
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Extract headings / major topics as Concept candidates
-      if (line.startsWith('#') || line.startsWith('**') && line.endsWith('**') && line.length < 80) {
+      // 1. Code Block Tokenization: Never detect tasks or headers inside code snippets
+      if (line.startsWith('```')) {
+        inCodeBlock = !inCodeBlock;
+        continue;
+      }
+      if (inCodeBlock) continue;
+
+      // 2. Extract Headings / Major Topics as Concept Candidates
+      const isHeader = line.startsWith('#') || (line.startsWith('**') && line.endsWith('**') && line.length < 90);
+      if (isHeader) {
         const cleanTitle = line.replace(/^[#*]+|\**$/g, '').trim();
-        if (cleanTitle.length > 5) {
+        if (cleanTitle.length > 4 && !cleanTitle.toLowerCase().startsWith('step ') && !cleanTitle.toLowerCase().startsWith('action')) {
           currentTopic = cleanTitle;
-          // Lookahead for explanation lines
-          const nextLines = lines.slice(i + 1, i + 5).join(' ').trim();
+          // Lookahead for synthesis paragraph lines
+          const nextLines = lines
+            .slice(i + 1, i + 6)
+            .filter(l => !l.trim().startsWith('#') && !l.trim().startsWith('```') && !l.trim().startsWith('- [ ]'))
+            .join(' ')
+            .trim();
+
           newCandidates.push({
             id: `cand-concept-${Date.now()}-${newCandidates.length}`,
             type: 'concept',
             title: cleanTitle,
-            details: nextLines || 'Concept captured from AI conversation analysis.',
+            details: nextLines || `Synthesized key concept from ${sourceType} conversation turn.`,
+            suggestedQuadrant: 'Q2',
+            conceptType: 'Concept',
             selected: true
           });
         }
       }
 
-      // Extract Action Items (TODOs, bullets with action verbs)
-      const isTodoRegex = /^[-*]\s*(\[ \]|TODO:|Action Item:|Next Step:)?/i;
-      const isImperativeAction = /^(Research|Build|Create|Configure|Implement|Review|Verify|Contact|Test|Schedule)\b/i;
+      // 3. Extract Action Items (TODO bullets or imperative verbs)
+      const isTodoBullet = /^[-*]\s*(\[[ xX]?\]|TODO:|Action Item:|Next Step:)/i.test(line);
+      const isImperativeAction = /^[-*]?\s*(Research|Build|Create|Configure|Implement|Review|Verify|Contact|Test|Schedule|Deploy|Design|Audit)\b/i.test(line);
 
-      if (line.match(isTodoRegex) || line.match(isImperativeAction)) {
-        const cleanTask = line.replace(/^[-*]\s*(\[[ xX]\]|TODO:|Action Item:)?\s*/i, '').trim();
-        if (cleanTask.length > 8 && !cleanTask.endsWith('?')) {
+      if (isTodoBullet || isImperativeAction) {
+        const cleanTask = line.replace(/^[-*]\s*(\[[ xX]?\]|TODO:|Action Item:|Next Step:)?\s*/i, '').trim();
+        if (cleanTask.length > 6 && !cleanTask.endsWith('?')) {
+          // Infer suggested quadrant from keywords
+          let quad: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q2';
+          const lower = cleanTask.toLowerCase();
+          if (lower.includes('urgent') || lower.includes('crisis') || lower.includes('asap') || lower.includes('immediately')) {
+            quad = 'Q1';
+          } else if (lower.includes('quick') || lower.includes('call') || lower.includes('email') || lower.includes('order')) {
+            quad = 'Q3';
+          } else if (lower.includes('someday') || lower.includes('backlog') || lower.includes('later')) {
+            quad = 'Q4';
+          }
+
           newCandidates.push({
             id: `cand-task-${Date.now()}-${newCandidates.length}`,
             type: 'task',
             title: cleanTask,
-            details: currentTopic ? `Context: ${currentTopic}` : 'Extracted from conversation turn',
-            suggestedQuadrant: 'Q2', // Default to Important Not Urgent Deep Work
+            details: currentTopic ? `Context: ${currentTopic}` : `Turn extracted from ${sourceType}`,
+            suggestedQuadrant: quad,
             selected: true
           });
         }
@@ -92,6 +123,8 @@ export const UniversalInboxAI: React.FC = () => {
         type: 'concept',
         title: `AI Synthesis (${sourceType})`,
         details: rawText.slice(0, 300) + '...',
+        suggestedQuadrant: 'Q2',
+        conceptType: 'Concept',
         selected: true
       });
     }
@@ -104,6 +137,19 @@ export const UniversalInboxAI: React.FC = () => {
     setCandidates(prev => prev.map(c => c.id === id ? { ...c, selected: !c.selected } : c));
   };
 
+  const handleUpdateCandidateTitle = (id: string, newTitle: string) => {
+    setCandidates(prev => prev.map(c => c.id === id ? { ...c, title: newTitle } : c));
+  };
+
+  const handleUpdateCandidateQuadrant = (id: string, quad: 'Q1' | 'Q2' | 'Q3' | 'Q4') => {
+    setCandidates(prev => prev.map(c => c.id === id ? { ...c, suggestedQuadrant: quad } : c));
+  };
+
+  const handleUpdateCandidateConceptType = (id: string, type: 'Concept' | 'Note' | 'Question' | 'Quote') => {
+    setCandidates(prev => prev.map(c => c.id === id ? { ...c, conceptType: type } : c));
+  };
+
+  // Atomic Dexie transaction commit
   const handleApproveAndImport = async () => {
     const selected = candidates.filter(c => c.selected);
     if (selected.length === 0) return;
@@ -112,49 +158,59 @@ export const UniversalInboxAI: React.FC = () => {
     let tasksAdded = 0;
     let notesAdded = 0;
 
-    for (const item of selected) {
-      if (item.type === 'task') {
-        await db.tasks.add({
-          id: `task-${now}-${tasksAdded}`,
-          title: item.title,
-          status: 'To Do',
-          priority: 'Important Not Urgent',
-          quadrant: item.suggestedQuadrant || 'Q2',
-          urgency: 'Medium',
-          impact: 'High',
-          energyRequired: 'Deep Work',
-          isCompleted: false,
-          createdAt: now,
-          updatedAt: now
-        });
-        tasksAdded++;
-      } else {
-        await db.knowledge.add({
-          id: `know-${now}-${notesAdded}`,
-          title: item.title,
-          type: 'Concept',
-          content: `${item.details}\n\n*Source: Imported from ${sourceType} conversation transcript.*`,
-          tags: ['AI-Ingestion', sourceType],
-          createdAt: now,
-          updatedAt: now
-        });
-        notesAdded++;
-      }
-    }
+    const priorityMap: Record<'Q1' | 'Q2' | 'Q3' | 'Q4', TaskItem['priority']> = {
+      Q1: 'Urgent & Important',
+      Q2: 'Important Not Urgent',
+      Q3: 'Urgent Not Important',
+      Q4: 'Neither'
+    };
 
-    // Save full original transcript to Inbox archive
-    await db.inbox.add({
-      id: `inbox-${now}`,
-      title: `${sourceType} Import (${tasksAdded} tasks, ${notesAdded} notes)`,
-      content: rawText,
-      type: 'AI Conversation',
-      source: sourceType,
-      status: 'Processed',
-      createdAt: now,
-      updatedAt: now
+    await db.transaction('rw', [db.tasks, db.knowledge, db.inbox], async () => {
+      for (const item of selected) {
+        if (item.type === 'task') {
+          const quad = item.suggestedQuadrant || 'Q2';
+          await db.tasks.add({
+            id: `task-${now}-${tasksAdded}`,
+            title: item.title,
+            status: 'To Do',
+            priority: priorityMap[quad],
+            quadrant: quad,
+            urgency: quad === 'Q1' || quad === 'Q3' ? 'High' : 'Low',
+            impact: quad === 'Q1' || quad === 'Q2' ? 'High' : 'Low',
+            energyRequired: quad === 'Q3' ? 'Quick Win' : 'Deep Work',
+            isCompleted: false,
+            createdAt: now,
+            updatedAt: now
+          });
+          tasksAdded++;
+        } else {
+          await db.knowledge.add({
+            id: `know-${now}-${notesAdded}`,
+            title: item.title,
+            type: item.conceptType || 'Concept',
+            content: `${item.details}\n\n*Source: Imported from ${sourceType} conversation transcript.*`,
+            tags: ['AI-Ingestion', sourceType],
+            createdAt: now,
+            updatedAt: now
+          });
+          notesAdded++;
+        }
+      }
+
+      // Save full original transcript to Inbox archive
+      await db.inbox.add({
+        id: `inbox-${now}`,
+        title: `${sourceType} Import (${tasksAdded} tasks, ${notesAdded} notes)`,
+        content: rawText,
+        type: 'AI Conversation',
+        source: sourceType,
+        status: 'Processed',
+        createdAt: now,
+        updatedAt: now
+      });
     });
 
-    setSuccessMessage(`Successfully imported ${tasksAdded} tasks to Task Intelligence and ${notesAdded} notes to Knowledge Vault!`);
+    setSuccessMessage(`Atomic transaction complete: imported ${tasksAdded} tasks and ${notesAdded} notes. Verbatim transcript archived in Universal Inbox!`);
     setRawText('');
     setCandidates([]);
   };
@@ -229,7 +285,7 @@ Assistant: Here are the key findings on Vivarta Vada.
             <button
               onClick={handleParseConversation}
               disabled={isProcessing || !rawText.trim()}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles size={15} />
               <span>Analyze & Extract Entities (Approval Staging)</span>
@@ -246,24 +302,23 @@ Assistant: Here are the key findings on Vivarta Vada.
                     Step 2: Review & Approve Extracted Entities
                   </h3>
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    Select the tasks and concepts you want to commit. Nothing is saved until you approve.
+                    Select, edit titles, and choose target quadrants before committing.
                   </p>
                 </div>
                 <button
                   onClick={handleApproveAndImport}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md shadow-emerald-600/30 flex items-center gap-1.5"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md shadow-emerald-600/30 flex items-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle2 size={15} />
                   <span>Approve & Save ({candidates.filter(c => c.selected).length})</span>
                 </button>
               </div>
 
-              <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-[440px] overflow-y-auto pr-1">
                 {candidates.map(cand => (
                   <div
                     key={cand.id}
-                    onClick={() => handleToggleCandidate(cand.id)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                    className={`p-3 rounded-xl border transition-all flex items-start gap-3 ${
                       cand.selected
                         ? 'bg-[#1e2336] border-indigo-500/50'
                         : 'bg-[#141622] border-[#272b3b] opacity-60'
@@ -272,28 +327,61 @@ Assistant: Here are the key findings on Vivarta Vada.
                     <input
                       type="checkbox"
                       checked={cand.selected}
-                      onChange={() => {}}
-                      className="mt-1 rounded accent-indigo-600 cursor-pointer"
+                      onChange={() => handleToggleCandidate(cand.id)}
+                      className="mt-1.5 rounded accent-indigo-600 cursor-pointer shrink-0"
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded uppercase font-bold ${
+
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase flex items-center gap-1 ${
                           cand.type === 'task'
                             ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
                             : 'bg-indigo-500/10 text-indigo-300 border border-indigo-500/20'
                         }`}>
-                          {cand.type === 'task' ? '⚡ Action Task' : '🧠 Knowledge Concept'}
+                          {cand.type === 'task' ? <Zap size={10} /> : <BookOpen size={10} />}
+                          <span>{cand.type === 'task' ? 'Task Item' : 'Knowledge Concept'}</span>
                         </span>
-                        {cand.suggestedQuadrant && (
-                          <span className="text-[9px] text-gray-400 font-mono">
-                            {cand.suggestedQuadrant} • Important Not Urgent
-                          </span>
+
+                        {cand.type === 'task' ? (
+                          <div className="flex items-center gap-1 text-[11px]">
+                            <span className="text-gray-400 text-[10px]">Quadrant:</span>
+                            <select
+                              value={cand.suggestedQuadrant}
+                              onChange={(e: any) => handleUpdateCandidateQuadrant(cand.id, e.target.value)}
+                              className="bg-[#141622] border border-[#2c3247] text-white text-[10px] rounded px-1.5 py-0.5 focus:outline-none"
+                            >
+                              <option value="Q1">Q1: Urgent & Important</option>
+                              <option value="Q2">Q2: Important Not Urgent</option>
+                              <option value="Q3">Q3: Urgent Not Important</option>
+                              <option value="Q4">Q4: Someday / Backlog</option>
+                            </select>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-[11px]">
+                            <span className="text-gray-400 text-[10px]">Type:</span>
+                            <select
+                              value={cand.conceptType || 'Concept'}
+                              onChange={(e: any) => handleUpdateCandidateConceptType(cand.id, e.target.value)}
+                              className="bg-[#141622] border border-[#2c3247] text-white text-[10px] rounded px-1.5 py-0.5 focus:outline-none"
+                            >
+                              <option value="Concept">Concept</option>
+                              <option value="Note">Note</option>
+                              <option value="Question">Question</option>
+                              <option value="Quote">Quote</option>
+                            </select>
+                          </div>
                         )}
                       </div>
-                      <h4 className="text-xs font-semibold text-white">
-                        {cand.title}
-                      </h4>
-                      <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">
+
+                      {/* Editable Title */}
+                      <input
+                        type="text"
+                        value={cand.title}
+                        onChange={(e) => handleUpdateCandidateTitle(cand.id, e.target.value)}
+                        className="w-full bg-[#141622] border border-[#2c3248] rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500"
+                      />
+
+                      <p className="text-[11px] text-gray-400 line-clamp-2 bg-[#141724]/60 p-2 rounded border border-[#242838]">
                         {cand.details}
                       </p>
                     </div>
@@ -334,7 +422,7 @@ Assistant: Here are the key findings on Vivarta Vada.
                         </span>
                         <button
                           onClick={() => handleDeleteInbox(item.id)}
-                          className="text-gray-500 hover:text-rose-400 transition-colors p-0.5"
+                          className="text-gray-500 hover:text-rose-400 transition-colors p-0.5 cursor-pointer"
                           title="Delete archive item"
                         >
                           <Trash2 size={13} />
