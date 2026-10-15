@@ -1,4 +1,4 @@
-﻿import Dexie, { type Table } from 'dexie';
+import Dexie, { type Table } from 'dexie';
 
 export interface Project {
   id: string;
@@ -222,11 +222,22 @@ export class OmKnowledgeDatabase extends Dexie {
       syncSettings: 'id, value, updatedAt',
     });
 
-    this.version(3).stores({
+    this.version(4).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
       pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
       pdfReadingStates: 'documentId, lastPage, updatedAt',
       pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
       noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
     });
   }
 }
