@@ -16,8 +16,10 @@ import {
   Brain,
   Zap,
   Edit2,
-  Check
+  Check,
+  Camera
 } from 'lucide-react';
+import { DocumentIntelligenceModal } from './DocumentIntelligenceModal';
 
 interface ExtractedCandidate {
   id: string;
@@ -35,6 +37,7 @@ export const UniversalInboxAI: React.FC = () => {
   const [candidates, setCandidates] = useState<ExtractedCandidate[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isOcrOpen, setIsOcrOpen] = useState(false);
 
   const inboxItems = useLiveQuery(() => db.inbox.orderBy('createdAt').reverse().toArray(), []) || [];
 
@@ -253,19 +256,30 @@ export const UniversalInboxAI: React.FC = () => {
                 <Cpu size={15} className="text-indigo-400" />
                 Step 1: Paste Transcript or Conversation
               </span>
-              <div className="flex items-center gap-1 bg-[#141622] p-1 rounded-lg border border-[#272b3c] text-xs">
-                {(['ChatGPT', 'Gemini', 'Web Note'] as const).map(src => (
-                  <button
-                    key={src}
-                    type="button"
-                    onClick={() => setSourceType(src)}
-                    className={`px-2 py-0.5 rounded font-medium transition-colors ${
-                      sourceType === src ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    {src}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsOcrOpen(true)}
+                  className="px-2.5 py-1 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
+                  title="Scan document, bill, or Sanskrit text via offline Tesseract OCR"
+                >
+                  <Camera size={13} className="text-indigo-400" />
+                  <span>Scan OCR</span>
+                </button>
+                <div className="flex items-center gap-1 bg-[#141622] p-1 rounded-lg border border-[#272b3c] text-xs">
+                  {(['ChatGPT', 'Gemini', 'Web Note'] as const).map(src => (
+                    <button
+                      key={src}
+                      type="button"
+                      onClick={() => setSourceType(src)}
+                      className={`px-2 py-0.5 rounded font-medium transition-colors ${
+                        sourceType === src ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {src}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -443,6 +457,16 @@ Assistant: Here are the key findings on Vivarta Vada.
         </div>
 
       </div>
+
+      {/* Multimodal Document Intelligence & OCR Modal */}
+      <DocumentIntelligenceModal
+        isOpen={isOcrOpen}
+        onClose={() => setIsOcrOpen(false)}
+        onSavedToVault={() => {
+          setIsOcrOpen(false);
+          setSuccessMessage('Scanned document saved directly to Knowledge Vault!');
+        }}
+      />
     </div>
   );
 };

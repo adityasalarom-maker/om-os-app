@@ -13,15 +13,17 @@ import { PropertyTracker } from './components/PropertyTracker';
 import { PdfReaderView } from './components/pdf/PdfReaderView';
 import { CommandPalette } from './components/CommandPalette';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
+import { DocumentIntelligenceModal } from './components/DocumentIntelligenceModal';
 import { initializeSeedDataIfEmpty } from './db';
 import { initializeThemeOnStartup } from './services/themeEngine';
-import { Search, Sparkles, Bell, Shield, Smartphone, Palette } from 'lucide-react';
+import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
+  const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export function App() {
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
         onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenOcr={() => setIsOcrOpen(true)}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
@@ -78,6 +81,16 @@ export function App() {
               <Search size={14} className="text-indigo-400" />
               <span>Jump to note or task...</span>
               <kbd className="bg-[#141622] px-1 py-0.5 rounded text-[10px] font-mono border border-[#272b3d]">Ctrl+P</kbd>
+            </button>
+
+            {/* Multimodal OCR Scanner Button */}
+            <button
+              onClick={() => setIsOcrOpen(true)}
+              className="flex items-center gap-1.5 bg-[#1c2030] hover:bg-[#23283c] border border-[#2d3246] text-purple-300 hover:text-white px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
+              title="Multimodal Document Intelligence: Scan bills, receipts, or Sanskrit text via offline OCR"
+            >
+              <Camera size={14} className="text-purple-400" />
+              <span className="hidden sm:inline">Scan / OCR</span>
             </button>
 
             {/* Visual Theme Selector Button */}
@@ -128,6 +141,16 @@ export function App() {
       <ThemeSelectorModal
         isOpen={isThemeOpen}
         onClose={() => setIsThemeOpen(false)}
+      />
+
+      {/* Multimodal Document Intelligence & OCR Modal */}
+      <DocumentIntelligenceModal
+        isOpen={isOcrOpen}
+        onClose={() => setIsOcrOpen(false)}
+        onSavedToVault={() => {
+          setIsOcrOpen(false);
+          setCurrentTab('knowledge');
+        }}
       />
     </div>
   );

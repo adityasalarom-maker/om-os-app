@@ -18,7 +18,8 @@ import {
   Grid,
   X,
   Layers,
-  Smartphone
+  Smartphone,
+  Camera
 } from 'lucide-react';
 
 export type NavTab = 
@@ -38,6 +39,7 @@ interface SidebarProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
   onOpenSearch: () => void;
+  onOpenOcr?: () => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }
@@ -46,6 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentTab,
   onSelectTab,
   onOpenSearch,
+  onOpenOcr,
   isCollapsed,
   onToggleCollapse,
 }) => {
@@ -260,18 +263,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             </div>
 
-            {/* Quick Action Bar (Search & Jump inside drawer) */}
-            <div className="px-5 py-2.5 bg-[#12141c] border-b border-[#222638] flex items-center justify-between">
+            {/* Quick Action Bar (Search & Jump + Scan OCR inside drawer) */}
+            <div className="px-5 py-2.5 bg-[#12141c] border-b border-[#222638] flex items-center gap-2">
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   onOpenSearch();
                 }}
-                className="flex items-center gap-2 text-xs text-indigo-300 hover:text-white bg-[#1c2030] px-3 py-1.5 rounded-xl border border-[#2b3046] w-full justify-center"
+                className="flex items-center gap-2 text-xs text-indigo-300 hover:text-white bg-[#1c2030] px-3 py-1.5 rounded-xl border border-[#2b3046] flex-1 justify-center"
               >
                 <Search size={14} className="text-indigo-400" />
-                <span>Quick Search & Jump (Ctrl+P)</span>
+                <span>Search (Ctrl+P)</span>
               </button>
+              {onOpenOcr && (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenOcr();
+                  }}
+                  className="flex items-center gap-2 text-xs text-purple-300 hover:text-white bg-[#1c2030] px-3 py-1.5 rounded-xl border border-[#2b3046] flex-1 justify-center"
+                >
+                  <Camera size={14} className="text-purple-400" />
+                  <span>Scan OCR</span>
+                </button>
+              )}
             </div>
 
             {/* Scrollable Module Grid */}

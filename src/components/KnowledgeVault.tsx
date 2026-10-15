@@ -29,7 +29,8 @@ import {
   Network,
   Link2,
   CornerDownRight,
-  Sparkles
+  Sparkles,
+  Camera
 } from 'lucide-react';
 import { 
   isVaultEncrypted, 
@@ -44,6 +45,7 @@ import {
   getUnlinkedMentionsForNote, 
   convertMentionToWikilink 
 } from '../services/graphEngine';
+import { DocumentIntelligenceModal } from './DocumentIntelligenceModal';
 
 export const KnowledgeVault: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('All');
@@ -55,6 +57,7 @@ export const KnowledgeVault: React.FC = () => {
   const [importNotification, setImportNotification] = useState<string | null>(null);
   const [linkingNotification, setLinkingNotification] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'notes' | 'graph'>('notes');
+  const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
 
   // Form state
   const [editTitle, setEditTitle] = useState('');
@@ -527,6 +530,16 @@ export const KnowledgeVault: React.FC = () => {
           >
             <Upload size={14} className="text-purple-400" />
             <span className="hidden sm:inline">Import .md</span>
+          </button>
+
+          {/* Scan / OCR Document Intelligence */}
+          <button
+            onClick={() => setIsOcrModalOpen(true)}
+            title="Scan document, receipt, or Sanskrit text via offline Tesseract WASM OCR"
+            className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all bg-gradient-to-r from-indigo-600/20 to-purple-600/20 hover:from-indigo-600/30 hover:to-purple-600/30 text-indigo-300 hover:text-white border border-indigo-500/40 shadow-sm"
+          >
+            <Camera size={14} className="text-indigo-400" />
+            <span>Scan / OCR</span>
           </button>
 
           {/* Vault Lock/Unlock Status */}
@@ -1106,6 +1119,20 @@ export const KnowledgeVault: React.FC = () => {
           </form>
         </div>
       )}
+
+      {/* Multimodal Document Intelligence & OCR Modal */}
+      <DocumentIntelligenceModal
+        isOpen={isOcrModalOpen}
+        onClose={() => setIsOcrModalOpen(false)}
+        onSavedToVault={async (noteId) => {
+          setIsOcrModalOpen(false);
+          const saved = await db.knowledge.get(noteId);
+          if (saved) {
+            setActiveNote(saved);
+            setViewMode('notes');
+          }
+        }}
+      />
 
     </div>
   );
