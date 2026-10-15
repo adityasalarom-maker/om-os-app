@@ -50,6 +50,11 @@ export interface GoalItem {
   status: 'Active' | 'Achieved' | 'Pivoted';
   progress: number; // 0-100
   lifeArea: 'Spiritual & Inner' | 'Health & Vitality' | 'Wealth & Assets' | 'Career & Skills' | 'Family & Relationships';
+  parentId?: string;
+  targetDate?: string;
+  keyResults?: { id: string; text: string; done: boolean }[];
+  linkedProjectIds?: string[];
+  autoRollup?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -72,8 +77,12 @@ export interface JournalEntry {
   entryType: 'Daily' | 'Weekly Review' | 'Monthly Review';
   moodScore: number; // 1-10
   energyScore: number; // 1-10
+  clarityScore?: number; // 1-10
   morningTop3: string[];
+  morningCompleted?: boolean[];
   eveningWins: string[];
+  gratitude?: string[];
+  lessonsLearned?: string;
   content: string;
   createdAt: number;
   updatedAt: number;
