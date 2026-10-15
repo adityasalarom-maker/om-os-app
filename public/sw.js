@@ -1,4 +1,4 @@
-const CACHE_NAME = 'om-knowledge-os-v2.1';
+const CACHE_NAME = 'om-knowledge-os-v2.2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -29,14 +29,14 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
-  // Let local network and external API calls pass through
   const url = new URL(event.request.url);
+  // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cache immediately, update in background
+        // Return cache immediately, update in background (Stale-While-Revalidate)
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {

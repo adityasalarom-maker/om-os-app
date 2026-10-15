@@ -10,15 +10,18 @@ import { PantryView } from './components/PantryView';
 import { GoogleSheetsSyncModal } from './components/GoogleSheetsSyncModal';
 import { HealthTracker } from './components/HealthTracker';
 import { PropertyTracker } from './components/PropertyTracker';
-import { PdfReaderView } from './components/pdf/PdfReaderView';
 import { CommandPalette } from './components/CommandPalette';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
-import { DocumentIntelligenceModal } from './components/DocumentIntelligenceModal';
 import { AnalyticsView } from './components/AnalyticsView';
+import { DiagnosticTestModal } from './components/DiagnosticTestModal';
+
+// Code-split heavy libraries (pdfjs-dist, tesseract.js)
+const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
+const DocumentIntelligenceModal = React.lazy(() => import('./components/DocumentIntelligenceModal').then(m => ({ default: m.DocumentIntelligenceModal })));
 import { db, initializeSeedDataIfEmpty } from './db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { initializeThemeOnStartup } from './services/themeEngine';
-import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera, Sheet } from 'lucide-react';
+import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera, Sheet, ShieldCheck } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
@@ -26,6 +29,7 @@ export function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isOcrOpen, setIsOcrOpen] = useState(false);
+  const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   const pendingQueueCount = useLiveQuery(() => db.syncQueue.where('status').equals('pending').count(), []) || 0;
@@ -131,24 +135,37 @@ export function App() {
               </span>
             </button>
 
-            {/* Offline status badge */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              <span className="hidden sm:inline">Local SQLite/IndexedDB Active</span>
-              <span className="sm:hidden">Local</span>
-            </div>
+            {/* System Diagnostic & E2E Audit Button */}
+            <button
+              onClick={() => setIsDiagnosticOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 hover:border-emerald-500/40 text-[11px] text-emerald-400 font-mono transition-colors cursor-pointer"
+              title="Run Automated E2E Test Suite & Lighthouse PWA Audit"
+            >
+              <ShieldCheck size={12} className="text-emerald-400" />
+              <span className="hidden sm:inline">Audit: 100% Local-First</span>
+              <span className="sm:hidden">Audit</span>
+            </button>
           </div>
         </header>
 
         {/* Scrollable Content View */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
           <div className="max-w-7xl mx-auto">
-            {currentTab === 'dashboard' && <ExecutiveDashboard onNavigate={setCurrentTab} />}
+            {currentTab === 'dashboard' && (
+              <ExecutiveDashboard 
+                onNavigate={setCurrentTab} 
+                onOpenDiagnostics={() => setIsDiagnosticOpen(true)} 
+              />
+            )}
             {currentTab === 'tasks' && <TaskIntelligence />}
             {currentTab === 'knowledge' && <KnowledgeVault />}
             {currentTab === 'health' && <HealthTracker />}
             {currentTab === 'property' && <PropertyTracker />}
-            {currentTab === 'pdf' && <PdfReaderView />}
+            {currentTab === 'pdf' && (
+              <React.Suspense fallback={<div className="p-8 text-center text-xs text-gray-400">Loading PDF Research Reader...</div>}>
+                <PdfReaderView />
+              </React.Suspense>
+            )}
             {currentTab === 'inbox' && <UniversalInboxAI />}
             {currentTab === 'goals' && <GoalsPyramid />}
             {currentTab === 'journal' && <JournalView />}
@@ -164,6 +181,7 @@ export function App() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onNavigate={setCurrentTab}
+        onOpenDiagnostics={() => setIsDiagnosticOpen(true)}
       />
 
       {/* Universal Theme Selector Modal */}
@@ -173,13 +191,22 @@ export function App() {
       />
 
       {/* Multimodal Document Intelligence & OCR Modal */}
-      <DocumentIntelligenceModal
-        isOpen={isOcrOpen}
-        onClose={() => setIsOcrOpen(false)}
-        onSavedToVault={() => {
-          setIsOcrOpen(false);
-          setCurrentTab('knowledge');
-        }}
+      {isOcrOpen && (
+        <React.Suspense fallback={<div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center text-white text-xs">Loading OCR Engine...</div>}>
+          <DocumentIntelligenceModal
+            isOpen={isOcrOpen}
+            onClose={() => setIsOcrOpen(false)}
+            onSavedToVault={() => {
+              setIsOcrOpen(false);
+              setCurrentTab('knowledge');
+            }}
+          />
+        </React.Suspense>
+      )}
+      {/* Comprehensive E2E Diagnostic & Lighthouse PWA Audit Modal */}
+      <DiagnosticTestModal
+        isOpen={isDiagnosticOpen}
+        onClose={() => setIsDiagnosticOpen(false)}
       />
     </div>
   );

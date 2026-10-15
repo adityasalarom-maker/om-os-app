@@ -1,4 +1,4 @@
-﻿# ??? Om Knowledge OS — Repository Conventions & Agent Execution Rules
+# ॐ Om Knowledge OS — Repository Conventions & Agent Execution Rules
 
 This document establishes persistent repository rules, architecture standards, and execution constraints for all Antigravity agent interactions in this workspace.
 
@@ -49,4 +49,12 @@ This document establishes persistent repository rules, architecture standards, a
 ## 4. Platform Deprecation Guard (October 19, 2026 Cutoff)
 - **Zero Legacy Workflows**: No agent dependencies on deprecated `.agents/workflows/` or `.gemini/workflows/`.
 - **Progressive Skill Loading**: All capabilities are encapsulated in `.agents/skills/<name>/SKILL.md` with strict YAML frontmatter.
+
+---
+
+## 5. Dual-Lens Communication & Memory Protocol
+All architectural analyses and design deliverables must be delivered under the Dual-Lens Standard:
+- **LENS 1 (The Systems Learner's Architectural Deconstruction):** Deep, educational explanation of systems design, causal mechanisms, data flows, and trade-offs. 100% of technical terms accompanied by inline parentheses definitions for an ambitious non-coder learner. Zero data loss.
+- **LENS 2 (The IDE Machine Cockpit):** Pure, un-truncated, developer-grade technical specifications (schemas, types, algorithms, commands, prompts) ready for immediate execution by Antigravity IDE.
+
 
