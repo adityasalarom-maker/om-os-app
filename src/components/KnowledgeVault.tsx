@@ -25,7 +25,11 @@ import {
   EyeOff,
   FolderArchive,
   Highlighter,
-  ExternalLink
+  ExternalLink,
+  Network,
+  Link2,
+  CornerDownRight,
+  Sparkles
 } from 'lucide-react';
 import { 
   isVaultEncrypted, 
@@ -34,6 +38,12 @@ import {
   isSessionUnlocked, 
   setSessionPassphrase 
 } from '../services/vaultCrypto';
+import { KnowledgeGraphView } from './KnowledgeGraphView';
+import { 
+  getBacklinksForNote, 
+  getUnlinkedMentionsForNote, 
+  convertMentionToWikilink 
+} from '../services/graphEngine';
 
 export const KnowledgeVault: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('All');
@@ -43,6 +53,8 @@ export const KnowledgeVault: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(0);
   const [importNotification, setImportNotification] = useState<string | null>(null);
+  const [linkingNotification, setLinkingNotification] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'notes' | 'graph'>('notes');
 
   // Form state
   const [editTitle, setEditTitle] = useState('');
@@ -370,20 +382,86 @@ export const KnowledgeVault: React.FC = () => {
     setDecryptedCache({});
   };
 
-  // Helper to render text with highlighted search query matches
-  const renderHighlightedText = (text: string, query: string) => {
-    if (!query.trim()) return text;
-    const parts = text.split(new RegExp(`(${query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
-    return parts.map((part, i) => 
-      part.toLowerCase() === query.toLowerCase() ? (
-        <mark key={i} className="bg-amber-400/40 text-amber-200 px-1 py-0.5 rounded font-bold">
-          {part}
-        </mark>
-      ) : (
-        part
-      )
-    );
+  // Jump to or instantiate a wikilink target note
+  const handleJumpToWikilink = (targetTitle: string) => {
+    const clean = targetTitle.trim().toLowerCase();
+    const found = notes.find(n => n.title.trim().toLowerCase() === clean);
+    if (found) {
+      setActiveNote(found);
+      setIsEditing(false);
+      setViewMode('notes');
+    } else {
+      setEditTitle(targetTitle);
+      setEditContent('');
+      setEditType('Concept');
+      setEditTags('concept');
+      setIsEditing(true);
+      setViewMode('notes');
+    }
   };
+
+  // 1-Click convert unlinked mention to formal [[wikilink]] in Dexie
+  const handleLinkMention = async (sourceNoteId: string, sourceTitle: string) => {
+    if (!activeNote) return;
+    const success = await convertMentionToWikilink(sourceNoteId, activeNote.title);
+    if (success) {
+      setLinkingNotification(`Linked "[[${activeNote.title}]]" inside "${sourceTitle}"!`);
+      setTimeout(() => setLinkingNotification(null), 3000);
+    }
+  };
+
+  // Helper to render text with highlighted search query matches and clickable [[wikilinks]]
+  const renderHighlightedText = (text: string, query: string) => {
+    if (!text) return null;
+
+    // Split by wikilinks [[Target]] or [[Target|Alias]]
+    const wikiParts = text.split(/(\[\[[^\]]+\]\])/g);
+
+    return wikiParts.map((segment, segIdx) => {
+      const wikiMatch = segment.match(/^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]$/);
+      if (wikiMatch) {
+        const targetTitle = wikiMatch[1].trim();
+        const displayLabel = (wikiMatch[2] || targetTitle).trim();
+        const exists = notes.some(n => n.title.trim().toLowerCase() === targetTitle.toLowerCase());
+
+        return (
+          <span
+            key={`wiki-${segIdx}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleJumpToWikilink(targetTitle);
+            }}
+            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded cursor-pointer font-semibold transition-all border ${
+              exists
+                ? 'bg-indigo-950/70 border-indigo-500/40 text-indigo-300 hover:text-white hover:bg-indigo-900/80 shadow-sm'
+                : 'bg-amber-950/40 border-amber-500/30 text-amber-300 hover:text-white hover:bg-amber-900/60'
+            }`}
+            title={exists ? `Jump to note: ${targetTitle}` : `Concept note not created yet (click to create: ${targetTitle})`}
+          >
+            <Link2 size={11} className={exists ? 'text-indigo-400' : 'text-amber-400'} />
+            <span>{displayLabel}</span>
+          </span>
+        );
+      }
+
+      if (!query.trim()) return segment;
+
+      const parts = segment.split(new RegExp(`(${query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+      return parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={`mark-${segIdx}-${i}`} className="bg-amber-400/40 text-amber-200 px-1 py-0.5 rounded font-bold">
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      );
+    });
+  };
+
+  // Backlinks & Unlinked Mentions for active note
+  const backlinks = activeNote ? getBacklinksForNote(activeNote, notes) : [];
+  const unlinkedMentions = activeNote ? getUnlinkedMentionsForNote(activeNote, notes) : [];
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
@@ -409,6 +487,28 @@ export const KnowledgeVault: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+          {/* View Mode Segmented Switcher */}
+          <div className="flex items-center p-1 rounded-xl bg-[#141622] border border-[#272b3b]">
+            <button
+              onClick={() => setViewMode('notes')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                viewMode === 'notes' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <BookOpen size={14} />
+              <span>Notes View</span>
+            </button>
+            <button
+              onClick={() => setViewMode('graph')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                viewMode === 'graph' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Network size={14} />
+              <span>Knowledge Graph</span>
+            </button>
+          </div>
+
           {/* Export All Notes Button */}
           <button
             onClick={handleExportAllNotes}
@@ -453,15 +553,35 @@ export const KnowledgeVault: React.FC = () => {
         </div>
       </div>
 
-      {/* Import Notification Banner */}
+      {/* Notification Banners */}
       {importNotification && (
         <div className="bg-purple-500/10 border border-purple-500/30 text-purple-300 p-3 rounded-xl text-xs flex items-center gap-2 animate-in fade-in duration-200">
           <Check size={16} className="text-purple-400 shrink-0" />
           <span>{importNotification}</span>
         </div>
       )}
+      {linkingNotification && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 p-3 rounded-xl text-xs flex items-center gap-2 animate-in fade-in duration-200">
+          <Check size={16} className="text-emerald-400 shrink-0" />
+          <span>{linkingNotification}</span>
+        </div>
+      )}
 
-      {/* Main Dual-Pane Layout: Left List, Right Editor/Reader */}
+      {/* Conditional View: Knowledge Graph View vs Dual-Pane Notes View */}
+      {viewMode === 'graph' ? (
+        <KnowledgeGraphView
+          notes={notes}
+          activeNoteId={activeNote?.id}
+          onSelectNote={(noteId) => {
+            const found = notes.find(n => n.id === noteId);
+            if (found) {
+              setActiveNote(found);
+              setViewMode('notes');
+            }
+          }}
+        />
+      ) : (
+      /* Main Dual-Pane Layout: Left List, Right Editor/Reader */
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[600px]">
         
         {/* Left List Pane (5 cols) */}
@@ -816,6 +936,96 @@ export const KnowledgeVault: React.FC = () => {
                   <span>Copy GFM</span>
                 </button>
               </div>
+
+              {/* Bidirectional Backlinks & Unlinked Mentions Section */}
+              <div className="pt-5 border-t border-[#272b3b] space-y-5">
+                {/* Direct Backlinks */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Link2 size={13} className="text-indigo-400" />
+                      <span>Linked Backlinks ({backlinks.length})</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-500">Explicit [[{activeNote.title}]]</span>
+                  </div>
+
+                  {backlinks.length === 0 ? (
+                    <p className="text-[11px] text-gray-500 italic bg-[#141622] p-3 rounded-xl border border-white/5">
+                      No other notes currently link directly to this note. Add <code className="text-indigo-300 bg-indigo-950/60 px-1.5 py-0.5 rounded font-mono">[[{activeNote.title}]]</code> in any note to connect them.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                      {backlinks.map((b, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setActiveNote(b.sourceNote)}
+                          className="p-3 rounded-xl bg-[#141622] hover:bg-[#1a1d2c] border border-[#272b3d] hover:border-indigo-500/50 cursor-pointer transition-all space-y-1.5 shadow-sm"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                              <CornerDownRight size={13} className="text-indigo-400" />
+                              {b.sourceNote.title}
+                            </span>
+                            <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-indigo-950/80 text-indigo-300 border border-indigo-500/20">
+                              {b.sourceNote.type}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-gray-400 line-clamp-2 italic font-mono pl-4">
+                            "{b.snippet}"
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Unlinked Mentions */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-amber-400" />
+                      <span>Unlinked Mentions ({unlinkedMentions.length})</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-gray-500">Mentions without [[ ]]</span>
+                  </div>
+
+                  {unlinkedMentions.length === 0 ? (
+                    <p className="text-[11px] text-gray-500 italic bg-[#141622] p-3 rounded-xl border border-white/5">
+                      No unlinked mentions found across your vault.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                      {unlinkedMentions.map((m, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-xl bg-[#141622] border border-[#272b3d] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
+                        >
+                          <div className="space-y-1 max-w-md">
+                            <span 
+                              onClick={() => setActiveNote(m.sourceNote)}
+                              className="font-bold text-xs text-white hover:text-indigo-300 cursor-pointer block"
+                            >
+                              {m.sourceNote.title}
+                            </span>
+                            <p className="text-[11px] text-gray-400 line-clamp-2 italic font-mono">
+                              "{m.snippet}"
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => handleLinkMention(m.sourceNote.id, m.sourceNote.title)}
+                            className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 cursor-pointer shadow-md shadow-indigo-600/30"
+                            title={`Convert plain mention in "${m.sourceNote.title}" to formal [[${activeNote.title}]]`}
+                          >
+                            <Link2 size={12} />
+                            <span>1-Click Link</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ) : (
             /* Empty State */
@@ -830,6 +1040,7 @@ export const KnowledgeVault: React.FC = () => {
         </div>
 
       </div>
+      )}
 
       {/* Master Passphrase Unlock Modal */}
       {showPassphraseModal && (

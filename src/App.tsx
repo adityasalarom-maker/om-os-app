@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar, type NavTab } from './components/Sidebar';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { TaskIntelligence } from './components/TaskIntelligence';
@@ -12,16 +12,22 @@ import { HealthTracker } from './components/HealthTracker';
 import { PropertyTracker } from './components/PropertyTracker';
 import { PdfReaderView } from './components/pdf/PdfReaderView';
 import { CommandPalette } from './components/CommandPalette';
+import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { initializeSeedDataIfEmpty } from './db';
-import { Search, Sparkles, Bell, Shield, Smartphone } from 'lucide-react';
+import { initializeThemeOnStartup } from './services/themeEngine';
+import { Search, Sparkles, Bell, Shield, Smartphone, Palette } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    // Initialize user's persisted visual theme
+    initializeThemeOnStartup();
+
     // Seed initial database records from Om Knowledge OS v2.0
     initializeSeedDataIfEmpty().then(() => {
       setIsReady(true);
@@ -74,6 +80,16 @@ export function App() {
               <kbd className="bg-[#141622] px-1 py-0.5 rounded text-[10px] font-mono border border-[#272b3d]">Ctrl+P</kbd>
             </button>
 
+            {/* Visual Theme Selector Button */}
+            <button
+              onClick={() => setIsThemeOpen(true)}
+              className="flex items-center gap-1.5 bg-[#1c2030] hover:bg-[#23283c] border border-[#2d3246] text-indigo-300 hover:text-white px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
+              title="Change Visual Theme (15 themes available across Basic Dark, High Contrast, Bright Solar)"
+            >
+              <Palette size={14} className="text-indigo-400" />
+              <span className="hidden sm:inline">Theme</span>
+            </button>
+
             {/* Offline status badge */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-400 font-mono">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
@@ -106,6 +122,12 @@ export function App() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onNavigate={setCurrentTab}
+      />
+
+      {/* Universal Theme Selector Modal */}
+      <ThemeSelectorModal
+        isOpen={isThemeOpen}
+        onClose={() => setIsThemeOpen(false)}
       />
     </div>
   );
