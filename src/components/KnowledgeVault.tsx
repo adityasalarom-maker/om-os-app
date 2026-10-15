@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type KnowledgeItem } from '../db';
 import { 
@@ -12,20 +12,27 @@ import {
   Trash2, 
   Edit3, 
   Download,
+  Copy,
+  Check,
+  Upload,
+  ArrowDown,
+  ArrowUp,
   Lock,
   Unlock,
   Shield,
   KeyRound,
   Eye,
-  EyeOff
+  EyeOff,
+  FolderArchive,
+  Highlighter,
+  ExternalLink
 } from 'lucide-react';
 import { 
   isVaultEncrypted, 
   encryptVaultText, 
   decryptVaultText, 
   isSessionUnlocked, 
-  setSessionPassphrase, 
-  getSessionPassphrase 
+  setSessionPassphrase 
 } from '../services/vaultCrypto';
 
 export const KnowledgeVault: React.FC = () => {
@@ -33,6 +40,9 @@ export const KnowledgeVault: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeNote, setActiveNote] = useState<KnowledgeItem | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(0);
+  const [importNotification, setImportNotification] = useState<string | null>(null);
 
   // Form state
   const [editTitle, setEditTitle] = useState('');
@@ -49,6 +59,9 @@ export const KnowledgeVault: React.FC = () => {
   const [vaultError, setVaultError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const viewerContainerRef = useRef<HTMLDivElement>(null);
+
   const notes = useLiveQuery(() => db.knowledge.toArray(), []) || [];
 
   // When vault unlocks, decrypt active note if encrypted
@@ -62,16 +75,70 @@ export const KnowledgeVault: React.FC = () => {
     }
   }, [activeNote, vaultUnlocked]);
 
+  // Full-Text Inverted Index Search & Match Snippet Extraction
+  const getNoteSearchText = (note: KnowledgeItem): string => {
+    if (isVaultEncrypted(note.content)) {
+      return decryptedCache[note.id] || '';
+    }
+    return note.content;
+  };
+
+  const getMatchedSnippet = (text: string, query: string): string | null => {
+    if (!query.trim()) return null;
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const idx = lowerText.indexOf(lowerQuery);
+    if (idx === -1) return null;
+
+    const start = Math.max(0, idx - 40);
+    const end = Math.min(text.length, idx + query.length + 60);
+    const prefix = start > 0 ? '...' : '';
+    const suffix = end < text.length ? '...' : '';
+    return prefix + text.slice(start, end).replace(/\n/g, ' ') + suffix;
+  };
+
   const filteredNotes = notes.filter(note => {
     if (selectedType !== 'All' && note.type !== selectedType) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTitle = note.title.toLowerCase().includes(q);
       const matchTags = note.tags.some(t => t.toLowerCase().includes(q));
-      return matchTitle || matchTags;
+      const bodyText = getNoteSearchText(note);
+      const matchContent = bodyText.toLowerCase().includes(q);
+      const matchType = note.type.toLowerCase().includes(q);
+      return matchTitle || matchTags || matchContent || matchType;
     }
     return true;
   });
+
+  // Calculate matching blocks in active note for Jump-to-Location Highlighter
+  const activeContentText = activeNote ? (decryptedCache[activeNote.id] || activeNote.content) : '';
+  const noteBlocks = activeContentText ? activeContentText.split(/\n\s*\n/) : [];
+
+  const matchedBlockIndices: number[] = [];
+  if (searchQuery.trim() && activeNote && !isVaultEncrypted(activeNote.content) || (activeNote && vaultUnlocked)) {
+    const qLower = searchQuery.toLowerCase();
+    noteBlocks.forEach((block, idx) => {
+      if (block.toLowerCase().includes(qLower)) {
+        matchedBlockIndices.push(idx);
+      }
+    });
+  }
+
+  // Scroll to active match block
+  const handleJumpToMatch = (direction: 'next' | 'prev') => {
+    if (matchedBlockIndices.length === 0) return;
+    let nextIdx = direction === 'next' ? currentMatchIndex + 1 : currentMatchIndex - 1;
+    if (nextIdx >= matchedBlockIndices.length) nextIdx = 0;
+    if (nextIdx < 0) nextIdx = matchedBlockIndices.length - 1;
+    setCurrentMatchIndex(nextIdx);
+
+    const targetBlockId = `vault-block-${matchedBlockIndices[nextIdx]}`;
+    const el = document.getElementById(targetBlockId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   const handleStartNewNote = () => {
     setActiveNote(null);
@@ -89,6 +156,7 @@ export const KnowledgeVault: React.FC = () => {
     setEditType(note.type);
     setEditTags(note.tags.join(', '));
     setIsEditing(false);
+    setCurrentMatchIndex(0);
 
     if (isVaultEncrypted(note.content)) {
       setEncryptOnSave(true);
@@ -171,15 +239,118 @@ export const KnowledgeVault: React.FC = () => {
     }
   };
 
+  // Generate GFM Markdown with YAML frontmatter
+  const buildGFMMarkdown = (note: KnowledgeItem): string => {
+    const content = decryptedCache[note.id] || note.content;
+    const dateStr = new Date(note.updatedAt).toISOString().split('T')[0];
+    const frontmatter = [
+      '---',
+      `title: "${note.title.replace(/"/g, '\\"')}"`,
+      `type: ${note.type}`,
+      `tags: [${note.tags.join(', ')}]`,
+      `updatedAt: "${dateStr}"`,
+      '---',
+      '',
+      content
+    ].join('\n');
+    return frontmatter;
+  };
+
+  // Export single note as .md file
   const handleExportMarkdown = (note: KnowledgeItem) => {
-    const contentToExport = decryptedCache[note.id] || note.content;
-    const blob = new Blob([contentToExport], { type: 'text/markdown;charset=utf-8' });
+    const markdown = buildGFMMarkdown(note);
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Copy raw GFM Markdown to clipboard
+  const handleCopyMarkdown = async (note: KnowledgeItem) => {
+    const markdown = buildGFMMarkdown(note);
+    await navigator.clipboard.writeText(markdown);
+    setCopiedId(note.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Export entire Knowledge Vault as a combined master archive
+  const handleExportAllNotes = () => {
+    if (notes.length === 0) return;
+    const timestamp = new Date().toISOString().split('T')[0];
+    const separator = '\n\n' + '='.repeat(80) + '\n\n';
+    
+    const combined = [
+      `# Om Knowledge OS — Knowledge Vault Master Archive`,
+      `*Generated on ${new Date().toLocaleString()} | Total Notes: ${notes.length}*`,
+      separator,
+      notes.map(note => buildGFMMarkdown(note)).join(separator)
+    ].join('\n');
+
+    const blob = new Blob([combined], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `om_knowledge_vault_master_${timestamp}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import external .md file into Knowledge Vault
+  const handleImportMarkdownFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const text = await file.text();
+    let title = file.name.replace(/\.md$/i, '');
+    let content = text;
+    let tags: string[] = ['Imported'];
+    let type: KnowledgeItem['type'] = 'Note';
+
+    // Parse YAML frontmatter if present
+    const frontmatterMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+    if (frontmatterMatch) {
+      const yaml = frontmatterMatch[1];
+      content = frontmatterMatch[2].trim();
+
+      const titleMatch = yaml.match(/title:\s*"?([^"\r\n]+)"?/i);
+      if (titleMatch) title = titleMatch[1].trim();
+
+      const typeMatch = yaml.match(/type:\s*(\w+)/i);
+      if (typeMatch && ['Concept', 'Note', 'Source', 'Quote', 'Question'].includes(typeMatch[1])) {
+        type = typeMatch[1] as KnowledgeItem['type'];
+      }
+
+      const tagsMatch = yaml.match(/tags:\s*\[(.*?)\]/i);
+      if (tagsMatch) {
+        tags = tagsMatch[1].split(',').map(t => t.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+      }
+    } else {
+      // Look for first # Heading as title
+      const headingMatch = text.match(/^#\s+(.+)$/m);
+      if (headingMatch) {
+        title = headingMatch[1].trim();
+      }
+    }
+
+    const now = Date.now();
+    const newNote: KnowledgeItem = {
+      id: `know-import-${now}`,
+      title,
+      type,
+      content,
+      tags,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await db.knowledge.add(newNote);
+    setActiveNote(newNote);
+    setImportNotification(`Imported note: "${title}"`);
+    setTimeout(() => setImportNotification(null), 3000);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleUnlockSubmit = (e: React.FormEvent) => {
@@ -199,8 +370,32 @@ export const KnowledgeVault: React.FC = () => {
     setDecryptedCache({});
   };
 
+  // Helper to render text with highlighted search query matches
+  const renderHighlightedText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    const parts = text.split(new RegExp(`(${query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+    return parts.map((part, i) => 
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark key={i} className="bg-amber-400/40 text-amber-200 px-1 py-0.5 rounded font-bold">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   return (
     <div className="space-y-6 pb-20 md:pb-6">
+      {/* Hidden File Input for Markdown Import */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleImportMarkdownFile} 
+        accept=".md,.txt,.markdown" 
+        className="hidden" 
+      />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#181a24] p-5 rounded-2xl border border-[#272b3b]">
         <div>
@@ -209,11 +404,31 @@ export const KnowledgeVault: React.FC = () => {
             <span>Knowledge Vault & Synthesis Hub</span>
           </h2>
           <p className="text-gray-400 text-xs mt-1">
-            Atomic concepts, synthesis notes, and research sources with client-side AES-GCM-256 encryption.
+            Full-text indexed atomic concepts, block highlighting, and GFM export with client-side AES-GCM-256 encryption.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+          {/* Export All Notes Button */}
+          <button
+            onClick={handleExportAllNotes}
+            title="Download complete Knowledge Vault as combined GFM Markdown"
+            className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all bg-[#141622] hover:bg-[#202538] text-gray-300 hover:text-white border border-[#282d3e]"
+          >
+            <FolderArchive size={14} className="text-indigo-400" />
+            <span className="hidden sm:inline">Export All (.md)</span>
+          </button>
+
+          {/* Import Markdown File */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            title="Import external .md note file"
+            className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all bg-[#141622] hover:bg-[#202538] text-gray-300 hover:text-white border border-[#282d3e]"
+          >
+            <Upload size={14} className="text-purple-400" />
+            <span className="hidden sm:inline">Import .md</span>
+          </button>
+
           {/* Vault Lock/Unlock Status */}
           <button
             onClick={() => vaultUnlocked ? handleLockVault() : setShowPassphraseModal(true)}
@@ -227,6 +442,7 @@ export const KnowledgeVault: React.FC = () => {
             <span>{vaultUnlocked ? 'Vault Unlocked' : 'Unlock Vault'}</span>
           </button>
 
+          {/* New Note Button */}
           <button
             onClick={handleStartNewNote}
             className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-md shadow-indigo-600/30 flex items-center gap-2"
@@ -237,24 +453,48 @@ export const KnowledgeVault: React.FC = () => {
         </div>
       </div>
 
+      {/* Import Notification Banner */}
+      {importNotification && (
+        <div className="bg-purple-500/10 border border-purple-500/30 text-purple-300 p-3 rounded-xl text-xs flex items-center gap-2 animate-in fade-in duration-200">
+          <Check size={16} className="text-purple-400 shrink-0" />
+          <span>{importNotification}</span>
+        </div>
+      )}
+
       {/* Main Dual-Pane Layout: Left List, Right Editor/Reader */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[600px]">
         
         {/* Left List Pane (5 cols) */}
         <div className="lg:col-span-5 space-y-4">
           
-          {/* Search & Filter Bar */}
-          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-4 space-y-3">
+          {/* Full-Text Search & Filter Bar */}
+          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-4 space-y-3 shadow-sm">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 text-gray-500" size={15} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search keywords, concepts, or tags..."
-                className="w-full bg-[#141622] border border-[#272b3d] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
+                placeholder="Full-text search keywords, concepts, tags, or body text..."
+                className="w-full bg-[#141622] border border-[#272b3d] rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-gray-500 hover:text-gray-300 text-xs"
+                >
+                  ✕
+                </button>
+              )}
             </div>
+
+            {/* Match Counter Badge */}
+            {searchQuery.trim() && (
+              <div className="flex items-center justify-between text-[11px] text-indigo-300 font-mono bg-indigo-950/40 border border-indigo-900/50 px-2.5 py-1 rounded-lg">
+                <span>Indexed Search Matches:</span>
+                <span className="font-bold">{filteredNotes.length} notes found</span>
+              </div>
+            )}
 
             {/* Type Filter Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
@@ -278,28 +518,32 @@ export const KnowledgeVault: React.FC = () => {
           <div className="space-y-2.5 max-h-[680px] overflow-y-auto pr-1">
             {filteredNotes.length === 0 ? (
               <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-8 text-center text-gray-500 text-xs">
-                No notes found matching current filters.
+                No notes found matching current search query or filter.
               </div>
             ) : (
               filteredNotes.map(note => {
                 const isEnc = isVaultEncrypted(note.content);
                 const isSelected = activeNote?.id === note.id;
+                const bodyText = getNoteSearchText(note);
+                const matchedSnippet = searchQuery.trim() ? getMatchedSnippet(bodyText, searchQuery) : null;
 
                 return (
                   <div
                     key={note.id}
                     onClick={() => handleSelectNote(note)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2.5 ${
                       isSelected
                         ? 'bg-[#1f2436] border-indigo-500/60 shadow-lg shadow-indigo-500/10'
                         : 'bg-[#181a24] hover:bg-[#1a1d29] border-[#272b3b]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-xs font-bold text-white line-clamp-1">{note.title}</h4>
+                      <h4 className="text-xs font-bold text-white line-clamp-1">
+                        {renderHighlightedText(note.title, searchQuery)}
+                      </h4>
                       <div className="flex items-center gap-1 shrink-0">
                         {isEnc && (
-                          <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 font-mono">
                             <Lock size={10} />
                             <span>AES-256</span>
                           </span>
@@ -310,19 +554,27 @@ export const KnowledgeVault: React.FC = () => {
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">
-                      {isEnc ? (
-                        <span className="font-mono text-gray-500 italic">?? Encrypted ciphertext payload</span>
-                      ) : (
-                        note.content.replace(/#+\s/g, '').slice(0, 120)
-                      )}
-                    </p>
+                    {/* Matched Content Snippet or Preview */}
+                    {matchedSnippet ? (
+                      <div className="text-[11px] text-indigo-200/90 bg-[#131623] p-2 rounded-lg border border-indigo-500/20 font-mono leading-relaxed">
+                        <span className="text-[9px] uppercase tracking-wider text-indigo-400 font-bold block mb-0.5">Match Snippet:</span>
+                        {renderHighlightedText(matchedSnippet, searchQuery)}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">
+                        {isEnc ? (
+                          <span className="font-mono text-gray-500 italic">🔒 Encrypted ciphertext payload</span>
+                        ) : (
+                          note.content.replace(/#+\s/g, '').slice(0, 130)
+                        )}
+                      </p>
+                    )}
 
                     <div className="flex items-center justify-between pt-1 text-[10px] text-gray-500">
                       <div className="flex flex-wrap gap-1">
                         {note.tags.map(tag => (
                           <span key={tag} className="text-indigo-400/80 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                            #{tag}
+                            #{renderHighlightedText(tag, searchQuery)}
                           </span>
                         ))}
                       </div>
@@ -376,7 +628,7 @@ export const KnowledgeVault: React.FC = () => {
                     type="checkbox"
                     checked={encryptOnSave}
                     onChange={(e) => setEncryptOnSave(e.target.checked)}
-                    className="accent-indigo-500 rounded"
+                    className="accent-indigo-500 rounded cursor-pointer"
                   />
                   <span className="flex items-center gap-1 text-[11px]">
                     <Shield size={12} className={encryptOnSave ? 'text-indigo-400' : 'text-gray-500'} />
@@ -388,11 +640,11 @@ export const KnowledgeVault: React.FC = () => {
               <textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
-                placeholder="Write markdown note, reflection, synthesis, or citations..."
+                placeholder="Write GFM markdown note, reflection, synthesis, or citations..."
                 className="w-full flex-1 min-h-[360px] bg-[#141622] border border-[#272b3d] rounded-xl p-4 text-xs text-gray-200 font-mono focus:outline-none focus:border-indigo-500 resize-none leading-relaxed"
               />
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#272b3b]">
                 <button
                   onClick={() => setIsEditing(false)}
                   className="text-xs text-gray-400 hover:text-white px-3 py-1.5"
@@ -408,18 +660,22 @@ export const KnowledgeVault: React.FC = () => {
               </div>
             </div>
           ) : activeNote ? (
-            /* Reading / Viewing Mode */
+            /* Reading / Viewing Mode with Block Highlighting */
             <div className="space-y-5 flex-1 flex flex-col justify-between">
               <div className="space-y-4">
+                
+                {/* Header Actions */}
                 <div className="flex items-start justify-between gap-4 border-b border-[#272b3b] pb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-white">{activeNote.title}</h3>
-                    <div className="flex items-center gap-2 mt-2">
+                    <h3 className="text-xl font-bold text-white leading-tight">
+                      {renderHighlightedText(activeNote.title, searchQuery)}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="text-[10px] bg-[#141622] text-indigo-300 border border-[#272b3d] px-2 py-0.5 rounded-full">
                         {activeNote.type}
                       </span>
                       {isVaultEncrypted(activeNote.content) && (
-                        <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 font-mono">
                           <Lock size={11} />
                           <span>AES-GCM-256 Protected</span>
                         </span>
@@ -430,10 +686,18 @@ export const KnowledgeVault: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Note Action Toolbar */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleCopyMarkdown(activeNote)}
+                      title="Copy GFM Markdown to clipboard"
+                      className="p-2 rounded-xl bg-[#141622] hover:bg-[#202538] text-gray-400 hover:text-white border border-[#272b3d] transition-colors flex items-center gap-1 text-xs"
+                    >
+                      {copiedId === activeNote.id ? <Check size={15} className="text-emerald-400" /> : <Copy size={15} />}
+                    </button>
                     <button
                       onClick={() => handleExportMarkdown(activeNote)}
-                      title="Export as Markdown"
+                      title="Download as GFM Markdown (.md)"
                       className="p-2 rounded-xl bg-[#141622] hover:bg-[#202538] text-gray-400 hover:text-white border border-[#272b3d] transition-colors"
                     >
                       <Download size={15} />
@@ -455,7 +719,35 @@ export const KnowledgeVault: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Content View */}
+                {/* Jump-to-Location Search Match Navigation Bar */}
+                {matchedBlockIndices.length > 0 && (
+                  <div className="flex items-center justify-between bg-indigo-950/40 border border-indigo-500/30 rounded-xl px-3 py-2 text-xs">
+                    <div className="flex items-center gap-2">
+                      <Highlighter size={14} className="text-amber-400" />
+                      <span className="text-indigo-200 font-mono text-[11px]">
+                        Match {currentMatchIndex + 1} of {matchedBlockIndices.length} blocks
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleJumpToMatch('prev')}
+                        className="p-1 rounded-lg bg-[#141622] hover:bg-[#202538] text-gray-300 hover:text-white border border-[#272b3d]"
+                        title="Previous Match"
+                      >
+                        <ArrowUp size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleJumpToMatch('next')}
+                        className="p-1 rounded-lg bg-[#141622] hover:bg-[#202538] text-gray-300 hover:text-white border border-[#272b3d]"
+                        title="Next Match"
+                      >
+                        <ArrowDown size={13} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Structured Block Content View */}
                 {isVaultEncrypted(activeNote.content) && !vaultUnlocked ? (
                   /* Locked Vault Prompt */
                   <div className="bg-[#12141d] border border-[#2d344d] rounded-2xl p-8 text-center space-y-4 my-6">
@@ -470,28 +762,59 @@ export const KnowledgeVault: React.FC = () => {
                     </div>
                     <button
                       onClick={() => setShowPassphraseModal(true)}
-                      className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-md shadow-amber-600/30 inline-flex items-center gap-1.5"
+                      className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all shadow-md shadow-amber-600/30 inline-flex items-center gap-1.5 cursor-pointer"
                     >
                       <KeyRound size={14} />
                       <span>Unlock with Passphrase</span>
                     </button>
                   </div>
                 ) : (
-                  /* Decrypted / Plaintext content */
-                  <div className="bg-[#141622] border border-[#262b3d] rounded-xl p-5 text-xs text-gray-200 leading-relaxed font-mono whitespace-pre-wrap overflow-y-auto max-h-[480px]">
-                    {decryptedCache[activeNote.id] || activeNote.content}
+                  /* Render Blocks with Match Highlight */
+                  <div 
+                    ref={viewerContainerRef}
+                    className="bg-[#141622] border border-[#262b3d] rounded-xl p-5 text-xs text-gray-200 leading-relaxed font-mono overflow-y-auto max-h-[500px] space-y-3.5"
+                  >
+                    {noteBlocks.map((block, idx) => {
+                      const isMatched = matchedBlockIndices.includes(idx);
+                      const isCurrentMatch = matchedBlockIndices[currentMatchIndex] === idx;
+
+                      return (
+                        <div
+                          key={idx}
+                          id={`vault-block-${idx}`}
+                          className={`transition-all duration-200 rounded-lg whitespace-pre-wrap ${
+                            isCurrentMatch 
+                              ? 'bg-indigo-950/70 border-l-4 border-amber-400 p-3 shadow-md ring-1 ring-amber-400/30'
+                              : isMatched 
+                                ? 'bg-indigo-950/30 border-l-2 border-indigo-400 p-2.5'
+                                : ''
+                          }`}
+                        >
+                          {renderHighlightedText(block, searchQuery)}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
               {/* Tags Footer */}
-              <div className="pt-4 border-t border-[#272b3b] flex items-center gap-1.5 flex-wrap">
-                <Tag size={13} className="text-gray-500 mr-1" />
-                {activeNote.tags.map(tag => (
-                  <span key={tag} className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">
-                    #{tag}
-                  </span>
-                ))}
+              <div className="pt-4 border-t border-[#272b3b] flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Tag size={13} className="text-gray-500 mr-1" />
+                  {activeNote.tags.map(tag => (
+                    <span key={tag} className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg border border-indigo-500/20">
+                      #{renderHighlightedText(tag, searchQuery)}
+                    </span>
+                  ))}
+                </div>
+                <button
+                  onClick={() => handleCopyMarkdown(activeNote)}
+                  className="text-[11px] text-gray-400 hover:text-white flex items-center gap-1 font-mono transition-colors"
+                >
+                  <Copy size={12} />
+                  <span>Copy GFM</span>
+                </button>
               </div>
             </div>
           ) : (
@@ -500,7 +823,7 @@ export const KnowledgeVault: React.FC = () => {
               <BookOpen size={36} className="text-gray-600" />
               <div>
                 <p className="text-xs font-semibold text-gray-400">No Note Selected</p>
-                <p className="text-[11px] text-gray-500">Select a note from the left to view, decrypt, or edit.</p>
+                <p className="text-[11px] text-gray-500">Select a note from the left to view, search, decrypt, or export.</p>
               </div>
             </div>
           )}
@@ -522,7 +845,7 @@ export const KnowledgeVault: React.FC = () => {
                 onClick={() => setShowPassphraseModal(false)}
                 className="text-gray-400 hover:text-white text-xs"
               >
-                ? Close
+                ✕ Close
               </button>
             </div>
 

@@ -1,7 +1,7 @@
 param(
     [string]$SnapshotName
 )
-$projectRoot = "C:\Users\adity\AI projects planner\ai selection planner"
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $backupDir = "$projectRoot\version_backups"
 
 if (-not $SnapshotName) {

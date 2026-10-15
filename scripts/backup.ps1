@@ -1,7 +1,7 @@
 param(
     [string]$Reason = "manual_checkpoint"
 )
-$projectRoot = "C:\Users\adity\AI projects planner\ai selection planner"
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $snapshotDir = Join-Path $projectRoot "version_backups\snapshot_$timestamp"
 
