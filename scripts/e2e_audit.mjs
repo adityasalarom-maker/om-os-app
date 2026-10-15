@@ -124,7 +124,7 @@ async function runAudit() {
       'projects', 'tasks', 'knowledge', 'goals', 'inbox', 'journal', 
       'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
       'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
-      'noteDestinations', 'health', 'properties', 'semanticEmbeddings'
+      'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts'
     ];
     let allStoresPresent = true;
     for (const store of requiredStores) {
@@ -134,11 +134,14 @@ async function runAudit() {
       }
     }
     if (allStoresPresent) {
-      recordTest('Database', 'All 17 core local Dexie tables verified in schema', true, `${requiredStores.length} stores checked`);
+      recordTest('Database', 'All 18 core local Dexie tables verified in schema', true, `${requiredStores.length} stores checked`);
     }
 
     const vectorEnginePath = path.join(rootDir, 'src', 'services', 'semanticVectorEngine.ts');
     recordTest('Database', 'Client-Side Semantic Vector Engine active', fs.existsSync(vectorEnginePath));
+
+    const jyotishEnginePath = path.join(rootDir, 'src', 'services', 'jyotishEngine.ts');
+    recordTest('Database', 'Metaphysical & Jyotish Ephemeris Engine active', fs.existsSync(jyotishEnginePath));
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }
@@ -146,7 +149,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 4. MODULE SUBSYSTEM COMPONENT AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}▶ Step 4: 12 Subsystem Module Components Verification${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}▶ Step 4: 13 Subsystem Module Components Verification${colors.reset}`);
   const modules = [
     { name: 'ExecutiveDashboard', file: 'src/components/ExecutiveDashboard.tsx' },
     { name: 'TaskIntelligence', file: 'src/components/TaskIntelligence.tsx' },
@@ -162,6 +165,7 @@ async function runAudit() {
     { name: 'GoogleSheetsSyncModal', file: 'src/components/GoogleSheetsSyncModal.tsx' },
     { name: 'ThemeSelectorModal', file: 'src/components/ThemeSelectorModal.tsx' },
     { name: 'DiagnosticTestModal', file: 'src/components/DiagnosticTestModal.tsx' },
+    { name: 'JyotishView', file: 'src/components/JyotishView.tsx' },
   ];
 
   for (const mod of modules) {

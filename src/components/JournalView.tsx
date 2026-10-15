@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type JournalEntry, type TaskItem } from '../db';
+import { calculateJyotishEphemeris } from '../services/jyotishEngine';
 import { 
   BookHeart, 
   Calendar, 
@@ -58,6 +59,11 @@ export const JournalView: React.FC = () => {
   const entries = useLiveQuery(() => db.journal.orderBy('date').reverse().toArray(), []) || [];
   const activeEntry = useLiveQuery(() => db.journal.where('date').equals(selectedDate).first(), [selectedDate]);
   const activeTasks = useLiveQuery(() => db.tasks.where('status').notEqual('Done').toArray(), []) || [];
+
+  // Vedic Panchang for Selected Journal Date
+  const panchang = useMemo(() => {
+    return calculateJyotishEphemeris(new Date(selectedDate)).panchang;
+  }, [selectedDate]);
 
   // Sync state with active entry when selectedDate changes
   useEffect(() => {
@@ -199,6 +205,16 @@ intention_score: "${completedIntentionsCount}/${totalIntentionsCount} (${intenti
 
 ---
 
+### 🪐 Vedic Panchang & Celestial Rhythm
+- **Tithi:** ${panchang.tithiName} (${panchang.tithiElapsedPercentage}% elapsed)
+- **Nakshatra:** ${panchang.nakshatraName} (Pada ${panchang.pada}, Lord: ${panchang.nakshatraLord})
+- **Yoga:** ${panchang.yogaName}
+- **Karana:** ${panchang.karanaName} ${panchang.isBhadra ? '(⚠️ Bhadra Active)' : ''}
+- **Vara:** ${panchang.varaName}
+- **Sun Timings:** Sunrise ${panchang.sunriseTime} | Sunset ${panchang.sunsetTime} (Daylight: ${panchang.dayDurationHours}h)
+
+---
+
 ### 🎯 Morning Top 3 High-Leverage Intentions
 ${morning1 ? `- [${completed1 ? 'x' : ' '}] ${morning1}` : ''}
 ${morning2 ? `- [${completed2 ? 'x' : ' '}] ${morning2}` : ''}
@@ -327,6 +343,27 @@ ${content ? content : '_No contemplation written._'}
             <Save size={14} />
             <span>{savedStatus ? 'Saved!' : 'Save Entry'}</span>
           </button>
+        </div>
+      </div>
+
+      {/* Daily Vedic Panchang Rhythm Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 rounded-2xl bg-[#141622] border border-[#272b3d] shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="p-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <Sparkles size={13} />
+          </span>
+          <span className="font-bold text-white">Vedic Panchang:</span>
+          <span className="text-sky-300 font-medium">{panchang.tithiName}</span>
+          <span className="text-gray-600">•</span>
+          <span className="text-gray-300">Nakshatra: <strong className="text-amber-300 font-semibold">{panchang.nakshatraName}</strong> (Pada {panchang.pada})</span>
+          <span className="text-gray-600">•</span>
+          <span className="text-gray-300">Yoga: <strong className="text-indigo-300 font-semibold">{panchang.yogaName}</strong></span>
+          <span className="text-gray-600">•</span>
+          <span className="text-gray-300">Karana: <strong className={panchang.isBhadra ? "text-rose-400 font-bold" : "text-emerald-300 font-semibold"}>{panchang.karanaName}</strong></span>
+        </div>
+        <div className="flex items-center gap-3 font-mono text-[11px] text-gray-400">
+          <span>🌅 {panchang.sunriseTime}</span>
+          <span>🌇 {panchang.sunsetTime}</span>
         </div>
       </div>
 

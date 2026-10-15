@@ -222,6 +222,25 @@ export interface SemanticEmbeddingRecord {
   updatedAt: number;
 }
 
+export interface JyotishChartRecord {
+  id: string;
+  title: string;
+  dateTime: string;
+  locationName: string;
+  latitude: number;
+  longitude: number;
+  notes?: string;
+  lagnaRashi: string;
+  lagnaDegree: string;
+  chandraRashi: string;
+  chandraNakshatra: string;
+  tithi: string;
+  vara: string;
+  grahasJson: string; // JSON serialized Graha positions
+  createdAt: number;
+  updatedAt: number;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -240,6 +259,7 @@ export class OmKnowledgeDatabase extends Dexie {
   health!: Table<HealthEntry, string>;
   properties!: Table<PropertyParcel, string>;
   semanticEmbeddings!: Table<SemanticEmbeddingRecord, string>;
+  jyotishCharts!: Table<JyotishChartRecord, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -310,6 +330,27 @@ export class OmKnowledgeDatabase extends Dexie {
       health: 'id, date, pranaScore, createdAt, updatedAt',
       properties: 'id, title, location, status, updatedAt',
       semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+    });
+
+    this.version(7).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+      jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
     });
   }
 }

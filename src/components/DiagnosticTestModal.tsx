@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { THEMES } from '../services/themeEngine';
 import { generateVectorEmbedding, cosineSimilarity } from '../services/semanticVectorEngine';
+import { calculateJyotishEphemeris } from '../services/jyotishEngine';
 
 export interface TestResult {
   id: string;
@@ -42,8 +43,8 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
   const [overallScore, setOverallScore] = useState<number | null>(null);
   const [tests, setTests] = useState<TestResult[]>([
     // Database Suite
-    { id: 'db-connect', name: 'Dexie v6 Local-First Database Connection', category: 'Database', status: 'pending' },
-    { id: 'db-tables', name: '17 Schema Table Stores Verification', category: 'Database', status: 'pending' },
+    { id: 'db-connect', name: 'Dexie v7 Local-First Database Connection', category: 'Database', status: 'pending' },
+    { id: 'db-tables', name: '18 Schema Table Stores Verification', category: 'Database', status: 'pending' },
     { id: 'db-acid', name: 'Atomic Transaction & Write-Rollback Integrity', category: 'Database', status: 'pending' },
     { id: 'db-vector', name: '256-Dim Semantic Vector Engine & Cosine Probe', category: 'Database', status: 'pending' },
     
@@ -59,6 +60,7 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
     { id: 'mod-analytics', name: '5-Spoke Life Radar & 24-Mo Runway Forecaster', category: 'Modules', status: 'pending' },
     { id: 'mod-pantry', name: 'Kitchen & Pantry Reorder Inventory Engine', category: 'Modules', status: 'pending' },
     { id: 'mod-sheets', name: 'Google Sheets Live 3-Way Cloud Bridge & Queue', category: 'Modules', status: 'pending' },
+    { id: 'mod-jyotish', name: 'Metaphysical & Jyotish Ephemeris Computational Engine', category: 'Modules', status: 'pending' },
     
     // PWA & Offline
     { id: 'pwa-manifest', name: 'Web App Manifest (Icons, Standalone, Scope)', category: 'PWA & Offline', status: 'pending' },
@@ -103,11 +105,11 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
               'tasks', 'projects', 'goals', 'knowledge', 'inbox', 'journal', 
               'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
               'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
-              'noteDestinations', 'health', 'properties', 'semanticEmbeddings'
+              'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts'
             ];
             const present = expectedTables.filter(name => (db as any)[name] !== undefined);
-            if (present.length < 16) throw new Error(`Missing tables. Found: ${present.length}/17`);
-            t.message = `All 17 Dexie schema tables verified active`;
+            if (present.length < 17) throw new Error(`Missing tables. Found: ${present.length}/18`);
+            t.message = `All 18 Dexie schema tables verified active`;
             break;
           }
           case 'db-acid': {
@@ -193,6 +195,14 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
             const qCount = await db.syncQueue.count();
             const cCount = await db.syncConflicts.count();
             t.message = `Sync Engine: ${qCount} pending mutations, ${cCount} conflicts resolved`;
+            break;
+          }
+          case 'mod-jyotish': {
+            const result = calculateJyotishEphemeris(new Date());
+            if (!result.panchang || result.grahas.length !== 9) {
+              throw new Error('Jyotish ephemeris computation incomplete');
+            }
+            t.message = `Ephemeris verified: Lahiri ${result.ayanamsha.toFixed(2)}°, ${result.panchang.tithiName}, 9 Grahas, 12 Bhavas`;
             break;
           }
           case 'pwa-manifest': {

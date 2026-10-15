@@ -52,9 +52,9 @@ This document establishes persistent repository rules, architecture standards, a
 
 ---
 
-## 5. Dual-Lens Communication & Memory Protocol
-All architectural analyses and design deliverables must be delivered under the Dual-Lens Standard:
-- **LENS 1 (The Systems Learner's Architectural Deconstruction):** Deep, educational explanation of systems design, causal mechanisms, data flows, and trade-offs. 100% of technical terms accompanied by inline parentheses definitions for an ambitious non-coder learner. Zero data loss.
-- **LENS 2 (The IDE Machine Cockpit):** Pure, un-truncated, developer-grade technical specifications (schemas, types, algorithms, commands, prompts) ready for immediate execution by Antigravity IDE.
+## 5. Mode-Aware Communication Protocol
+- **Default Mode (Execution & Coding):** Deliver lean cockpit updates (~200-450 tokens). Always include a compact, understandable narrative explaining what actually changed and why, followed by files touched, build verification status, and the next command. Saving tokens must never compromise delivering information in at least a minimum, precise, compact, understandable way of what is really happening.
+- **Deep Dive Mode (Trigger: "use lens 2"):** Deliver full Lens 1 (Educational Systems Masterclass with inline parentheses definitions) + Lens 2 (Executable Technical Blueprint on disk in docs/tasks/).
+
 
 

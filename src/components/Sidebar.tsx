@@ -37,7 +37,8 @@ export type NavTab =
   | 'property' 
   | 'pantry' 
   | 'sheets'
-  | 'analytics';
+  | 'analytics'
+  | 'jyotish';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -64,6 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Executive Dashboard', shortLabel: 'Home', icon: LayoutDashboard, category: 'Core OS' },
     { id: 'tasks', label: 'Task Intelligence', shortLabel: 'Tasks', icon: CheckSquare, category: 'Productivity' },
     { id: 'knowledge', label: 'Knowledge Vault', shortLabel: 'Vault', icon: BookOpen, category: 'Core OS' },
+    { id: 'jyotish', label: 'Metaphysical & Jyotish', shortLabel: 'Jyotish', icon: Sparkles, category: 'Metaphysical' },
     { id: 'health', label: 'Health & Ayurveda', shortLabel: 'Health', icon: Heart, category: 'Life & Vitality' },
     { id: 'property', label: 'Land & Diligence', shortLabel: 'Land', icon: Mountain, category: 'Asset Diligence' },
     { id: 'pdf', label: 'PDF Research Reader', shortLabel: 'PDFs', icon: FileText, category: 'Study Archive' },
@@ -76,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   // Secondary tabs that indicate "More" is active when selected
-  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets', 'analytics'].includes(currentTab);
+  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets', 'analytics', 'jyotish'].includes(currentTab);
 
   const handleMobileSelect = (tab: NavTab) => {
     onSelectTab(tab);

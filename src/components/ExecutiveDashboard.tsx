@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type TaskItem } from '../db';
 import { 
@@ -17,6 +17,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { calculateLifeEquilibrium } from '../services/predictiveAnalytics';
+import { calculateJyotishEphemeris } from '../services/jyotishEngine';
 
 interface ExecutiveDashboardProps {
   onNavigate: (tab: any) => void;
@@ -42,6 +43,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   const journals = useLiveQuery(() => db.journal.toArray(), []) || [];
 
   const equilibrium = calculateLifeEquilibrium(goals, tasks, health, journals);
+  const ephemeris = useMemo(() => calculateJyotishEphemeris(new Date()), []);
 
   const activeTasks = tasks.filter(t => !t.isCompleted);
   const completedToday = tasks.filter(t => t.isCompleted);
@@ -180,6 +182,38 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
             <span className="text-xl font-bold text-rose-300 mt-1 block">{pantryLow.length}</span>
             <span className="text-[10px] text-rose-400 mt-0.5 block">Needs replenishment</span>
           </div>
+        </div>
+      </div>
+
+      {/* Real-time Vedic Panchang & Muhurta Executive Strip */}
+      <div 
+        onClick={() => onNavigate('jyotish')}
+        className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/20 via-[#181a24] to-indigo-950/20 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:border-amber-500/50 transition-all shadow-sm group"
+      >
+        <div className="flex items-center gap-3">
+          <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform">
+            <Compass size={18} />
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white">Vedic Panchang & Muhurta</span>
+              <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                {ephemeris.panchang.tithiName}
+              </span>
+              {ephemeris.activeMuhurta && (
+                <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  {ephemeris.activeMuhurta.name}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Nakshatra: <span className="text-amber-200 font-semibold">{ephemeris.panchang.nakshatraName}</span> (P{ephemeris.panchang.pada}) • Yoga: <span className="text-indigo-300">{ephemeris.panchang.yogaName}</span> • Lagna: <span className="text-gray-300">{ephemeris.lagna.rashiName}</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-semibold text-amber-300 group-hover:text-amber-200">
+          <span>Open Ephemeris & Kundli</span>
+          <ArrowUpRight size={14} />
         </div>
       </div>
 
