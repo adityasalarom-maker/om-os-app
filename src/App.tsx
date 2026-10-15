@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Sidebar, type NavTab } from './components/Sidebar';
 import { ExecutiveDashboard } from './components/ExecutiveDashboard';
 import { TaskIntelligence } from './components/TaskIntelligence';
@@ -8,6 +8,9 @@ import { GoalsPyramid } from './components/GoalsPyramid';
 import { JournalView } from './components/JournalView';
 import { PantryView } from './components/PantryView';
 import { GoogleSheetsSyncModal } from './components/GoogleSheetsSyncModal';
+import { HealthTracker } from './components/HealthTracker';
+import { PropertyTracker } from './components/PropertyTracker';
+import { PdfReaderView } from './components/pdf/PdfReaderView';
 import { CommandPalette } from './components/CommandPalette';
 import { initializeSeedDataIfEmpty } from './db';
 import { Search, Sparkles, Bell, Shield, Smartphone } from 'lucide-react';
@@ -29,7 +32,7 @@ export function App() {
     return (
       <div className="min-h-screen bg-[#0f1117] flex flex-col items-center justify-center text-white space-y-3">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold shadow-xl shadow-indigo-500/30 animate-pulse">
-          ॐ
+          à¥
         </div>
         <p className="text-sm font-semibold tracking-wide">Initializing Om Knowledge OS...</p>
         <p className="text-xs text-gray-500 font-mono">Loading local-first encrypted tables</p>
@@ -55,7 +58,7 @@ export function App() {
         <header className="h-16 bg-[#161822]/80 backdrop-blur-md border-b border-[#272b3b] px-6 flex items-center justify-between z-10 shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <span className="text-indigo-400">ॐ</span>
+              <span className="text-indigo-400">à¥</span>
               <span className="capitalize">{currentTab === 'inbox' ? 'Universal Inbox & AI' : currentTab === 'sheets' ? 'Google Sheets Bridge' : currentTab.replace('-', ' ')}</span>
             </span>
           </div>
@@ -86,6 +89,9 @@ export function App() {
             {currentTab === 'dashboard' && <ExecutiveDashboard onNavigate={setCurrentTab} />}
             {currentTab === 'tasks' && <TaskIntelligence />}
             {currentTab === 'knowledge' && <KnowledgeVault />}
+            {currentTab === 'health' && <HealthTracker />}
+            {currentTab === 'property' && <PropertyTracker />}
+            {currentTab === 'pdf' && <PdfReaderView />}
             {currentTab === 'inbox' && <UniversalInboxAI />}
             {currentTab === 'goals' && <GoalsPyramid />}
             {currentTab === 'journal' && <JournalView />}
@@ -106,3 +112,4 @@ export function App() {
 }
 
 export default App;
+

@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie';
+﻿import Dexie, { type Table } from 'dexie';
 
 export interface Project {
   id: string;
@@ -140,6 +140,50 @@ export interface PdfAnnotation {
   createdAt: number;
 }
 
+export interface HealthEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  sleepHours: number;
+  sleepQuality: 'Deep / Restful' | 'Moderate' | 'Disturbed';
+  digestionAgni: 'Sama (Balanced)' | 'Manda (Sluggish)' | 'Tikshna (Intense)' | 'Vishama (Irregular)';
+  doshaState: {
+    vata: 'Balanced' | 'Elevated';
+    pitta: 'Balanced' | 'Elevated';
+    kapha: 'Balanced' | 'Elevated';
+  };
+  pranaScore: number; // 1-10
+  yogaPranayamaMin: number;
+  dietType: 'Sattvic' | 'Rajasic' | 'Tamasic' | 'Mixed';
+  herbsTaken: string[];
+  symptomsOrNotes: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface PropertyParcel {
+  id: string;
+  title: string;
+  location: string;
+  elevationMeters: number;
+  areaSize: string;
+  askingPrice: string;
+  pricePerUnit: string;
+  roadAccess: 'Paved Motor Road' | 'Kaccha Jeep Track' | 'Foot Trail';
+  waterSource: 'Perennial Stream (Gadhera)' | 'Spring Water' | 'Borewell' | 'Piped';
+  solarExposure: 'South Facing (Full Day)' | 'East Facing' | 'West Facing' | 'Shaded';
+  status: 'Shortlisted' | 'Site Visited' | 'Due Diligence' | 'Acquired' | 'Archived';
+  diligenceChecks: {
+    khatauni12YrVerified: boolean;
+    necObtained: boolean;
+    disasterFloodSafe: boolean;
+    boundaryDemarcated: boolean;
+    localTehsilApproved: boolean;
+  };
+  legalNotes: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface NoteDestination {
   id: string;
   title: string;
@@ -161,6 +205,8 @@ export class OmKnowledgeDatabase extends Dexie {
   pdfReadingStates!: Table<PdfReadingState, string>;
   pdfAnnotations!: Table<PdfAnnotation, string>;
   noteDestinations!: Table<NoteDestination, string>;
+  health!: Table<HealthEntry, string>;
+  properties!: Table<PropertyParcel, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -355,7 +401,7 @@ When integrating personal knowledge into an OS:
       title: 'Uttarkashi Himalayan Sanctuary Site Criteria',
       type: 'Source',
       content: `Key parameters for evaluating spiritual retreat or sustainable homestead property in Uttarakhand:
-- **Elevation**: 1100m – 1600m (temperate summers, brisk winters).
+- **Elevation**: 1100m â€“ 1600m (temperate summers, brisk winters).
 - **Water Source**: Perennial mountain stream (gadhera) or gravity-fed spring within 200m.
 - **Solar Exposure**: South or South-East facing ridge for maximum winter insolation.
 - **Title Verification**: Verify 12-year revenue record (Khatauni) and non-encumbrance certificate at local Tehsil.`,
@@ -476,5 +522,6 @@ When integrating personal knowledge into an OS:
     updatedAt: now,
   });
 }
+
 
 

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -11,16 +11,22 @@ import {
   Search,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  Heart,
+  Mountain
 } from 'lucide-react';
 
 export type NavTab = 
   | 'dashboard' 
   | 'tasks' 
   | 'knowledge' 
+  | 'pdf'
   | 'inbox' 
   | 'goals' 
   | 'journal' 
+  | 'health'
+  | 'property'
   | 'pantry' 
   | 'sheets';
 
@@ -43,6 +49,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
     { id: 'tasks', label: 'Task Intelligence', icon: CheckSquare },
     { id: 'knowledge', label: 'Knowledge Vault', icon: BookOpen },
+    { id: 'health', label: 'Health & Ayurveda', icon: Heart },
+    { id: 'property', label: 'Land & Diligence', icon: Mountain },
+    { id: 'pdf', label: 'PDF Research Reader', icon: FileText },
     { id: 'inbox', label: 'Universal Inbox & AI', icon: Inbox },
     { id: 'goals', label: 'Goals (Life Pyramid)', icon: Compass },
     { id: 'journal', label: 'Journal & Reflection', icon: BookHeart },
@@ -63,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!isCollapsed && (
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-500/20">
-                ॐ
+                à¥
               </div>
               <div>
                 <h1 className="font-semibold text-sm tracking-wide text-white">Om Knowledge OS</h1>
@@ -73,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
           {isCollapsed && (
             <div className="w-8 h-8 mx-auto rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
-              ॐ
+              à¥
             </div>
           )}
           <button 
@@ -189,3 +198,4 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
+
