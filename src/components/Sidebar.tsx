@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   CheckSquare, 
@@ -8,25 +8,29 @@ import {
   BookHeart, 
   UtensilsCrossed, 
   Sheet, 
-  Search,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  FileText,
-  Heart,
-  Mountain
+  Search, 
+  Sparkles, 
+  ChevronLeft, 
+  ChevronRight, 
+  FileText, 
+  Heart, 
+  Mountain,
+  Grid,
+  X,
+  Layers,
+  Smartphone
 } from 'lucide-react';
 
 export type NavTab = 
   | 'dashboard' 
   | 'tasks' 
   | 'knowledge' 
-  | 'pdf'
+  | 'pdf' 
   | 'inbox' 
   | 'goals' 
   | 'journal' 
-  | 'health'
-  | 'property'
+  | 'health' 
+  | 'property' 
   | 'pantry' 
   | 'sheets';
 
@@ -45,19 +49,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const navItems = [
-    { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
-    { id: 'tasks', label: 'Task Intelligence', icon: CheckSquare },
-    { id: 'knowledge', label: 'Knowledge Vault', icon: BookOpen },
-    { id: 'health', label: 'Health & Ayurveda', icon: Heart },
-    { id: 'property', label: 'Land & Diligence', icon: Mountain },
-    { id: 'pdf', label: 'PDF Research Reader', icon: FileText },
-    { id: 'inbox', label: 'Universal Inbox & AI', icon: Inbox },
-    { id: 'goals', label: 'Goals (Life Pyramid)', icon: Compass },
-    { id: 'journal', label: 'Journal & Reflection', icon: BookHeart },
-    { id: 'pantry', label: 'Kitchen & Pantry', icon: UtensilsCrossed },
-    { id: 'sheets', label: 'Google Sheets Bridge', icon: Sheet },
+    { id: 'dashboard', label: 'Executive Dashboard', shortLabel: 'Home', icon: LayoutDashboard, category: 'Core OS' },
+    { id: 'tasks', label: 'Task Intelligence', shortLabel: 'Tasks', icon: CheckSquare, category: 'Productivity' },
+    { id: 'knowledge', label: 'Knowledge Vault', shortLabel: 'Vault', icon: BookOpen, category: 'Core OS' },
+    { id: 'health', label: 'Health & Ayurveda', shortLabel: 'Health', icon: Heart, category: 'Life & Vitality' },
+    { id: 'property', label: 'Land & Diligence', shortLabel: 'Land', icon: Mountain, category: 'Asset Diligence' },
+    { id: 'pdf', label: 'PDF Research Reader', shortLabel: 'PDFs', icon: FileText, category: 'Study Archive' },
+    { id: 'inbox', label: 'Universal Inbox & AI', shortLabel: 'Capture', icon: Inbox, category: 'Input Hub' },
+    { id: 'goals', label: 'Goals (Life Pyramid)', shortLabel: 'Goals', icon: Compass, category: 'Life & Vitality' },
+    { id: 'journal', label: 'Journal & Reflection', shortLabel: 'Journal', icon: BookHeart, category: 'Life & Vitality' },
+    { id: 'pantry', label: 'Kitchen & Pantry', shortLabel: 'Pantry', icon: UtensilsCrossed, category: 'Household' },
+    { id: 'sheets', label: 'Google Sheets Bridge', shortLabel: 'Sheets', icon: Sheet, category: 'Sync Bridge' },
   ];
+
+  // Secondary tabs that indicate "More" is active when selected
+  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets'].includes(currentTab);
+
+  const handleMobileSelect = (tab: NavTab) => {
+    onSelectTab(tab);
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -72,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!isCollapsed && (
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-500/20">
-                à¥
+                ॐ
               </div>
               <div>
                 <h1 className="font-semibold text-sm tracking-wide text-white">Om Knowledge OS</h1>
@@ -82,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
           {isCollapsed && (
             <div className="w-8 h-8 mx-auto rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">
-              à¥
+              ॐ
             </div>
           )}
           <button 
@@ -149,52 +163,161 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </aside>
 
-      {/* Mobile Bottom Navigation Bar (Visible on phones like Samsung Galaxy S25) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#161822]/95 backdrop-blur-md border-t border-[#272b3b] z-50 flex items-center justify-around px-2">
+      {/* Mobile Bottom Navigation Bar (Optimized for Samsung S25 Ultra 6.8" AMOLED & Thumb Ergonomics) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#161822]/95 backdrop-blur-md border-t border-[#272b3b] z-40 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+        {/* 1. Home Dashboard */}
         <button
           onClick={() => onSelectTab('dashboard')}
-          className={`flex flex-col items-center justify-center w-12 py-1 ${
-            currentTab === 'dashboard' ? 'text-indigo-400' : 'text-gray-400'
+          className={`flex flex-col items-center justify-center w-14 py-1 transition-colors ${
+            currentTab === 'dashboard' ? 'text-indigo-400 font-semibold' : 'text-gray-400'
           }`}
         >
           <LayoutDashboard size={20} />
-          <span className="text-[10px] mt-1 font-medium">Home</span>
+          <span className="text-[10px] mt-1">Home</span>
         </button>
+
+        {/* 2. Tasks Matrix */}
         <button
           onClick={() => onSelectTab('tasks')}
-          className={`flex flex-col items-center justify-center w-12 py-1 ${
-            currentTab === 'tasks' ? 'text-indigo-400' : 'text-gray-400'
+          className={`flex flex-col items-center justify-center w-14 py-1 transition-colors ${
+            currentTab === 'tasks' ? 'text-indigo-400 font-semibold' : 'text-gray-400'
           }`}
         >
           <CheckSquare size={20} />
-          <span className="text-[10px] mt-1 font-medium">Tasks</span>
+          <span className="text-[10px] mt-1">Tasks</span>
         </button>
+
+        {/* 3. Center Hero Quick Capture (Elevated Floating Action Button) */}
         <button
           onClick={() => onSelectTab('inbox')}
-          className={`flex flex-col items-center justify-center w-14 h-14 -mt-5 bg-gradient-to-tr from-indigo-500 to-purple-600 text-white rounded-full shadow-lg shadow-indigo-500/30 border-2 border-[#161822]`}
-          title="Quick Capture"
+          className="flex flex-col items-center justify-center w-13 h-13 -mt-6 bg-gradient-to-tr from-indigo-500 to-purple-600 text-white rounded-full shadow-lg shadow-indigo-500/40 border-2 border-[#161822] active:scale-95 transition-transform"
+          title="Quick Capture & AI Inbox"
         >
           <Sparkles size={22} />
         </button>
+
+        {/* 4. Knowledge Vault */}
         <button
           onClick={() => onSelectTab('knowledge')}
-          className={`flex flex-col items-center justify-center w-12 py-1 ${
-            currentTab === 'knowledge' ? 'text-indigo-400' : 'text-gray-400'
+          className={`flex flex-col items-center justify-center w-14 py-1 transition-colors ${
+            currentTab === 'knowledge' ? 'text-indigo-400 font-semibold' : 'text-gray-400'
           }`}
         >
           <BookOpen size={20} />
-          <span className="text-[10px] mt-1 font-medium">Vault</span>
+          <span className="text-[10px] mt-1">Vault</span>
         </button>
+
+        {/* 5. More Modules Drawer Trigger */}
         <button
-          onClick={() => onSelectTab('journal')}
-          className={`flex flex-col items-center justify-center w-12 py-1 ${
-            currentTab === 'journal' ? 'text-indigo-400' : 'text-gray-400'
+          onClick={() => setIsMobileMenuOpen(true)}
+          className={`flex flex-col items-center justify-center w-14 py-1 relative transition-colors ${
+            isMoreActive ? 'text-indigo-400 font-semibold' : 'text-gray-400'
           }`}
         >
-          <BookHeart size={20} />
-          <span className="text-[10px] mt-1 font-medium">Journal</span>
+          {isMoreActive && (
+            <span className="absolute top-1 right-3 w-2 h-2 rounded-full bg-indigo-500 ring-2 ring-[#161822]" />
+          )}
+          <Grid size={20} />
+          <span className="text-[10px] mt-1">Modules</span>
         </button>
       </nav>
+
+      {/* Mobile All-Modules Bottom Sheet Drawer */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Sheet Container */}
+          <div className="relative bg-[#161822] border-t border-[#2e3449] rounded-t-3xl shadow-2xl z-10 max-h-[85vh] flex flex-col overflow-hidden pb-[max(1rem,env(safe-area-inset-bottom,1rem))] animate-in slide-in-from-bottom duration-200">
+            {/* Grab Handle */}
+            <div className="w-full flex justify-center pt-3 pb-1" onClick={() => setIsMobileMenuOpen(false)}>
+              <div className="w-12 h-1.5 rounded-full bg-gray-600/70" />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 py-3 flex items-center justify-between border-b border-[#272b3b]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                  ॐ
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Om Knowledge OS</h3>
+                  <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                    <Smartphone size={10} className="text-indigo-400" />
+                    <span>Samsung S25 Ultra AMOLED • 11 Modules</span>
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-8 h-8 rounded-full bg-[#1f2333] text-gray-400 hover:text-white flex items-center justify-center"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Quick Action Bar (Search & Jump inside drawer) */}
+            <div className="px-5 py-2.5 bg-[#12141c] border-b border-[#222638] flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onOpenSearch();
+                }}
+                className="flex items-center gap-2 text-xs text-indigo-300 hover:text-white bg-[#1c2030] px-3 py-1.5 rounded-xl border border-[#2b3046] w-full justify-center"
+              >
+                <Search size={14} className="text-indigo-400" />
+                <span>Quick Search & Jump (Ctrl+P)</span>
+              </button>
+            </div>
+
+            {/* Scrollable Module Grid */}
+            <div className="p-4 overflow-y-auto space-y-4 max-h-[60vh]">
+              <div className="grid grid-cols-2 gap-2.5">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  const isCurrent = currentTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleMobileSelect(item.id as NavTab)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all active:scale-98 ${
+                        isCurrent 
+                          ? 'bg-indigo-600/20 border-indigo-500/50 text-white shadow-md shadow-indigo-500/10'
+                          : 'bg-[#1b1e2c] border-[#292e42] text-gray-300 hover:border-gray-500 hover:text-white'
+                      }`}
+                    >
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                        isCurrent 
+                          ? 'bg-indigo-600 text-white' 
+                          : 'bg-[#24293d] text-indigo-400'
+                      }`}>
+                        <Icon size={18} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold truncate leading-tight">{item.label}</div>
+                        <div className="text-[10px] text-gray-400 mt-0.5 truncate">{item.category}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Drawer Footer Status */}
+            <div className="px-5 pt-2 flex items-center justify-between text-[11px] text-gray-500 border-t border-[#222638]">
+              <span className="flex items-center gap-1.5 text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Dexie Local-First DB Active</span>
+              </span>
+              <span className="text-[10px] font-mono text-gray-400">PWA v2.1</span>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'om-knowledge-os-v2.0';
+const CACHE_NAME = 'om-knowledge-os-v2.1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
