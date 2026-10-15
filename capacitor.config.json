@@ -2,7 +2,6 @@
   "appId": "com.omknowledge.os",
   "appName": "Om Knowledge OS",
   "webDir": "dist",
-  "bundledWebRuntime": false,
   "android": {
     "backgroundColor": "#161822",
     "allowMixedContent": true,

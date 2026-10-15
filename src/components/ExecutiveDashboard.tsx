@@ -13,16 +13,22 @@ import {
   Flame,
   ShieldCheck,
   Utensils,
-  Compass
+  Compass,
+  Smartphone
 } from 'lucide-react';
 import { calculateLifeEquilibrium } from '../services/predictiveAnalytics';
 
 interface ExecutiveDashboardProps {
   onNavigate: (tab: any) => void;
   onOpenDiagnostics?: () => void;
+  onOpenMobileDeploy?: () => void;
 }
 
-export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ onNavigate, onOpenDiagnostics }) => {
+export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ 
+  onNavigate, 
+  onOpenDiagnostics,
+  onOpenMobileDeploy 
+}) => {
   const [quickInput, setQuickInput] = useState('');
   const [quickType, setQuickType] = useState<'task' | 'inbox'>('task');
 
@@ -107,6 +113,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({ onNaviga
                 title="Run Automated E2E Test Suite & Lighthouse PWA Audit"
               >
                 <ShieldCheck size={14} /> System Optimal (E2E Verified)
+              </button>
+              <span className="text-gray-500">•</span>
+              <button
+                onClick={onOpenMobileDeploy}
+                className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors cursor-pointer"
+                title="Open Mobile & Samsung S25 Ultra Deployment Hub"
+              >
+                <Smartphone size={14} /> Samsung S25 Deploy
               </button>
             </div>
             <h2 className="text-2xl font-bold text-white tracking-tight">Executive Command Center</h2>

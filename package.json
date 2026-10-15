@@ -9,9 +9,16 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:e2e": "node scripts/e2e_audit.mjs",
-    "audit": "npm run build && node scripts/e2e_audit.mjs"
+    "audit": "npm run build && node scripts/e2e_audit.mjs",
+    "serve": "node scripts/serve_production.mjs",
+    "deploy:s25": "powershell scripts/samsung_s25_wireless_deploy.ps1",
+    "cap:sync": "npm run build && npx cap sync android",
+    "cap:open": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
     "clsx": "^2.1.1",
     "dexie": "^4.4.6",
     "dexie-react-hooks": "^4.4.0",

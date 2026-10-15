@@ -9,9 +9,16 @@ interface CommandPaletteProps {
   onClose: () => void;
   onNavigate: (tab: NavTab) => void;
   onOpenDiagnostics?: () => void;
+  onOpenMobileDeploy?: () => void;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, onNavigate, onOpenDiagnostics }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ 
+  isOpen, 
+  onClose, 
+  onNavigate, 
+  onOpenDiagnostics,
+  onOpenMobileDeploy 
+}) => {
   const [query, setQuery] = useState('');
 
   const notes = useLiveQuery(() => db.knowledge.toArray(), []) || [];
@@ -125,6 +132,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                   className="p-2.5 rounded-xl bg-[#141624] hover:bg-[#202538] border border-[#262b3d] text-left text-xs font-semibold text-cyan-300 flex items-center justify-between"
                 >
                   <span>🛡️ System E2E Diagnostics & Audit</span>
+                  <ArrowRight size={13} className="text-gray-500" />
+                </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenMobileDeploy?.();
+                  }}
+                  className="p-2.5 rounded-xl bg-[#141624] hover:bg-[#202538] border border-[#262b3d] text-left text-xs font-semibold text-cyan-300 flex items-center justify-between"
+                >
+                  <span>📱 Samsung S25 Ultra & Mobile Hub</span>
                   <ArrowRight size={13} className="text-gray-500" />
                 </button>
               </div>

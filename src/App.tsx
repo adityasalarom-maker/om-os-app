@@ -14,6 +14,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { ThemeSelectorModal } from './components/ThemeSelectorModal';
 import { AnalyticsView } from './components/AnalyticsView';
 import { DiagnosticTestModal } from './components/DiagnosticTestModal';
+import { MobileDeploymentModal } from './components/MobileDeploymentModal';
 
 // Code-split heavy libraries (pdfjs-dist, tesseract.js)
 const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
@@ -30,6 +31,7 @@ export function App() {
   const [isThemeOpen, setIsThemeOpen] = useState(false);
   const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
+  const [isMobileDeployOpen, setIsMobileDeployOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   const pendingQueueCount = useLiveQuery(() => db.syncQueue.where('status').equals('pending').count(), []) || 0;
@@ -135,6 +137,16 @@ export function App() {
               </span>
             </button>
 
+            {/* Mobile & S25 Ultra Deployment Hub Button */}
+            <button
+              onClick={() => setIsMobileDeployOpen(true)}
+              className="flex items-center gap-1.5 bg-[#1c2030] hover:bg-[#23283c] border border-[#2d3246] text-cyan-300 hover:text-white px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
+              title="Mobile & Samsung Galaxy S25 Ultra Deployment Hub"
+            >
+              <Smartphone size={14} className="text-cyan-400" />
+              <span className="hidden sm:inline">S25 Hub</span>
+            </button>
+
             {/* System Diagnostic & E2E Audit Button */}
             <button
               onClick={() => setIsDiagnosticOpen(true)}
@@ -154,7 +166,8 @@ export function App() {
             {currentTab === 'dashboard' && (
               <ExecutiveDashboard 
                 onNavigate={setCurrentTab} 
-                onOpenDiagnostics={() => setIsDiagnosticOpen(true)} 
+                onOpenDiagnostics={() => setIsDiagnosticOpen(true)}
+                onOpenMobileDeploy={() => setIsMobileDeployOpen(true)}
               />
             )}
             {currentTab === 'tasks' && <TaskIntelligence />}
@@ -182,6 +195,7 @@ export function App() {
         onClose={() => setIsSearchOpen(false)}
         onNavigate={setCurrentTab}
         onOpenDiagnostics={() => setIsDiagnosticOpen(true)}
+        onOpenMobileDeploy={() => setIsMobileDeployOpen(true)}
       />
 
       {/* Universal Theme Selector Modal */}
@@ -207,6 +221,12 @@ export function App() {
       <DiagnosticTestModal
         isOpen={isDiagnosticOpen}
         onClose={() => setIsDiagnosticOpen(false)}
+      />
+
+      {/* Mobile & Samsung S25 Ultra Deployment Modal */}
+      <MobileDeploymentModal
+        isOpen={isMobileDeployOpen}
+        onClose={() => setIsMobileDeployOpen(false)}
       />
     </div>
   );
