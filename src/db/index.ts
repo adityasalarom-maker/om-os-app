@@ -593,10 +593,21 @@ export class OmKnowledgeDatabase extends Dexie {
   }
 }
 
+import { ingestChatGPTArchitecturalConcepts, CHATGPT_ARCHITECTURAL_CONCEPTS } from './chatgptPkmSeed';
+export { ingestChatGPTArchitecturalConcepts, CHATGPT_ARCHITECTURAL_CONCEPTS };
+
 export const db = new OmKnowledgeDatabase();
+
+// Ensure foundational ChatGPT architectural concepts are ingested into Knowledge Vault
+export async function ensureChatGPTArchitecturalConcepts() {
+  return await ingestChatGPTArchitecturalConcepts();
+}
 
 // Seed initial realistic data from Om Knowledge OS v2.0 if database is empty
 export async function initializeSeedDataIfEmpty() {
+  // Always ensure ChatGPT foundational architecture concepts are present
+  await ensureChatGPTArchitecturalConcepts();
+
   const projectCount = await db.projects.count();
   if (projectCount > 0) return;
 
