@@ -1,6 +1,7 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type PropertyParcel } from '../db';
+import { HimalayanSpatialGis } from './HimalayanSpatialGis';
 import { 
   Compass, 
   MapPin, 
@@ -13,10 +14,12 @@ import {
   Circle, 
   FileText,
   Mountain,
-  Navigation
+  Navigation,
+  Layers
 } from 'lucide-react';
 
 export const PropertyTracker: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'spatial-gis' | 'shortlist'>('spatial-gis');
   const parcels = useLiveQuery(() => db.properties.orderBy('updatedAt').reverse().toArray(), []) || [];
   const [isAdding, setIsAdding] = useState(false);
 
@@ -89,25 +92,62 @@ export const PropertyTracker: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-20 md:pb-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#181a24] p-5 rounded-2xl border border-[#272b3b]">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Mountain className="text-amber-400" size={22} />
-            <span>Land & Property Due Diligence Hub</span>
-          </h2>
-          <p className="text-gray-400 text-xs mt-1">
-            Site shortlist, 12-year Khatauni revenue checks, perennial stream water access, solar elevation, and disaster safety.
-          </p>
+      {/* Top View Mode Switcher */}
+      <div className="flex items-center justify-between bg-[#161822] border border-[#272b3b] p-1.5 rounded-2xl">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setViewMode('spatial-gis')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'spatial-gis'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Layers size={14} />
+            <span>Himalayan Spatial GIS & Cadastre</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('shortlist')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'shortlist'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <FileText size={14} />
+            <span>Property Shortlist & Dossiers</span>
+          </button>
         </div>
-        <button
-          onClick={() => setIsAdding(!isAdding)}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/30 self-start sm:self-auto"
-        >
-          <Plus size={15} />
-          <span>{isAdding ? 'Close Form' : 'Add Property Parcel'}</span>
-        </button>
+
+        <span className="text-[11px] font-mono text-gray-500 hidden sm:inline mr-3">
+          {viewMode === 'spatial-gis' ? 'Vector GIS Canvas & Shoelace Math' : `${parcels.length} Sites Shortlisted`}
+        </span>
       </div>
+
+      {viewMode === 'spatial-gis' ? (
+        <HimalayanSpatialGis />
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#181a24] p-5 rounded-2xl border border-[#272b3b]">
+            <div>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Mountain className="text-amber-400" size={22} />
+                <span>Land & Property Due Diligence Hub</span>
+              </h2>
+              <p className="text-gray-400 text-xs mt-1">
+                Site shortlist, 12-year Khatauni revenue checks, perennial stream water access, solar elevation, and disaster safety.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsAdding(!isAdding)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/30 self-start sm:self-auto"
+            >
+              <Plus size={15} />
+              <span>{isAdding ? 'Close Form' : 'Add Property Parcel'}</span>
+            </button>
+          </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -378,6 +418,8 @@ export const PropertyTracker: React.FC = () => {
           );
         })}
       </div>
+        </>
+      )}
     </div>
   );
 };

@@ -241,6 +241,40 @@ export interface JyotishChartRecord {
   updatedAt: number;
 }
 
+export interface KhasraParcelRecord {
+  id: string; // e.g. "khasra-142-1"
+  khasraNumber: string; // e.g. "142/1"
+  khataNumber: string; // e.g. "00045"
+  fasliYear: string; // e.g. "1431-1436 Fasli"
+  villageTehsil: string; // e.g. "Netala, Bhatwari Tehsil, Uttarkashi"
+  landClassification: 'Krishi (Agricultural)' | 'Bagicha (Orchard)' | 'Abadi (Residential)' | 'Banjar (Uncultivated)';
+  bhumidharNames: string[];
+  shareFraction?: string;
+  areaNali: number;
+  areaMutthi: number;
+  areaSqMeters: number;
+  coordinates: [number, number][]; // [lon, lat]
+  elevationMin: number;
+  elevationMax: number;
+  slopePercent: number;
+  aspectDirection: 'South' | 'South-East' | 'East' | 'South-West' | 'North' | 'North-East' | 'North-West' | 'West';
+  waterStreamDistanceMeters: number;
+  roadDistanceMeters: number;
+  riskScore: number;
+  diligenceStatus: 'Clear' | 'Conditional' | 'High Risk' | 'Pending';
+  legalChecks: {
+    khatauni12Yr: boolean;
+    nec12Yr: boolean;
+    section143Cleared: boolean;
+    patwariDemarcated: boolean;
+    disasterSafe: boolean;
+  };
+  encumbranceNotes: string;
+  propertyId?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -260,6 +294,7 @@ export class OmKnowledgeDatabase extends Dexie {
   properties!: Table<PropertyParcel, string>;
   semanticEmbeddings!: Table<SemanticEmbeddingRecord, string>;
   jyotishCharts!: Table<JyotishChartRecord, string>;
+  khasraParcels!: Table<KhasraParcelRecord, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -351,6 +386,28 @@ export class OmKnowledgeDatabase extends Dexie {
       properties: 'id, title, location, status, updatedAt',
       semanticEmbeddings: 'id, itemId, itemType, updatedAt',
       jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
+    });
+
+    this.version(8).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+      jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
+      khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
     });
   }
 }
@@ -645,6 +702,129 @@ When integrating personal knowledge into an OS:
     createdAt: now,
     updatedAt: now,
   });
+
+  // Seed Himalayan Khasra cadastral parcels
+  await ensureSeedKhasraParcelsIfEmpty();
+}
+
+export async function ensureSeedKhasraParcelsIfEmpty() {
+  const count = await db.khasraParcels.count();
+  if (count > 0) return;
+
+  const now = Date.now();
+  await db.khasraParcels.bulkAdd([
+    {
+      id: 'khasra-142-1',
+      khasraNumber: '142/1',
+      khataNumber: '00042',
+      fasliYear: '1431-1436 Fasli',
+      villageTehsil: 'Netala, Bhatwari Tehsil, Uttarkashi',
+      landClassification: 'Bagicha (Orchard)',
+      bhumidharNames: ['Sundar Singh Negi', 'Devendra Singh Negi'],
+      shareFraction: '1/2 Joint Tenancy',
+      areaNali: 4.5,
+      areaMutthi: 0,
+      areaSqMeters: 903.02,
+      coordinates: [
+        [78.4912, 30.7654],
+        [78.4925, 30.7658],
+        [78.4929, 30.7649],
+        [78.4915, 30.7645],
+      ],
+      elevationMin: 1360,
+      elevationMax: 1385,
+      slopePercent: 18,
+      aspectDirection: 'South-East',
+      waterStreamDistanceMeters: 45,
+      roadDistanceMeters: 25,
+      riskScore: 95,
+      diligenceStatus: 'Clear',
+      legalChecks: {
+        khatauni12Yr: true,
+        nec12Yr: true,
+        section143Cleared: true,
+        patwariDemarcated: true,
+        disasterSafe: true,
+      },
+      encumbranceNotes: '12-Year Khatauni inspected at Bhatwari Tehsil. Clear hereditary Bhumidhari title with transferable rights. 200m buffer from Bhagirathi river intact; 45m from perennial Netala Gadhera.',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'khasra-142-2',
+      khasraNumber: '142/2',
+      khataNumber: '00042',
+      fasliYear: '1431-1436 Fasli',
+      villageTehsil: 'Netala, Bhatwari Tehsil, Uttarkashi',
+      landClassification: 'Krishi (Agricultural)',
+      bhumidharNames: ['Sundar Singh Negi', 'Devendra Singh Negi'],
+      shareFraction: '1/2 Joint Tenancy',
+      areaNali: 3.2,
+      areaMutthi: 3.2,
+      areaSqMeters: 642.15,
+      coordinates: [
+        [78.4925, 30.7658],
+        [78.4938, 30.7662],
+        [78.4941, 30.7653],
+        [78.4929, 30.7649],
+      ],
+      elevationMin: 1375,
+      elevationMax: 1398,
+      slopePercent: 16,
+      aspectDirection: 'South-East',
+      waterStreamDistanceMeters: 80,
+      roadDistanceMeters: 60,
+      riskScore: 90,
+      diligenceStatus: 'Clear',
+      legalChecks: {
+        khatauni12Yr: true,
+        nec12Yr: true,
+        section143Cleared: true,
+        patwariDemarcated: true,
+        disasterSafe: true,
+      },
+      encumbranceNotes: 'Adjoining upper terraced orchard slope. Gravity-fed spring water channel easement registered in Khatauni remarks.',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'khasra-89-b',
+      khasraNumber: '89/B',
+      khataNumber: '00118',
+      fasliYear: '1430-1435 Fasli',
+      villageTehsil: 'Ranikhet Sun-facing Apple Ridge, Almora',
+      landClassification: 'Bagicha (Orchard)',
+      bhumidharNames: ['Kailash Chandra Joshi'],
+      shareFraction: 'Sole Bhumidhar',
+      areaNali: 8.0,
+      areaMutthi: 0,
+      areaSqMeters: 1605.37,
+      coordinates: [
+        [79.4310, 29.6450],
+        [79.4328, 29.6456],
+        [79.4332, 29.6442],
+        [79.4314, 29.6436],
+      ],
+      elevationMin: 1820,
+      elevationMax: 1865,
+      slopePercent: 22,
+      aspectDirection: 'South',
+      waterStreamDistanceMeters: 120,
+      roadDistanceMeters: 15,
+      riskScore: 75,
+      diligenceStatus: 'Conditional',
+      legalChecks: {
+        khatauni12Yr: true,
+        nec12Yr: true,
+        section143Cleared: false,
+        patwariDemarcated: false,
+        disasterSafe: true,
+      },
+      encumbranceNotes: 'Clean 12-year revenue chain. Requires Section 143 conversion and physical demarcation stone survey with Patwari prior to sale deed execution.',
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
 }
 
 

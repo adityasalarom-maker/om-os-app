@@ -67,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'knowledge', label: 'Knowledge Vault', shortLabel: 'Vault', icon: BookOpen, category: 'Core OS' },
     { id: 'jyotish', label: 'Metaphysical & Jyotish', shortLabel: 'Jyotish', icon: Sparkles, category: 'Metaphysical' },
     { id: 'health', label: 'Health & Ayurveda', shortLabel: 'Health', icon: Heart, category: 'Life & Vitality' },
-    { id: 'property', label: 'Land & Diligence', shortLabel: 'Land', icon: Mountain, category: 'Asset Diligence' },
+    { id: 'property', label: 'Himalayan Spatial GIS', shortLabel: 'GIS', icon: Mountain, category: 'Asset Diligence' },
     { id: 'pdf', label: 'PDF Research Reader', shortLabel: 'PDFs', icon: FileText, category: 'Study Archive' },
     { id: 'inbox', label: 'Universal Inbox & AI', shortLabel: 'Capture', icon: Inbox, category: 'Input Hub' },
     { id: 'goals', label: 'Goals (Life Pyramid)', shortLabel: 'Goals', icon: Compass, category: 'Life & Vitality' },

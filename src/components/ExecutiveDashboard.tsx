@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   Utensils,
   Compass,
-  Smartphone
+  Smartphone,
+  Mountain
 } from 'lucide-react';
 import { calculateLifeEquilibrium } from '../services/predictiveAnalytics';
 import { calculateJyotishEphemeris } from '../services/jyotishEngine';
@@ -41,6 +42,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   const latestJournal = useLiveQuery(() => db.journal.orderBy('createdAt').reverse().first(), []);
   const health = useLiveQuery(() => db.health.toArray(), []) || [];
   const journals = useLiveQuery(() => db.journal.toArray(), []) || [];
+  const khasraParcels = useLiveQuery(() => db.khasraParcels.toArray(), []) || [];
 
   const equilibrium = calculateLifeEquilibrium(goals, tasks, health, journals);
   const ephemeris = useMemo(() => calculateJyotishEphemeris(new Date()), []);
@@ -444,6 +446,53 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
             >
               <TrendingUp size={13} />
               <span>Explore 30-Day Heatmaps & 24-Mo Runway</span>
+            </button>
+          </div>
+
+          {/* Himalayan Homestead & Land Diligence Spatial GIS Widget */}
+          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Mountain className="text-amber-400" size={17} />
+                <h3 className="font-semibold text-white text-sm">Himalayan Land Diligence & GIS</h3>
+              </div>
+              <button 
+                onClick={() => onNavigate('property')}
+                className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 font-medium"
+              >
+                Vector Map <ArrowUpRight size={12} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-center mb-3">
+              <div className="bg-[#141622] p-2.5 rounded-xl border border-[#222738]">
+                <span className="text-[10px] text-gray-400 block font-semibold">Surveyed Khasras</span>
+                <span className="text-xl font-bold text-white mt-0.5 block">{khasraParcels.length} Parcels</span>
+                <span className="text-[10px] text-amber-400 font-mono">
+                  {khasraParcels.reduce((acc, p) => acc + (p.areaNali || 0), 0).toFixed(1)} Nali
+                </span>
+              </div>
+              <div className="bg-[#141622] p-2.5 rounded-xl border border-[#222738]">
+                <span className="text-[10px] text-gray-400 block font-semibold">Title Clearance</span>
+                <span className="text-xl font-bold text-emerald-400 mt-0.5 block">
+                  {khasraParcels.filter(p => p.diligenceStatus === 'Clear').length}/{khasraParcels.length}
+                </span>
+                <span className="text-[10px] text-emerald-300/80">Clear Title</span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-gray-400 bg-[#141622] p-2.5 rounded-lg border border-[#222738]">
+              {khasraParcels.length > 0 
+                ? `Latest: Khasra #${khasraParcels[0].khasraNumber} in ${khasraParcels[0].villageTehsil} (${khasraParcels[0].aspectDirection} aspect, ${khasraParcels[0].elevationMin}m MSL).`
+                : 'Zero offline cadastral units loaded.'}
+            </p>
+
+            <button
+              onClick={() => onNavigate('property')}
+              className="mt-3 w-full bg-[#1e2334] hover:bg-amber-600/20 hover:border-amber-500/50 border border-[#2e354f] text-amber-300 text-xs font-semibold py-2 rounded-xl transition-all flex items-center justify-center gap-1.5"
+            >
+              <Compass size={13} />
+              <span>Launch Cadastral Spatial GIS</span>
             </button>
           </div>
 

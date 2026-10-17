@@ -21,6 +21,7 @@ import {
 import { THEMES } from '../services/themeEngine';
 import { generateVectorEmbedding, cosineSimilarity } from '../services/semanticVectorEngine';
 import { calculateJyotishEphemeris } from '../services/jyotishEngine';
+import { calculateHimalayanArea, evaluateLegalDiligence } from '../services/spatialGisEngine';
 
 export interface TestResult {
   id: string;
@@ -61,6 +62,7 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
     { id: 'mod-pantry', name: 'Kitchen & Pantry Reorder Inventory Engine', category: 'Modules', status: 'pending' },
     { id: 'mod-sheets', name: 'Google Sheets Live 3-Way Cloud Bridge & Queue', category: 'Modules', status: 'pending' },
     { id: 'mod-jyotish', name: 'Metaphysical & Jyotish Ephemeris Computational Engine', category: 'Modules', status: 'pending' },
+    { id: 'mod-spatial-gis', name: 'Himalayan Homestead & Land Cadastre Spatial GIS', category: 'Modules', status: 'pending' },
     
     // PWA & Offline
     { id: 'pwa-manifest', name: 'Web App Manifest (Icons, Standalone, Scope)', category: 'PWA & Offline', status: 'pending' },
@@ -105,11 +107,11 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
               'tasks', 'projects', 'goals', 'knowledge', 'inbox', 'journal', 
               'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
               'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
-              'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts'
+              'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts', 'khasraParcels'
             ];
             const present = expectedTables.filter(name => (db as any)[name] !== undefined);
-            if (present.length < 17) throw new Error(`Missing tables. Found: ${present.length}/18`);
-            t.message = `All 18 Dexie schema tables verified active`;
+            if (present.length < 18) throw new Error(`Missing tables. Found: ${present.length}/19`);
+            t.message = `All 19 Dexie schema tables verified active`;
             break;
           }
           case 'db-acid': {
@@ -203,6 +205,27 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
               throw new Error('Jyotish ephemeris computation incomplete');
             }
             t.message = `Ephemeris verified: Lahiri ${result.ayanamsha.toFixed(2)}°, ${result.panchang.tithiName}, 9 Grahas, 12 Bhavas`;
+            break;
+          }
+          case 'mod-spatial-gis': {
+            const area = calculateHimalayanArea([
+              [78.4912, 30.7654],
+              [78.4925, 30.7658],
+              [78.4929, 30.7649],
+              [78.4915, 30.7645]
+            ]);
+            const evalDiligence = evaluateLegalDiligence({
+              khatauni12Yr: true,
+              nec12Yr: true,
+              section143Cleared: true,
+              patwariDemarcated: true,
+              disasterSafe: true
+            });
+            if (area.sqMeters < 500 || evalDiligence.score !== 100) {
+              throw new Error('Spatial GIS Shoelace area calculation or diligence audit failed');
+            }
+            const count = await db.khasraParcels.count();
+            t.message = `Spatial GIS verified: ${area.nali} Nali (${Math.round(area.sqMeters)} m²), 5-Point Diligence 100/100, ${count} cadastral units`;
             break;
           }
           case 'pwa-manifest': {
