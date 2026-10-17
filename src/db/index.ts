@@ -351,6 +351,29 @@ export interface PhilosophicalVadaRecord {
   detailedCritique: string;
 }
 
+export interface PranayamaSessionRecord {
+  id: string; // e.g. "prana-1729188000000"
+  date: string; // YYYY-MM-DD
+  timestamp: number;
+  patternName: 'Sama Vritti' | 'Visama Vritti' | 'Nadi Shodhana' | 'Kumbhaka Intensive' | 'Kapalabhati' | 'Bhramari' | 'Sheetali' | 'Custom';
+  ratio: [number, number, number, number]; // [puraka, antara, rechaka, bahya] in seconds
+  totalCycles: number;
+  totalDurationSeconds: number;
+  swaraActive: 'Chandra (Ida / Left)' | 'Surya (Pingala / Right)' | 'Sushumna (Equilibrium / Both)';
+  retentionComfortScore: number; // 1 to 10
+  pranaVayus: {
+    prana: number;   // Chest / Vitality (1-10)
+    apana: number;   // Grounding / Elimination (1-10)
+    samana: number;  // Solar plexus / Digestion (1-10)
+    udana: number;   // Throat / Ascending focus (1-10)
+    vyana: number;   // Whole body / Circulation (1-10)
+  };
+  heartRateEstimateBpm?: number;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -375,6 +398,7 @@ export class OmKnowledgeDatabase extends Dexie {
   sadhanaLogs!: Table<SadhanaLogRecord, string>;
   vedicVerses!: Table<VedicVerseRecord, string>;
   philosophicalVadas!: Table<PhilosophicalVadaRecord, string>;
+  pranayamaSessions!: Table<PranayamaSessionRecord, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -538,6 +562,33 @@ export class OmKnowledgeDatabase extends Dexie {
       sadhanaLogs: 'id, date, japaMantra, ojasScore, brahmaMuhurta, createdAt, updatedAt',
       vedicVerses: 'id, canon, sourceText, philosophicalVada, mahavakya, *tags, updatedAt',
       philosophicalVadas: 'id, name, school, worldStatus, updatedAt',
+    });
+
+    this.version(11).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+      jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
+      khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
+      dreamLogs: 'id, date, state, lucidityLevel, primaryChakraResonance, createdAt, updatedAt',
+      sadhanaLogs: 'id, date, japaMantra, ojasScore, brahmaMuhurta, createdAt, updatedAt',
+      vedicVerses: 'id, canon, sourceText, philosophicalVada, mahavakya, *tags, updatedAt',
+      philosophicalVadas: 'id, name, school, worldStatus, updatedAt',
+      pranayamaSessions: 'id, date, timestamp, patternName, swaraActive, createdAt, updatedAt',
     });
   }
 }
@@ -1371,6 +1422,61 @@ export async function ensureSeedKhasraParcelsIfEmpty() {
       detailedCritique: 'Rejects any eternal unchanging cause (Brahman/Atman). All phenomena are momentary and empty of inherent existence. Vedanta counters that dependent chains require an uncaused, eternal foundation (Adhiṣṭhāna).'
     }
   ]);
+
+  // Seed Pranayama Sessions if empty
+  const pranaCount = await db.pranayamaSessions.count();
+  if (pranaCount === 0) {
+    await db.pranayamaSessions.bulkAdd([
+      {
+        id: 'prana-seed-1',
+        date: new Date(now - 86400000 * 2).toISOString().split('T')[0],
+        timestamp: now - 86400000 * 2,
+        patternName: 'Sama Vritti',
+        ratio: [4, 4, 4, 4],
+        totalCycles: 16,
+        totalDurationSeconds: 256,
+        swaraActive: 'Sushumna (Equilibrium / Both)',
+        retentionComfortScore: 9,
+        pranaVayus: { prana: 9, apana: 8, samana: 9, udana: 8, vyana: 9 },
+        heartRateEstimateBpm: 58,
+        notes: 'Brahma Muhurta square box breathing. Deep vagal calming with immediate mental stillness.',
+        createdAt: now - 86400000 * 2,
+        updatedAt: now - 86400000 * 2,
+      },
+      {
+        id: 'prana-seed-2',
+        date: new Date(now - 86400000).toISOString().split('T')[0],
+        timestamp: now - 86400000,
+        patternName: 'Nadi Shodhana',
+        ratio: [4, 16, 8, 4],
+        totalCycles: 12,
+        totalDurationSeconds: 384,
+        swaraActive: 'Chandra (Ida / Left)',
+        retentionComfortScore: 8,
+        pranaVayus: { prana: 8, apana: 9, samana: 8, udana: 9, vyana: 8 },
+        heartRateEstimateBpm: 55,
+        notes: 'Alternate nostril with full Antara Kumbhaka (16s hold). Cooling lunar channel activation.',
+        createdAt: now - 86400000,
+        updatedAt: now - 86400000,
+      },
+      {
+        id: 'prana-seed-3',
+        date: new Date(now).toISOString().split('T')[0],
+        timestamp: now - 3600000 * 3,
+        patternName: 'Bhramari',
+        ratio: [4, 0, 12, 0],
+        totalCycles: 15,
+        totalDurationSeconds: 240,
+        swaraActive: 'Surya (Pingala / Right)',
+        retentionComfortScore: 10,
+        pranaVayus: { prana: 10, apana: 8, samana: 9, udana: 10, vyana: 9 },
+        heartRateEstimateBpm: 52,
+        notes: 'Low humming bee exhalation resonance. Intense cranial vibration and Ajna clarity.',
+        createdAt: now - 3600000 * 3,
+        updatedAt: now - 3600000 * 3,
+      }
+    ]);
+  }
 }
 
 

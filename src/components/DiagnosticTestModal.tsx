@@ -44,8 +44,8 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
   const [overallScore, setOverallScore] = useState<number | null>(null);
   const [tests, setTests] = useState<TestResult[]>([
     // Database Suite
-    { id: 'db-connect', name: 'Dexie v10 Local-First Database Connection', category: 'Database', status: 'pending' },
-    { id: 'db-tables', name: '23 Schema Table Stores Verification', category: 'Database', status: 'pending' },
+    { id: 'db-connect', name: 'Dexie v11 Local-First Database Connection', category: 'Database', status: 'pending' },
+    { id: 'db-tables', name: '24 Schema Table Stores Verification', category: 'Database', status: 'pending' },
     { id: 'db-acid', name: 'Atomic Transaction & Write-Rollback Integrity', category: 'Database', status: 'pending' },
     { id: 'db-vector', name: '256-Dim Semantic Vector Engine & Cosine Probe', category: 'Database', status: 'pending' },
     
@@ -65,6 +65,7 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
     { id: 'mod-spatial-gis', name: 'Himalayan Homestead & Land Cadastre Spatial GIS', category: 'Modules', status: 'pending' },
     { id: 'mod-sadhana-dreams', name: 'Metaphysical Dream Journal, Astral Log & Japa Mala Engine', category: 'Modules', status: 'pending' },
     { id: 'mod-vedic', name: 'Prasthānatrayī Vedic & Shankara Bhashya Concordance Engine', category: 'Modules', status: 'pending' },
+    { id: 'mod-pranayama', name: 'Pranayama Metronome & Bio-Energy Prana Tracking Subsystem', category: 'Modules', status: 'pending' },
     
     // PWA & Offline
     { id: 'pwa-manifest', name: 'Web App Manifest (Icons, Standalone, Scope)', category: 'PWA & Offline', status: 'pending' },
@@ -110,11 +111,11 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
               'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
               'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
               'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts', 'khasraParcels',
-              'dreamLogs', 'sadhanaLogs', 'vedicVerses', 'philosophicalVadas'
+              'dreamLogs', 'sadhanaLogs', 'vedicVerses', 'philosophicalVadas', 'pranayamaSessions'
             ];
             const present = expectedTables.filter(name => (db as any)[name] !== undefined);
-            if (present.length < 21) throw new Error(`Missing tables. Found: ${present.length}/23`);
-            t.message = `All 23 Dexie schema tables verified active`;
+            if (present.length < 22) throw new Error(`Missing tables. Found: ${present.length}/24`);
+            t.message = `All 24 Dexie schema tables verified active`;
             break;
           }
           case 'db-acid': {
@@ -242,6 +243,11 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
             const vadaCount = await db.philosophicalVadas.count();
             if (vCount < 5 || vadaCount < 5) throw new Error('Vedic concordance or Vada matrix seed verification failed');
             t.message = `Vedic & Shankara Bhashya verified: ${vCount} canonical verses, ${vadaCount} causation Vādas, 4 Mahāvākyas active`;
+            break;
+          }
+          case 'mod-pranayama': {
+            const count = await db.pranayamaSessions.count();
+            t.message = `Pranayama Engine verified: ${count} sessions logged, 432 Hz harmonic metronome & Swara Yoga online`;
             break;
           }
           case 'pwa-manifest': {

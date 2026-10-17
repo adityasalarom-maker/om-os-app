@@ -18,6 +18,7 @@ import { MobileDeploymentModal } from './components/MobileDeploymentModal';
 import { JyotishView } from './components/JyotishView';
 import { DreamSadhanaView } from './components/DreamSadhanaView';
 import { VedicConcordanceView } from './components/VedicConcordanceView';
+import { PranayamaView } from './components/PranayamaView';
 
 // Code-split heavy libraries (pdfjs-dist, tesseract.js)
 const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
@@ -89,6 +90,7 @@ export function App() {
                  currentTab === 'jyotish' ? 'Metaphysical & Jyotish Ephemeris' : 
                  currentTab === 'sadhana' ? 'Metaphysical Dream & Sadhana OS' : 
                  currentTab === 'vedic' ? 'Vedic & Shankara Bhashya Concordance' : 
+                 currentTab === 'pranayama' ? 'Prāṇāyāma & Bio-Energy Engine' : 
                  currentTab.replace('-', ' ')}
               </span>
             </span>
@@ -194,6 +196,7 @@ export function App() {
             {currentTab === 'jyotish' && <JyotishView />}
             {currentTab === 'sadhana' && <DreamSadhanaView />}
             {currentTab === 'vedic' && <VedicConcordanceView />}
+            {currentTab === 'pranayama' && <PranayamaView />}
           </div>
         </main>
       </div>

@@ -116,3 +116,92 @@ export function triggerMalaHaptic(type: 'bead' | 'meru' | 'kumbhaka'): void {
     // Graceful fallback for non-vibrating devices
   }
 }
+
+/**
+ * Harmonic tones for 4-phase Pranayama breathing cycles
+ */
+export function playBreathPhaseCue(phase: 'puraka' | 'antara' | 'rechaka' | 'bahya' | 'rapid'): void {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    let startFreq = 432;
+    let endFreq = 432;
+    let duration = 0.5;
+    let peakGain = 0.18;
+
+    if (phase === 'puraka') {
+      // Ascending tone (400 Hz -> 528 Hz)
+      startFreq = 400;
+      endFreq = 528;
+      duration = 0.6;
+      osc.type = 'sine';
+    } else if (phase === 'antara') {
+      // 528 Hz Harmonic Chime (Solfeggio transformation tone)
+      startFreq = 528;
+      endFreq = 528;
+      duration = 0.8;
+      osc.type = 'triangle';
+      peakGain = 0.22;
+    } else if (phase === 'rechaka') {
+      // Descending grounding tone (528 Hz -> 396 Hz)
+      startFreq = 528;
+      endFreq = 396;
+      duration = 0.6;
+      osc.type = 'sine';
+    } else if (phase === 'bahya') {
+      // Deep void resonance (216 Hz grounded hum)
+      startFreq = 216;
+      endFreq = 216;
+      duration = 0.7;
+      osc.type = 'sine';
+      peakGain = 0.16;
+    } else if (phase === 'rapid') {
+      // Kapalabhati quick energetic pulse
+      startFreq = 360;
+      endFreq = 240;
+      duration = 0.05;
+      osc.type = 'triangle';
+      peakGain = 0.12;
+    }
+
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration);
+
+    gainNode.gain.setValueAtTime(0.0001, now);
+    gainNode.gain.exponentialRampToValueAtTime(peakGain, now + 0.04);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + duration);
+  } catch {
+    // Non-blocking fallback
+  }
+}
+
+/**
+ * Triggers haptic pulse at breath phase transitions
+ */
+export function triggerBreathHaptic(phase: 'puraka' | 'antara' | 'rechaka' | 'bahya'): void {
+  if (typeof navigator === 'undefined' || !navigator.vibrate) return;
+  try {
+    if (phase === 'puraka') {
+      navigator.vibrate(25);
+    } else if (phase === 'antara') {
+      navigator.vibrate([30, 40, 30]);
+    } else if (phase === 'rechaka') {
+      navigator.vibrate(35);
+    } else if (phase === 'bahya') {
+      navigator.vibrate([20, 30, 20]);
+    }
+  } catch {
+    // Graceful fallback
+  }
+}
