@@ -125,7 +125,7 @@ async function runAudit() {
       'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
       'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
       'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts', 'khasraParcels',
-      'dreamLogs', 'sadhanaLogs'
+      'dreamLogs', 'sadhanaLogs', 'vedicVerses', 'philosophicalVadas'
     ];
     let allStoresPresent = true;
     for (const store of requiredStores) {
@@ -156,7 +156,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 4. MODULE SUBSYSTEM COMPONENT AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}▶ Step 4: 15 Subsystem Module Components Verification${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}▶ Step 4: 18 Subsystem Module Components Verification${colors.reset}`);
   const modules = [
     { name: 'ExecutiveDashboard', file: 'src/components/ExecutiveDashboard.tsx' },
     { name: 'TaskIntelligence', file: 'src/components/TaskIntelligence.tsx' },
@@ -175,6 +175,7 @@ async function runAudit() {
     { name: 'DiagnosticTestModal', file: 'src/components/DiagnosticTestModal.tsx' },
     { name: 'JyotishView', file: 'src/components/JyotishView.tsx' },
     { name: 'DreamSadhanaView', file: 'src/components/DreamSadhanaView.tsx' },
+    { name: 'VedicConcordanceView', file: 'src/components/VedicConcordanceView.tsx' },
   ];
 
   for (const mod of modules) {

@@ -44,8 +44,8 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
   const [overallScore, setOverallScore] = useState<number | null>(null);
   const [tests, setTests] = useState<TestResult[]>([
     // Database Suite
-    { id: 'db-connect', name: 'Dexie v7 Local-First Database Connection', category: 'Database', status: 'pending' },
-    { id: 'db-tables', name: '21 Schema Table Stores Verification', category: 'Database', status: 'pending' },
+    { id: 'db-connect', name: 'Dexie v10 Local-First Database Connection', category: 'Database', status: 'pending' },
+    { id: 'db-tables', name: '23 Schema Table Stores Verification', category: 'Database', status: 'pending' },
     { id: 'db-acid', name: 'Atomic Transaction & Write-Rollback Integrity', category: 'Database', status: 'pending' },
     { id: 'db-vector', name: '256-Dim Semantic Vector Engine & Cosine Probe', category: 'Database', status: 'pending' },
     
@@ -64,6 +64,7 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
     { id: 'mod-jyotish', name: 'Metaphysical & Jyotish Ephemeris Computational Engine', category: 'Modules', status: 'pending' },
     { id: 'mod-spatial-gis', name: 'Himalayan Homestead & Land Cadastre Spatial GIS', category: 'Modules', status: 'pending' },
     { id: 'mod-sadhana-dreams', name: 'Metaphysical Dream Journal, Astral Log & Japa Mala Engine', category: 'Modules', status: 'pending' },
+    { id: 'mod-vedic', name: 'Prasthānatrayī Vedic & Shankara Bhashya Concordance Engine', category: 'Modules', status: 'pending' },
     
     // PWA & Offline
     { id: 'pwa-manifest', name: 'Web App Manifest (Icons, Standalone, Scope)', category: 'PWA & Offline', status: 'pending' },
@@ -108,11 +109,12 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
               'tasks', 'projects', 'goals', 'knowledge', 'inbox', 'journal', 
               'pantry', 'syncConflicts', 'syncSettings', 'syncQueue', 
               'pdfDocuments', 'pdfReadingStates', 'pdfAnnotations', 
-              'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts', 'khasraParcels'
+              'noteDestinations', 'health', 'properties', 'semanticEmbeddings', 'jyotishCharts', 'khasraParcels',
+              'dreamLogs', 'sadhanaLogs', 'vedicVerses', 'philosophicalVadas'
             ];
             const present = expectedTables.filter(name => (db as any)[name] !== undefined);
-            if (present.length < 18) throw new Error(`Missing tables. Found: ${present.length}/19`);
-            t.message = `All 19 Dexie schema tables verified active`;
+            if (present.length < 21) throw new Error(`Missing tables. Found: ${present.length}/23`);
+            t.message = `All 23 Dexie schema tables verified active`;
             break;
           }
           case 'db-acid': {
@@ -233,6 +235,13 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
             const dreamCount = await db.dreamLogs.count();
             const sadhanaCount = await db.sadhanaLogs.count();
             t.message = `Dream & Sadhana OS verified: ${dreamCount} dreams/astral logs, ${sadhanaCount} sadhana practice logs, 108-bead Japa Mala online`;
+            break;
+          }
+          case 'mod-vedic': {
+            const vCount = await db.vedicVerses.count();
+            const vadaCount = await db.philosophicalVadas.count();
+            if (vCount < 5 || vadaCount < 5) throw new Error('Vedic concordance or Vada matrix seed verification failed');
+            t.message = `Vedic & Shankara Bhashya verified: ${vCount} canonical verses, ${vadaCount} causation Vādas, 4 Mahāvākyas active`;
             break;
           }
           case 'pwa-manifest': {

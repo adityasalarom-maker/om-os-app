@@ -321,6 +321,36 @@ export interface SadhanaLogRecord {
   updatedAt: number;
 }
 
+export interface VedicVerseRecord {
+  id: string; // e.g. "mandukya-1" or "gita-2-16"
+  canon: 'Upanishad' | 'Bhagavad Gita' | 'Brahma Sutras' | 'Shankara Bhashya' | 'Nath Agama';
+  sourceText: string;
+  chapterVerse: string;
+  sanskritDevanagari: string;
+  transliterationIast: string;
+  wordBreakdown: { word: string; meaning: string; grammar?: string }[];
+  englishTranslation: string;
+  shankaraBhashyaSummary: string;
+  philosophicalVada: 'Vivarta-Vada' | 'Parinama-Vada' | 'Cid-Vilasa-Vada' | 'Abhasa-Vada' | 'Satkaryavada' | 'Asatkaryavada' | 'Pratityasamutpada' | 'Samanvaya';
+  mahavakya: boolean;
+  crossReferences: string[];
+  tags: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface PhilosophicalVadaRecord {
+  id: string;
+  name: string;
+  school: string;
+  proponent: string;
+  coreAnalogy: string;
+  karyaKaranaRelation: string;
+  worldStatus: 'Mithya (Dependent Reality)' | 'Satya (Divine Expression)' | 'Shunya (Empty/Momentary)' | 'Real Physical Evolution' | 'Atomic Creation';
+  keyScriptures: string[];
+  detailedCritique: string;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -343,6 +373,8 @@ export class OmKnowledgeDatabase extends Dexie {
   khasraParcels!: Table<KhasraParcelRecord, string>;
   dreamLogs!: Table<DreamLogRecord, string>;
   sadhanaLogs!: Table<SadhanaLogRecord, string>;
+  vedicVerses!: Table<VedicVerseRecord, string>;
+  philosophicalVadas!: Table<PhilosophicalVadaRecord, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -480,6 +512,32 @@ export class OmKnowledgeDatabase extends Dexie {
       khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
       dreamLogs: 'id, date, state, lucidityLevel, primaryChakraResonance, createdAt, updatedAt',
       sadhanaLogs: 'id, date, japaMantra, ojasScore, brahmaMuhurta, createdAt, updatedAt',
+    });
+
+    this.version(10).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+      jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
+      khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
+      dreamLogs: 'id, date, state, lucidityLevel, primaryChakraResonance, createdAt, updatedAt',
+      sadhanaLogs: 'id, date, japaMantra, ojasScore, brahmaMuhurta, createdAt, updatedAt',
+      vedicVerses: 'id, canon, sourceText, philosophicalVada, mahavakya, *tags, updatedAt',
+      philosophicalVadas: 'id, name, school, worldStatus, updatedAt',
     });
   }
 }
@@ -1034,6 +1092,284 @@ export async function ensureSeedKhasraParcelsIfEmpty() {
       createdAt: now - 86400000 * 2,
       updatedAt: now - 86400000 * 2,
     },
+  ]);
+
+  // Seed Canonical Vedic & Philosophical Verses
+  await db.vedicVerses.bulkAdd([
+    {
+      id: 'verse-mandukya-1',
+      canon: 'Upanishad',
+      sourceText: 'Māṇḍūkya Upaniṣad',
+      chapterVerse: 'Verse 1',
+      sanskritDevanagari: 'ओमित्येतदक्षरमिदं सर्वं तस्योपव्याख्यानं भूतं भवद्भवविष्यदिति सर्वमोङ्कार एव। यच्चान्यत् त्रिकालातीतं तदप्योङ्कार एव॥',
+      transliterationIast: 'om ity etad akṣaram idaṁ sarvaṁ tasyopavyākhyānaṁ bhūtaṁ bhavad bhaviṣyad iti sarvam oṅkāra eva | yac cānyat trikālātītaṁ tad apy oṅkāra eva ||',
+      wordBreakdown: [
+        { word: 'om', meaning: 'The sacred syllable OM, the ultimate matrix of consciousness' },
+        { word: 'iti', meaning: 'thus' },
+        { word: 'etad akṣaram', meaning: 'this imperishable syllable' },
+        { word: 'idam sarvam', meaning: 'all this visible and invisible universe' },
+        { word: 'tasyopavyākhyānam', meaning: 'its comprehensive exposition' },
+        { word: 'bhūtam bhavad bhaviṣyat', meaning: 'the past, present, and future' },
+        { word: 'sarvam oṅkāra eva', meaning: 'all is indeed the syllable OM' },
+        { word: 'trikālātītam', meaning: 'that which transcends the three dimensions of time' }
+      ],
+      englishTranslation: 'OM: This syllable is all this. An explanation thereof is: whatever has existed in the past, whatever exists in the present, and whatever shall exist in the future—all this is indeed OM. And whatever transcends the threefold division of time—that too is indeed OM.',
+      shankaraBhashyaSummary: 'Shankara establishes in the Mandukya Bhashya that the Name (Abhidhāna: Om) and the Named Object (Abhidheya: Brahman) are non-different. The entire cosmos of sensory appearances is a phonetic and vibrational superimposition (Vivarta) upon pure changeless Awareness.',
+      philosophicalVada: 'Vivarta-Vada',
+      mahavakya: false,
+      crossReferences: ['verse-mandukya-7', 'verse-brahmasutra-1-1-1'],
+      tags: ['Mandukya', 'Om', 'Pranava', 'Nonduality', 'Time Transcendence'],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'verse-mandukya-7',
+      canon: 'Upanishad',
+      sourceText: 'Māṇḍūkya Upaniṣad',
+      chapterVerse: 'Verse 7 (Turīya)',
+      sanskritDevanagari: 'नान्तःप्रज्ञं न बहिष्प्रज्ञं नोभयतःप्रज्ञं न प्रज्ञानघनं न प्रज्ञं नाप्रज्ञम्। अदृष्टमव्यवहार्यमग्राह्यमलक्षणमचिन्त्यमव्यपदेश्यमेकात्मप्रत्ययसारं प्रपञ्चोपशमं शान्तं शिवमद्वैतं चतुर्थं मन्यन्ते स आत्मा स विज्ञेयः॥',
+      transliterationIast: 'nāntaḥ-prajñaṁ na bahiṣ-prajñaṁ nobhayataḥ-prajñaṁ na prajñāna-ghanaṁ na prajñaṁ nāprajñam | adṛṣṭam avyavahāryam agrāhyam alakṣaṇam acintyam avyapadeśyam ekātma-pratyaya-sāraṁ prapañcopaśamaṁ śāntaṁ śivam advaitaṁ caturthaṁ manyante sa ātmā sa vijñeyaḥ ||',
+      wordBreakdown: [
+        { word: 'na antaḥ-prajñam', meaning: 'not conscious of the internal dream world' },
+        { word: 'na bahiṣ-prajñam', meaning: 'not conscious of the external waking world' },
+        { word: 'na ubhayataḥ-prajñam', meaning: 'not conscious of both simultaneously' },
+        { word: 'prapañcopaśamam', meaning: 'the complete cessation of all phenomenal plurality' },
+        { word: 'śāntam', meaning: 'tranquil, undisturbed' },
+        { word: 'śivam', meaning: 'auspicious, pure bliss' },
+        { word: 'advaitam', meaning: 'non-dual, without a second' },
+        { word: 'caturtham', meaning: 'the Fourth state (Turīya)' },
+        { word: 'sa ātmā sa vijñeyaḥ', meaning: 'That is the Self; That is to be realized' }
+      ],
+      englishTranslation: 'Turīya is not that which is conscious of the inner subjective world, nor that which is conscious of the outer objective world, nor that which is a mass of consciousness. It is unperceived, unrelated, incomprehensible, uninferable, unthinkable, and indescribable. Its essence is the certitude of its own Self. It is the cessation of all phenomena; it is all peace, all bliss, and non-dual. This is the Self, and This is to be realized.',
+      shankaraBhashyaSummary: 'The crown jewel of Advaita ontology. Shankara demonstrates that Turiya is not a numerical fourth state sequential to waking, dreaming, and deep sleep, but the unchanging substratum (Adhiṣṭhāna) upon which the three temporary states playfully appear and dissolve.',
+      philosophicalVada: 'Vivarta-Vada',
+      mahavakya: true,
+      crossReferences: ['verse-mandukya-1', 'verse-adhyasa-bhashya'],
+      tags: ['Turiya', 'Advaita', 'Witness Sakshi', 'Mandukya', 'Transcendence'],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'verse-chandogya-6-8-7',
+      canon: 'Upanishad',
+      sourceText: 'Chāndogya Upaniṣad',
+      chapterVerse: '6.8.7 (Mahāvākya)',
+      sanskritDevanagari: 'स य एषोऽणिमैतदात्म्यमिदं सर्वं तत्सत्यं स आत्मा तत्त्वमसि श्वेतकेतो इति॥',
+      transliterationIast: 'sa ya eṣo \'ṇimaitad-ātmyam idaṁ sarvaṁ tat satyaṁ sa ātmā tat tvam asi śvetaketo iti ||',
+      wordBreakdown: [
+        { word: 'sa yaḥ eṣaḥ', meaning: 'That which is this' },
+        { word: 'aṇimā', meaning: 'subtle, finest essence' },
+        { word: 'etad-ātmyam idam sarvam', meaning: 'all this has this subtle Essence as its Self' },
+        { word: 'tat satyam', meaning: 'That alone is the Ultimate Truth' },
+        { word: 'sa ātmā', meaning: 'That is the True Self' },
+        { word: 'tat tvam asi', meaning: 'THAT THOU ART (You are That)' },
+        { word: 'śvetaketo', meaning: 'O Shvetaketu' }
+      ],
+      englishTranslation: 'That which is the subtlest essence—all this universe has That for its Self. That is the Truth. That is the Self. That Thou Art, O Shvetaketu!',
+      shankaraBhashyaSummary: 'The famous Sama Veda Mahāvākya. Shankara in the Bhashya utilizes Jahad-Ajahallakṣaṇā (exclusive-inclusive implication): stripping away the contradictory finite attributes of the individual Jīva (limited body-mind) and the cosmic attributes of Īśvara (omniscience/creator) to reveal the absolute identity of Pure Consciousness.',
+      philosophicalVada: 'Vivarta-Vada',
+      mahavakya: true,
+      crossReferences: ['verse-brihadaranyaka-1-4-10', 'verse-brahmasutra-1-1-4'],
+      tags: ['Mahavakya', 'Tat Tvam Asi', 'Chandogya', 'Identity', 'Uddalaka'],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'verse-brihadaranyaka-1-4-10',
+      canon: 'Upanishad',
+      sourceText: 'Bṛhadāraṇyaka Upaniṣad',
+      chapterVerse: '1.4.10 (Mahāvākya)',
+      sanskritDevanagari: 'ब्रह्म वा इदमग्र आसीत् तदात्मानमेवावेत् अहं ब्रह्मास्मीति। तस्मात् तत्सर्वमभवत्॥',
+      transliterationIast: 'brahma vā idam agra āsīt tad ātmānam evāvet ahaṁ brahmāsmīti | tasmāt tat sarvam abhavat ||',
+      wordBreakdown: [
+        { word: 'brahma vā idam agre āsīt', meaning: 'In the beginning this universe was indeed Brahman' },
+        { word: 'tat ātmānam eva avet', meaning: 'It knew only Itself' },
+        { word: 'aham brahma asmi iti', meaning: 'as "I am Brahman"' },
+        { word: 'tasmāt tat sarvam abhavat', meaning: 'therefore It became all this' }
+      ],
+      englishTranslation: 'This universe was indeed Brahman in the beginning. It knew only Itself as, "I am Brahman." Therefore It became all. Whosoever among the gods had this direct awakening, they indeed became That.',
+      shankaraBhashyaSummary: 'Yajur Veda Mahāvākya establishing subjective realization. Shankara explains that realization is not an action (Kriyā) producing something new, but the destruction of primal ignorance (Avidyā-Nivṛtti), revealing the ever-present fact of identity.',
+      philosophicalVada: 'Vivarta-Vada',
+      mahavakya: true,
+      crossReferences: ['verse-chandogya-6-8-7', 'verse-mandukya-7'],
+      tags: ['Mahavakya', 'Aham Brahmasmi', 'Brihadaranyaka', 'Yajnavalkya'],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'verse-gita-2-16',
+      canon: 'Bhagavad Gita',
+      sourceText: 'Bhagavad Gītā',
+      chapterVerse: 'Chapter 2, Verse 16',
+      sanskritDevanagari: 'नासतो विद्यते भावो नाभावो विद्यते सतः। उभयोरपि दृष्टोऽन्तस्त्वनयोस्तत्त्वदर्शिभिः॥',
+      transliterationIast: 'nāsato vidyate bhāvo nābhāvo vidyate sataḥ | ubhayor api dṛṣṭo \'ntas tv anayos tattva-darśibhiḥ ||',
+      wordBreakdown: [
+        { word: 'na asataḥ', meaning: 'of the unreal / changing phenomena' },
+        { word: 'vidyate bhāvaḥ', meaning: 'there is no permanent existence or being' },
+        { word: 'na abhāvaḥ', meaning: 'there is no non-existence or cessation' },
+        { word: 'vidyate sataḥ', meaning: 'of the Real (Sat / Brahman)' },
+        { word: 'ubhayor api', meaning: 'of both these two' },
+        { word: 'dṛṣṭaḥ antaḥ', meaning: 'the definitive conclusion is realized' },
+        { word: 'tattva-darśibhiḥ', meaning: 'by the seers of the Ultimate Truth' }
+      ],
+      englishTranslation: 'The unreal has no existence; the real never ceases to be. The ultimate truth concerning both these has been directly perceived by the seers of Reality.',
+      shankaraBhashyaSummary: 'The cardinal criterion of reality in Advaita Vedānta. That which is subject to modification (Vikāra) or cancellation (Bādha) is Asat (Mithyā); that whose presence is never canceled across past, present, or future is Sat (Brahman).',
+      philosophicalVada: 'Vivarta-Vada',
+      mahavakya: false,
+      crossReferences: ['verse-brahmasutra-1-1-1', 'verse-adhyasa-bhashya'],
+      tags: ['Gita', 'Sat-Asat', 'Ontology', 'Criterion of Truth'],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'verse-brahmasutra-1-1-1',
+      canon: 'Brahma Sutras',
+      sourceText: 'Brahma Sūtras',
+      chapterVerse: 'Sūtra 1.1.1',
+      sanskritDevanagari: 'अथातो ब्रह्मजिज्ञासा॥',
+      transliterationIast: 'athāto brahma-jijñāsā ||',
+      wordBreakdown: [
+        { word: 'atha', meaning: 'Now, subsequent to the attainment of the Fourfold Qualifications (Sādhana-Catuṣṭaya)' },
+        { word: 'ataḥ', meaning: 'therefore, because worldly and celestial fruits are impermanent' },
+        { word: 'brahma-jijñāsā', meaning: 'the dedicated inquiry and desire to directly know Brahman' }
+      ],
+      englishTranslation: 'Now, therefore, the inquiry into Brahman.',
+      shankaraBhashyaSummary: 'In the opening of the Catuhsutri, Shankara clarifies that "Atha" does not mean temporal sequence to Vedic rituals (Karma-Kanda), but rather the inner awakening of Viveka (discrimination), Vairāgya (dispassion), Śamādi-Ṣaṭka-Sampatti (sixfold mental virtues), and Mumukṣutva (burning yearning for liberation). Knowledge of Brahman is Vastu-Tantra (dependent entirely on reality), not Purusha-Tantra (dependent on human whim).',
+      philosophicalVada: 'Vivarta-Vada',
+      mahavakya: false,
+      crossReferences: ['verse-adhyasa-bhashya', 'verse-gita-2-16'],
+      tags: ['Brahma Sutras', 'Catuhsutri', 'Sadhana Chatushtaya', 'Jijnasa'],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'verse-adhyasa-bhashya',
+      canon: 'Shankara Bhashya',
+      sourceText: 'Śrīmad Śāṅkara-Bhāṣya (Adhyāsa-Bhāṣya)',
+      chapterVerse: 'Preamble to Brahma Sutras',
+      sanskritDevanagari: 'युष्मदस्मत्प्रत्ययगोचरयोर्विषयविषयिणोस्तमःप्रकाशवद्विरुद्धस्वभावयोरितरेतरभावानुपपत्तौ सिद्धायाम्... तमसोऽविवेकेन इतरेतराविवेकेन अन्योन्यस्मिन्नन्योन्यात्मकतामन्योन्यधर्मांश्चाध्यस्य...',
+      transliterationIast: 'yuṣmad-asmat-pratyaya-gocarayor viṣaya-viṣayiṇos tamaḥ-prakāśavad viruddha-svabhāvayor itaretara-bhāvānupapattau siddhāyām... tamaso \'vivekena itaretarāvivekena anyonyasminn anyonyātmakatām anyonya-dharmāṁś cādhyasya...',
+      wordBreakdown: [
+        { word: 'yuṣmad-pratyaya-gocara', meaning: 'The sphere of the object ("You" / Not-Self / Body-Mind / Jagat)' },
+        { word: 'asmat-pratyaya-gocara', meaning: 'The sphere of the Subject ("I" / Self / Pure Consciousness)' },
+        { word: 'tamaḥ-prakāśavat', meaning: 'like absolute darkness and light' },
+        { word: 'viruddha-svabhāvayoḥ', meaning: 'being mutually opposed in nature' },
+        { word: 'adhyāsya', meaning: 'superimposing through primal lack of discrimination (Avidyā)' }
+      ],
+      englishTranslation: 'It being a matter of established certainty that the Object and the Subject—whose spheres of reference are the notions of "Thou" (the Not-Self) and "I" (the Self), and which are as opposed to each other as darkness and light—cannot be identified with each other... yet, by coupling the real and the unreal through failure of discrimination, there is a natural human superimposition (Adhyāsa): "I am this body, this mind is mine."',
+      shankaraBhashyaSummary: 'The epistemological bedrock of Advaita Vedanta. Superimposition (Adhyāsa) is defined as "Smṛti-rūpaḥ paratra pūrva-dṛṣṭāvabhāsaḥ" (the apparent presentation of something previously observed in some other locus, resembling memory). All human bondage, suffering, and transmigration is a psychological mistaking of the body-mind complex for the transcendent Knower.',
+      philosophicalVada: 'Vivarta-Vada',
+      mahavakya: false,
+      crossReferences: ['verse-brahmasutra-1-1-1', 'verse-mandukya-7'],
+      tags: ['Adhyasa', 'Epistemology', 'Subject-Object', 'Superimposition', 'Bhashya'],
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'verse-siddha-siddhanta-1-1',
+      canon: 'Nath Agama',
+      sourceText: 'Siddha Siddhānta Paddhati (Guru Gorakhnāth)',
+      chapterVerse: 'Paṭala 1, Verse 1',
+      sanskritDevanagari: 'पिण्डब्रह्माण्डयोरैक्यं ज्ञातव्यं सिद्धियोगिना। चैतन्यस्य विलासस्तु जगत्सर्वं चराचरम्॥',
+      transliterationIast: 'piṇḍa-brahmāṇḍayor aikyaṁ jñātavyaṁ siddha-yoginā | caitanyasya vilāsas tu jagat sarvaṁ carācaram ||',
+      wordBreakdown: [
+        { word: 'piṇḍa-brahmāṇḍayoḥ', meaning: 'of the human physical vessel (Pinda) and the macrocosmic universe (Brahmanda)' },
+        { word: 'aikyam', meaning: 'the absolute non-dual identity and organic unity' },
+        { word: 'jñātavyam', meaning: 'must be somatically and spiritually realized' },
+        { word: 'siddha-yoginā', meaning: 'by the adept master yogi' },
+        { word: 'caitanyasya vilāsaḥ', meaning: 'the playful spontaneous joyful sport of Consciousness (Cid-Vilāsa)' },
+        { word: 'jagat sarvam', meaning: 'this entire animate and inanimate cosmos' }
+      ],
+      englishTranslation: 'The unity between the individual somatic vessel (Pinda) and the macrocosmic universe (Brahmanda) must be directly realized by the accomplished yogi. For this entire animate and inanimate universe is nothing other than the joyous, playful sport (Vilāsa) of Supreme Consciousness (Caitanya).',
+      shankaraBhashyaSummary: 'The foundational verse of Nath Sampradaya and Cid-Vilāsa-Vāda. Unlike Shankara who calls the world an illusory superimposition (Mithyā/Adhyāsa), Guru Gorakshanath asserts that the world is an authentic, divine dance of Shiva’s creative freedom (Vilāsa). The body is not a prison of ignorance, but a micro-universe to be spiritualized through Kaya-Sadhana.',
+      philosophicalVada: 'Cid-Vilasa-Vada',
+      mahavakya: true,
+      crossReferences: ['verse-mandukya-1', 'verse-gita-13-2'],
+      tags: ['Nath', 'Gorakhnath', 'Cid-Vilasa', 'Pinda-Brahmanda', 'Kaya-Sadhana'],
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]);
+
+  // Seed The 7 Classical Causation Vadas
+  await db.philosophicalVadas.bulkAdd([
+    {
+      id: 'vada-vivarta',
+      name: 'Vivarta-Vāda (Apparent Transformation)',
+      school: 'Advaita Vedānta',
+      proponent: 'Adi Śaṅkarācārya',
+      coreAnalogy: 'Rope mistaken for a Snake (Rajju-Sarpa); Gold appearing as various ornaments without losing its gold nature.',
+      karyaKaranaRelation: 'The effect (Kārya) has no independent reality apart from the cause (Kāraṇa). The cause remains changeless and untouched.',
+      worldStatus: 'Mithya (Dependent Reality)',
+      keyScriptures: ['Māṇḍūkya Upaniṣad', 'Brahma Sūtras (Catuhsutri)', 'Vivekacūḍāmaṇi'],
+      detailedCritique: 'The universe is not physically created out of nothing, nor is God physically converted into matter. The universe appears to exist on Brahman due to Avidyā/Māyā. Dissolving ignorance through Viveka reveals only pure Brahman.'
+    },
+    {
+      id: 'vada-parinama',
+      name: 'Pariṇāma-Vāda (Real Transformation)',
+      school: 'Sāṅkhya & Viśiṣṭādvaita',
+      proponent: 'Kapila Maharṣi / Śrī Rāmānujācārya',
+      coreAnalogy: 'Milk transforming into Curd / Yogurt (Kṣīra-Dadhi); Clay shaped into a pot.',
+      karyaKaranaRelation: 'The cause physically and irreversibly mutates its real state to become the manifest effect.',
+      worldStatus: 'Real Physical Evolution',
+      keyScriptures: ['Sāṅkhya Kārikā', 'Śrī Bhāṣya'],
+      detailedCritique: 'In Sāṅkhya, unmanifest Prakriti real-transforms into the 23 evolutes (Mahat, Ahamkara, Tanmatras). In Vishishtadvaita, Brahman transforms His subtle body (Chit and Achit) into the gross universe. Advaita refutes this because if Brahman transformed, Brahman would be finite and perishable.'
+    },
+    {
+      id: 'vada-cid-vilasa',
+      name: 'Cid-Vilāsa-Vāda (Joyous Play of Consciousness)',
+      school: 'Nātha Sampradāya / Siddha Siddhānta',
+      proponent: 'Guru Gorakhnāth & Matsyendranāth',
+      coreAnalogy: 'A master dancer and their dance; A musician and their spontaneous melody.',
+      karyaKaranaRelation: 'The universe is a spontaneous, willful expression of pure joy (Ānanda) and creative play bursting from Consciousness (Cit).',
+      worldStatus: 'Satya (Divine Expression)',
+      keyScriptures: ['Siddha Siddhānta Paddhati', 'Gorakṣa Śataka', 'Yoni Tantra'],
+      detailedCritique: 'Rejects Advaita\'s claim that the world is an illusion or cosmic error. Gorakshanath argues that calling the universe an illusion insults Shiva\'s sovereign power. The cosmos is Shiva\'s deliberate dance, structured into both Pinda (the human body) and Brahmanda (the cosmos).'
+    },
+    {
+      id: 'vada-abhasa',
+      name: 'Ābhāsa-Vāda (Cosmic Shining Reflection)',
+      school: 'Kashmir Shaivism (Pratyabhijñā)',
+      proponent: 'Ācārya Abhinavagupta & Somānanda',
+      coreAnalogy: 'A magnificent city reflected perfectly in a spotless crystal mirror.',
+      karyaKaranaRelation: 'The universe is an array of "shining appearances" projected on the mirror of Cosmic Consciousness (Samvit) through divine light (Prakāśa).',
+      worldStatus: 'Satya (Divine Expression)',
+      keyScriptures: ['Tantrāloka', 'Īśvara-Pratyabhijñā-Kārikā', 'Śiva Sūtras'],
+      detailedCritique: 'Unlike Vivarta where the reflection is illusory, here the reflection is genuine and divine. Shiva remains the supreme artist who projects forms out of Himself, onto Himself, and observes Himself.'
+    },
+    {
+      id: 'vada-svatantrya',
+      name: 'Svātantrya-Vāda (Doctrine of Absolute Free Will)',
+      school: 'Trika Shaivism',
+      proponent: 'Utpaladeva & Kṣemarāja',
+      coreAnalogy: 'A yogi who manifests physical objects purely through mental sovereignty and willpower without external materials.',
+      karyaKaranaRelation: 'Creation occurs without any external instrument or material cause, solely through the autonomous power (Svātantrya-Śakti) of Paramaśiva.',
+      worldStatus: 'Satya (Divine Expression)',
+      keyScriptures: ['Pratyabhijñāhṛdayam', 'Spanda Kārikā'],
+      detailedCritique: 'Asserts that Shiva is not bound by any laws of causation or karmic determinism. The universe exists because Consciousness delights in sovereign freedom.'
+    },
+    {
+      id: 'vada-arambha',
+      name: 'Ārambha-Vāda / Asatkāryavāda (New Beginning Theory)',
+      school: 'Nyāya-Vaiśeṣika',
+      proponent: 'Kaṇāda & Gautama Akṣapāda',
+      coreAnalogy: 'Threads woven into a cloth; Bricks assembled into a wall.',
+      karyaKaranaRelation: 'The effect does NOT exist before creation; it is a brand-new entity created out of atomic aggregation (Paramāṇu).',
+      worldStatus: 'Atomic Creation',
+      keyScriptures: ['Vaiśeṣika Sūtras', 'Nyāya Bhāṣya'],
+      detailedCritique: 'Materialistic and mechanistic realism. The world is an assembly line of independent atoms. Both Vedanta and Kashmir Shaivism reject this because dead atoms cannot account for unified conscious experience.'
+    },
+    {
+      id: 'vada-pratityasamutpada',
+      name: 'Pratītyasamutpāda (Dependent Origination)',
+      school: 'Madhyamaka Buddhism',
+      proponent: 'Ārya Nāgārjuna',
+      coreAnalogy: 'A candle flame lighting another flame before dying; Interlocking sheaves of reeds.',
+      karyaKaranaRelation: 'Nothing exists intrinsically (Niḥsvabhāva); everything arises in dependence upon conditions and ceases when conditions vanish.',
+      worldStatus: 'Shunya (Empty/Momentary)',
+      keyScriptures: ['Mūlamadhyamakakārikā', 'Prajñāpāramitā Sūtras'],
+      detailedCritique: 'Rejects any eternal unchanging cause (Brahman/Atman). All phenomena are momentary and empty of inherent existence. Vedanta counters that dependent chains require an uncaused, eternal foundation (Adhiṣṭhāna).'
+    }
   ]);
 }
 
