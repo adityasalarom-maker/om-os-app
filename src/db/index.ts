@@ -275,6 +275,52 @@ export interface KhasraParcelRecord {
   updatedAt: number;
 }
 
+export interface DreamLogRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  wakeTime?: string;
+  title: string;
+  narrative: string;
+  state: 'Lucid Dream' | 'Astral Projection (OBE)' | 'Prophetic / Archetypal' | 'Symbolic Teaching' | 'Ordinary REM' | 'Nidra Shadow';
+  lucidityLevel: number; // 0 - 5
+  clarityScore: number; // 1 - 10
+  recallQuality: 'Faint' | 'Moderate' | 'Vivid' | 'Photographic';
+  symbols: string[];
+  astralVibrations: boolean;
+  silverCordFelt: boolean;
+  astralDestination?: string;
+  primaryChakraResonance: 'Muladhara' | 'Svadhisthana' | 'Manipura' | 'Anahata' | 'Vishuddha' | 'Ajna' | 'Sahasrara';
+  lunarTithi?: string;
+  lunarNakshatra?: string;
+  interpretation?: string;
+  isNightmare: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SadhanaLogRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  brahmaMuhurta: boolean;
+  japaMantra: string;
+  japaCount: number;
+  japaMalas: number;
+  japaMinutes: number;
+  pranayamaTechnique: string;
+  pranayamaMinutes: number;
+  kumbhakaRetentionSeconds: number;
+  dhyanaTechnique: string;
+  dhyanaMinutes: number;
+  stillnessScore: number; // 1 - 10
+  asanaKayaMinutes: number;
+  swadhyayaText?: string;
+  swadhyayaMinutes: number;
+  ojasScore: number; // 0 - 100
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -295,6 +341,8 @@ export class OmKnowledgeDatabase extends Dexie {
   semanticEmbeddings!: Table<SemanticEmbeddingRecord, string>;
   jyotishCharts!: Table<JyotishChartRecord, string>;
   khasraParcels!: Table<KhasraParcelRecord, string>;
+  dreamLogs!: Table<DreamLogRecord, string>;
+  sadhanaLogs!: Table<SadhanaLogRecord, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -408,6 +456,30 @@ export class OmKnowledgeDatabase extends Dexie {
       semanticEmbeddings: 'id, itemId, itemType, updatedAt',
       jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
       khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
+    });
+
+    this.version(9).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+      jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
+      khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
+      dreamLogs: 'id, date, state, lucidityLevel, primaryChakraResonance, createdAt, updatedAt',
+      sadhanaLogs: 'id, date, japaMantra, ojasScore, brahmaMuhurta, createdAt, updatedAt',
     });
   }
 }
@@ -823,6 +895,144 @@ export async function ensureSeedKhasraParcelsIfEmpty() {
       encumbranceNotes: 'Clean 12-year revenue chain. Requires Section 143 conversion and physical demarcation stone survey with Patwari prior to sale deed execution.',
       createdAt: now,
       updatedAt: now,
+    },
+  ]);
+
+  // Seed Metaphysical Dream & Astral Logs
+  await db.dreamLogs.bulkAdd([
+    {
+      id: 'dream-1',
+      date: new Date(now - 86400000).toISOString().split('T')[0],
+      wakeTime: '04:15',
+      title: 'Himalayan Astral Flight Over Mount Kailash & Om Parvat',
+      narrative: 'Awakened at 03:45 AM during Brahma Muhurta. High-frequency electrical vibrations surged from feet to crown (Ajna resonance). Experienced classic kinetic separation out of the physical body. A luminous silver cord remained anchored to the solar plexus. Navigated northeast at immense velocity towards the Great Himalayan divide. Viewed Mount Kailash under pristine starlight with natural snow-inscribed Om glyph radiating subtle blue-violet bioluminescence. Overwhelming sense of Cid-Vilāsa (consciousness observing its own joyful play). Complete absence of fear.',
+      state: 'Astral Projection (OBE)',
+      lucidityLevel: 5,
+      clarityScore: 10,
+      recallQuality: 'Photographic',
+      symbols: ['Mount Kailash', 'Om Parvat', 'Silver Cord', 'Astral Flight', 'Shiva', 'Pure Light'],
+      astralVibrations: true,
+      silverCordFelt: true,
+      astralDestination: 'Kailash Inner Sanctum & Manasarovar Etheric Grid',
+      primaryChakraResonance: 'Ajna',
+      lunarTithi: 'Shukla Panchami',
+      lunarNakshatra: 'Mula',
+      interpretation: 'Direct somatic confirmation of Gorakhnath Cid-Vilasa-Vada—the universe as the active, joyous overflow of Shiva’s creative freedom. Ajna and Sahasrara activation indicates deep meditation residue from evening Japa.',
+      isNightmare: false,
+      createdAt: now - 86400000,
+      updatedAt: now - 86400000,
+    },
+    {
+      id: 'dream-2',
+      date: new Date(now - 86400000 * 3).toISOString().split('T')[0],
+      wakeTime: '05:10',
+      title: 'The Ancient Copper Scroll & Kashmir Shaivism Dialogue',
+      narrative: 'Found myself standing in an open stone pavilion alongside a mountain river. An ascetic in saffron robes presented a hand-engraved copper scroll containing verses on Spanda and the mirror-analogy of Abhasa-Vada. The teacher pointed to the reflection of trees in the water: "The reflection does not wet the mirror, yet the reflection is real." Woke with extreme intellectual clarity.',
+      state: 'Symbolic Teaching',
+      lucidityLevel: 3,
+      clarityScore: 9,
+      recallQuality: 'Vivid',
+      symbols: ['Copper Plate Inscription', 'Kashmir Temple', 'River Vitasta', 'Guru Gorakshanath', 'Spanda'],
+      astralVibrations: false,
+      silverCordFelt: false,
+      primaryChakraResonance: 'Vishuddha',
+      lunarTithi: 'Shukla Tritiya',
+      lunarNakshatra: 'Anuradha',
+      interpretation: 'Deep consolidation of study notes on Vivarta vs Abhasa vs Cid-Vilasa-Vada. Vishuddha (space/speech/transmission) resonance.',
+      isNightmare: false,
+      createdAt: now - 86400000 * 3,
+      updatedAt: now - 86400000 * 3,
+    },
+    {
+      id: 'dream-3',
+      date: new Date(now - 86400000 * 5).toISOString().split('T')[0],
+      wakeTime: '04:50',
+      title: 'Luminous Sri Yantra Geometry in Space',
+      narrative: 'Suspended in deep indigo space without a physical container. A golden, three-dimensional Sri Yantra rotated slowly on its vertical axis. Each interlocking triangle emitted a distinct acoustic tone that coalesced into the sound of Om (Nada). Full conscious awareness of being the observer rather than any physical form.',
+      state: 'Lucid Dream',
+      lucidityLevel: 4,
+      clarityScore: 9,
+      recallQuality: 'Vivid',
+      symbols: ['Sri Yantra', 'Golden Geometry', 'Nada Om Tone', 'Cosmic Indigo Space', 'Sakshi Bhava'],
+      astralVibrations: true,
+      silverCordFelt: false,
+      primaryChakraResonance: 'Sahasrara',
+      lunarTithi: 'Pratipada',
+      lunarNakshatra: 'Chitra',
+      interpretation: 'Pure contemplative yantra darshan. Deep stillness and pratyahara manifestation.',
+      isNightmare: false,
+      createdAt: now - 86400000 * 5,
+      updatedAt: now - 86400000 * 5,
+    },
+  ]);
+
+  // Seed Sadhana Discipline & Practice Logs
+  await db.sadhanaLogs.bulkAdd([
+    {
+      id: 'sadhana-1',
+      date: new Date(now).toISOString().split('T')[0],
+      brahmaMuhurta: true,
+      japaMantra: 'Maha Mrityunjaya Mantra',
+      japaCount: 1080,
+      japaMalas: 10,
+      japaMinutes: 45,
+      pranayamaTechnique: 'Nadi Shodhana + Antar Kumbhaka (1:4:2 ratio)',
+      pranayamaMinutes: 20,
+      kumbhakaRetentionSeconds: 32,
+      dhyanaTechnique: 'Sakshi Bhava (Witness Consciousness)',
+      dhyanaMinutes: 30,
+      stillnessScore: 9,
+      asanaKayaMinutes: 25,
+      swadhyayaText: 'Gorakhnath Cid-Vilāsa-Vāda & Siddha Siddhanta Paddhati',
+      swadhyayaMinutes: 30,
+      ojasScore: 94,
+      notes: 'Deep stillness achieved early during Brahma Muhurta. Heartbeat felt rhythmic and slowed to 52 bpm during Kumbhaka. Spontaneous Ajna pulsation.',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'sadhana-2',
+      date: new Date(now - 86400000).toISOString().split('T')[0],
+      brahmaMuhurta: true,
+      japaMantra: 'Gayatri Mantra',
+      japaCount: 540,
+      japaMalas: 5,
+      japaMinutes: 30,
+      pranayamaTechnique: 'Kapalabhati + Sheetali',
+      pranayamaMinutes: 15,
+      kumbhakaRetentionSeconds: 24,
+      dhyanaTechnique: 'Nada Yoga (Inner Sound Contemplation)',
+      dhyanaMinutes: 25,
+      stillnessScore: 8,
+      asanaKayaMinutes: 20,
+      swadhyayaText: 'Kashmir Shaivism Shiva Sutras & Spanda Karika',
+      swadhyayaMinutes: 25,
+      ojasScore: 86,
+      notes: 'Subtle high-pitched Nada bell sound perceived clearly in right ear during meditation.',
+      createdAt: now - 86400000,
+      updatedAt: now - 86400000,
+    },
+    {
+      id: 'sadhana-3',
+      date: new Date(now - 86400000 * 2).toISOString().split('T')[0],
+      brahmaMuhurta: false,
+      japaMantra: 'Om Namah Shivaya',
+      japaCount: 324,
+      japaMalas: 3,
+      japaMinutes: 20,
+      pranayamaTechnique: 'Bhastrika + Anulom Vilom',
+      pranayamaMinutes: 15,
+      kumbhakaRetentionSeconds: 20,
+      dhyanaTechnique: 'Chakra Anusandhana',
+      dhyanaMinutes: 20,
+      stillnessScore: 7,
+      asanaKayaMinutes: 30,
+      swadhyayaText: 'Bhagavad Gita Chapter 6 (Dhyana Yoga)',
+      swadhyayaMinutes: 20,
+      ojasScore: 78,
+      notes: 'Steady grounding practice. Muladhara and Manipura balance stabilized.',
+      createdAt: now - 86400000 * 2,
+      updatedAt: now - 86400000 * 2,
     },
   ]);
 }

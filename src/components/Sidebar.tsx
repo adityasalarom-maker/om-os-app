@@ -22,7 +22,8 @@ import {
   Layers,
   Smartphone,
   Camera,
-  TrendingUp
+  TrendingUp,
+  Moon
 } from 'lucide-react';
 
 export type NavTab = 
@@ -38,7 +39,8 @@ export type NavTab =
   | 'pantry' 
   | 'sheets'
   | 'analytics'
-  | 'jyotish';
+  | 'jyotish'
+  | 'sadhana';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -65,6 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Executive Dashboard', shortLabel: 'Home', icon: LayoutDashboard, category: 'Core OS' },
     { id: 'tasks', label: 'Task Intelligence', shortLabel: 'Tasks', icon: CheckSquare, category: 'Productivity' },
     { id: 'knowledge', label: 'Knowledge Vault', shortLabel: 'Vault', icon: BookOpen, category: 'Core OS' },
+    { id: 'sadhana', label: 'Dream & Sadhana OS', shortLabel: 'Sadhana', icon: Moon, category: 'Metaphysical' },
     { id: 'jyotish', label: 'Metaphysical & Jyotish', shortLabel: 'Jyotish', icon: Sparkles, category: 'Metaphysical' },
     { id: 'health', label: 'Health & Ayurveda', shortLabel: 'Health', icon: Heart, category: 'Life & Vitality' },
     { id: 'property', label: 'Himalayan Spatial GIS', shortLabel: 'GIS', icon: Mountain, category: 'Asset Diligence' },
@@ -78,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   // Secondary tabs that indicate "More" is active when selected
-  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets', 'analytics', 'jyotish'].includes(currentTab);
+  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets', 'analytics', 'jyotish', 'sadhana'].includes(currentTab);
 
   const handleMobileSelect = (tab: NavTab) => {
     onSelectTab(tab);

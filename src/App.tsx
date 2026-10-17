@@ -16,6 +16,7 @@ import { AnalyticsView } from './components/AnalyticsView';
 import { DiagnosticTestModal } from './components/DiagnosticTestModal';
 import { MobileDeploymentModal } from './components/MobileDeploymentModal';
 import { JyotishView } from './components/JyotishView';
+import { DreamSadhanaView } from './components/DreamSadhanaView';
 
 // Code-split heavy libraries (pdfjs-dist, tesseract.js)
 const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
@@ -85,6 +86,7 @@ export function App() {
                  currentTab === 'sheets' ? 'Google Sheets Bridge' : 
                  currentTab === 'analytics' ? 'Predictive Analytics & Life Balance' : 
                  currentTab === 'jyotish' ? 'Metaphysical & Jyotish Ephemeris' : 
+                 currentTab === 'sadhana' ? 'Metaphysical Dream & Sadhana OS' : 
                  currentTab.replace('-', ' ')}
               </span>
             </span>
@@ -188,6 +190,7 @@ export function App() {
             {currentTab === 'pantry' && <PantryView />}
             {currentTab === 'sheets' && <GoogleSheetsSyncModal />}
             {currentTab === 'jyotish' && <JyotishView />}
+            {currentTab === 'sadhana' && <DreamSadhanaView />}
           </div>
         </main>
       </div>

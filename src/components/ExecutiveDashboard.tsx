@@ -15,7 +15,8 @@ import {
   Utensils,
   Compass,
   Smartphone,
-  Mountain
+  Mountain,
+  Moon
 } from 'lucide-react';
 import { calculateLifeEquilibrium } from '../services/predictiveAnalytics';
 import { calculateJyotishEphemeris } from '../services/jyotishEngine';
@@ -43,6 +44,8 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   const health = useLiveQuery(() => db.health.toArray(), []) || [];
   const journals = useLiveQuery(() => db.journal.toArray(), []) || [];
   const khasraParcels = useLiveQuery(() => db.khasraParcels.toArray(), []) || [];
+  const latestSadhana = useLiveQuery(() => db.sadhanaLogs.orderBy('date').reverse().first(), []);
+  const latestDream = useLiveQuery(() => db.dreamLogs.orderBy('date').reverse().first(), []);
 
   const equilibrium = calculateLifeEquilibrium(goals, tasks, health, journals);
   const ephemeris = useMemo(() => calculateJyotishEphemeris(new Date()), []);
@@ -215,6 +218,38 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         </div>
         <div className="flex items-center gap-2 text-xs font-semibold text-amber-300 group-hover:text-amber-200">
           <span>Open Ephemeris & Kundli</span>
+          <ArrowUpRight size={14} />
+        </div>
+      </div>
+
+      {/* Metaphysical Dream & Sadhana OS Executive Strip */}
+      <div 
+        onClick={() => onNavigate('sadhana')}
+        className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/20 via-[#181a24] to-emerald-950/20 border border-purple-500/30 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:border-purple-500/50 transition-all shadow-sm group"
+      >
+        <div className="flex items-center gap-3">
+          <span className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 group-hover:scale-105 transition-transform">
+            <Moon size={18} />
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-white">Metaphysical Dream & Sadhana OS</span>
+              <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Ojas Score: {latestSadhana ? latestSadhana.ojasScore : 94}/100
+              </span>
+              {latestDream && (
+                <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  {latestDream.state} (L{latestDream.lucidityLevel})
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              Practice: <span className="text-emerald-300 font-semibold">{latestSadhana ? latestSadhana.japaMantra : 'Maha Mrityunjaya'}</span> ({latestSadhana ? latestSadhana.japaMalas : 10} Malas) • Recent Dream: <span className="text-purple-300 font-medium">"{latestDream ? latestDream.title : 'Mount Kailash Astral Flight'}"</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-semibold text-purple-300 group-hover:text-purple-200">
+          <span>Open Japa Mala & Dream Log</span>
           <ArrowUpRight size={14} />
         </div>
       </div>

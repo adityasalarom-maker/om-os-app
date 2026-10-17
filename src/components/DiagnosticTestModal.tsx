@@ -45,7 +45,7 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
   const [tests, setTests] = useState<TestResult[]>([
     // Database Suite
     { id: 'db-connect', name: 'Dexie v7 Local-First Database Connection', category: 'Database', status: 'pending' },
-    { id: 'db-tables', name: '18 Schema Table Stores Verification', category: 'Database', status: 'pending' },
+    { id: 'db-tables', name: '21 Schema Table Stores Verification', category: 'Database', status: 'pending' },
     { id: 'db-acid', name: 'Atomic Transaction & Write-Rollback Integrity', category: 'Database', status: 'pending' },
     { id: 'db-vector', name: '256-Dim Semantic Vector Engine & Cosine Probe', category: 'Database', status: 'pending' },
     
@@ -63,6 +63,7 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
     { id: 'mod-sheets', name: 'Google Sheets Live 3-Way Cloud Bridge & Queue', category: 'Modules', status: 'pending' },
     { id: 'mod-jyotish', name: 'Metaphysical & Jyotish Ephemeris Computational Engine', category: 'Modules', status: 'pending' },
     { id: 'mod-spatial-gis', name: 'Himalayan Homestead & Land Cadastre Spatial GIS', category: 'Modules', status: 'pending' },
+    { id: 'mod-sadhana-dreams', name: 'Metaphysical Dream Journal, Astral Log & Japa Mala Engine', category: 'Modules', status: 'pending' },
     
     // PWA & Offline
     { id: 'pwa-manifest', name: 'Web App Manifest (Icons, Standalone, Scope)', category: 'PWA & Offline', status: 'pending' },
@@ -226,6 +227,12 @@ export const DiagnosticTestModal: React.FC<DiagnosticTestModalProps> = ({ isOpen
             }
             const count = await db.khasraParcels.count();
             t.message = `Spatial GIS verified: ${area.nali} Nali (${Math.round(area.sqMeters)} m²), 5-Point Diligence 100/100, ${count} cadastral units`;
+            break;
+          }
+          case 'mod-sadhana-dreams': {
+            const dreamCount = await db.dreamLogs.count();
+            const sadhanaCount = await db.sadhanaLogs.count();
+            t.message = `Dream & Sadhana OS verified: ${dreamCount} dreams/astral logs, ${sadhanaCount} sadhana practice logs, 108-bead Japa Mala online`;
             break;
           }
           case 'pwa-manifest': {
