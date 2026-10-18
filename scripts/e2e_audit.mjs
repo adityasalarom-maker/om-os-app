@@ -1,6 +1,6 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 /**
- * ॐ Om Knowledge OS — Automated Headless E2E Diagnostic & Lighthouse PWA Audit Suite
+ * à¥ Om Knowledge OS â€” Automated Headless E2E Diagnostic & Lighthouse PWA Audit Suite
  * 
  * Verifies:
  * 1. PWA Manifest V2 specification & standard web app compliance
@@ -39,11 +39,11 @@ function recordTest(category, name, passed, details = '') {
   if (passed) {
     passCount++;
     results.push({ category, name, passed: true, details });
-    console.log(`  ${colors.green}✔ PASS${colors.reset} [${category}] ${name} ${details ? colors.yellow + '(' + details + ')' + colors.reset : ''}`);
+    console.log(`  ${colors.green}âœ” PASS${colors.reset} [${category}] ${name} ${details ? colors.yellow + '(' + details + ')' + colors.reset : ''}`);
   } else {
     failCount++;
     results.push({ category, name, passed: false, details });
-    console.log(`  ${colors.red}✖ FAIL${colors.reset} [${category}] ${name} ${colors.red + details + colors.reset}`);
+    console.log(`  ${colors.red}âœ– FAIL${colors.reset} [${category}] ${name} ${colors.red + details + colors.reset}`);
   }
 }
 
@@ -62,13 +62,13 @@ async function fetchHttp(url) {
 async function runAudit() {
   const startTime = Date.now();
   console.log(`\n${colors.bright}${colors.cyan}========================================================================${colors.reset}`);
-  console.log(`${colors.bright}${colors.cyan}  ॐ OM KNOWLEDGE OS — AUTOMATED HEADLESS E2E & PWA AUDIT SUITE${colors.reset}`);
+  console.log(`${colors.bright}${colors.cyan}  à¥ OM KNOWLEDGE OS â€” AUTOMATED HEADLESS E2E & PWA AUDIT SUITE${colors.reset}`);
   console.log(`${colors.bright}${colors.cyan}========================================================================${colors.reset}\n`);
 
   // ---------------------------------------------------------
   // 1. PWA MANIFEST AUDIT
   // ---------------------------------------------------------
-  console.log(`${colors.bright}${colors.magenta}▶ Step 1: PWA Web App Manifest 100/100 Audit${colors.reset}`);
+  console.log(`${colors.bright}${colors.magenta}â–¶ Step 1: PWA Web App Manifest 100/100 Audit${colors.reset}`);
   const manifestPath = path.join(rootDir, 'public', 'manifest.json');
   if (fs.existsSync(manifestPath)) {
     try {
@@ -96,7 +96,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 2. SERVICE WORKER AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}▶ Step 2: Service Worker & Offline Caching v2.2 Audit${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 2: Service Worker & Offline Caching v2.2 Audit${colors.reset}`);
   const swPath = path.join(rootDir, 'public', 'sw.js');
   if (fs.existsSync(swPath)) {
     const swContent = fs.readFileSync(swPath, 'utf8');
@@ -113,7 +113,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 3. DEXIE SCHEMA INTEGRITY AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}▶ Step 3: Dexie Local-First Database Architecture Audit${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 3: Dexie Local-First Database Architecture Audit${colors.reset}`);
   const dbPath = path.join(rootDir, 'src', 'db', 'index.ts');
   if (fs.existsSync(dbPath)) {
     const dbContent = fs.readFileSync(dbPath, 'utf8');
@@ -156,7 +156,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 4. MODULE SUBSYSTEM COMPONENT AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}▶ Step 4: 19 Subsystem Module Components Verification${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 20 Subsystem Module Components Verification${colors.reset}`);
   const modules = [
     { name: 'ExecutiveDashboard', file: 'src/components/ExecutiveDashboard.tsx' },
     { name: 'TaskIntelligence', file: 'src/components/TaskIntelligence.tsx' },
@@ -177,6 +177,7 @@ async function runAudit() {
     { name: 'DreamSadhanaView', file: 'src/components/DreamSadhanaView.tsx' },
     { name: 'VedicConcordanceView', file: 'src/components/VedicConcordanceView.tsx' },
     { name: 'PranayamaView', file: 'src/components/PranayamaView.tsx' },
+    { name: 'SovereignStudioV2', file: 'src/components/SovereignStudioV2.tsx' },
   ];
 
   for (const mod of modules) {
@@ -188,7 +189,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 5. PRODUCTION BUNDLE CHUNK OPTIMIZATION AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}▶ Step 5: Production Bundle & Chunk Optimization Audit${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 5: Production Bundle & Chunk Optimization Audit${colors.reset}`);
   const distPath = path.join(rootDir, 'dist');
   const distAssetsPath = path.join(rootDir, 'dist', 'assets');
   if (fs.existsSync(distAssetsPath)) {
@@ -219,7 +220,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 6. LIVE HTTP SERVER & ASSET AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}▶ Step 6: Live Local Dev / Production Server Probe${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 6: Live Local Dev / Production Server Probe${colors.reset}`);
   let serverProbed = false;
   for (const testPort of [5173, 8080]) {
     try {
@@ -274,3 +275,4 @@ runAudit().catch((err) => {
   console.error('Fatal audit failure:', err);
   process.exit(1);
 });
+

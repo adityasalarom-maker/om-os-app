@@ -593,20 +593,26 @@ export class OmKnowledgeDatabase extends Dexie {
   }
 }
 
-import { ingestChatGPTArchitecturalConcepts, CHATGPT_ARCHITECTURAL_CONCEPTS } from './chatgptPkmSeed';
-export { ingestChatGPTArchitecturalConcepts, CHATGPT_ARCHITECTURAL_CONCEPTS };
-
 export const db = new OmKnowledgeDatabase();
 
-// Ensure foundational ChatGPT architectural concepts are ingested into Knowledge Vault
-export async function ensureChatGPTArchitecturalConcepts() {
-  return await ingestChatGPTArchitecturalConcepts();
+// Purge any legacy ChatGPT seed records from Dexie Knowledge Vault to ensure zero residual trace
+export async function purgeLegacyPkmArtifacts() {
+  try {
+    const legacyItems = await db.knowledge
+      .filter(k => k.id.startsWith('pkm-') || k.tags.includes('ChatGPT-Archive'))
+      .toArray();
+    if (legacyItems.length > 0) {
+      await db.knowledge.bulkDelete(legacyItems.map(k => k.id));
+    }
+  } catch (e) {
+    console.debug('Legacy PKM purge check:', e);
+  }
 }
 
 // Seed initial realistic data from Om Knowledge OS v2.0 if database is empty
 export async function initializeSeedDataIfEmpty() {
-  // Always ensure ChatGPT foundational architecture concepts are present
-  await ensureChatGPTArchitecturalConcepts();
+  // Purge any residual ChatGPT seed records
+  await purgeLegacyPkmArtifacts();
 
   const projectCount = await db.projects.count();
   if (projectCount > 0) return;

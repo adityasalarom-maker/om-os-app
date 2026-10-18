@@ -56,7 +56,7 @@ import {
   getUnlinkedMentionsForNote, 
   convertMentionToWikilink 
 } from '../services/graphEngine';
-import { DocumentIntelligenceModal } from './DocumentIntelligenceModal';
+const DocumentIntelligenceModal = React.lazy(() => import('./DocumentIntelligenceModal').then(m => ({ default: m.DocumentIntelligenceModal })));
 
 export const KnowledgeVault: React.FC = () => {
   const [selectedType, setSelectedType] = useState<string>('All');
@@ -629,6 +629,13 @@ export const KnowledgeVault: React.FC = () => {
           notes={notes}
           activeNoteId={activeNote?.id}
           onSelectNote={(noteId) => {
+            const found = notes.find(n => n.id === noteId);
+            if (found) {
+              setActiveNote(found);
+              // Deliberately stay in graph view so user can freely inspect nodes & connections
+            }
+          }}
+          onOpenInEditor={(noteId) => {
             const found = notes.find(n => n.id === noteId);
             if (found) {
               setActiveNote(found);
@@ -1293,18 +1300,22 @@ export const KnowledgeVault: React.FC = () => {
       )}
 
       {/* Multimodal Document Intelligence & OCR Modal */}
-      <DocumentIntelligenceModal
-        isOpen={isOcrModalOpen}
-        onClose={() => setIsOcrModalOpen(false)}
-        onSavedToVault={async (noteId) => {
-          setIsOcrModalOpen(false);
-          const saved = await db.knowledge.get(noteId);
-          if (saved) {
-            setActiveNote(saved);
-            setViewMode('notes');
-          }
-        }}
-      />
+      {isOcrModalOpen && (
+        <React.Suspense fallback={<div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center text-white text-xs">Loading Document Intelligence...</div>}>
+          <DocumentIntelligenceModal
+            isOpen={isOcrModalOpen}
+            onClose={() => setIsOcrModalOpen(false)}
+            onSavedToVault={async (noteId) => {
+              setIsOcrModalOpen(false);
+              const saved = await db.knowledge.get(noteId);
+              if (saved) {
+                setActiveNote(saved);
+                setViewMode('notes');
+              }
+            }}
+          />
+        </React.Suspense>
+      )}
 
     </div>
   );

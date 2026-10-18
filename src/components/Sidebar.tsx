@@ -44,7 +44,8 @@ export type NavTab =
   | 'jyotish'
   | 'sadhana'
   | 'vedic'
-  | 'pranayama';
+  | 'pranayama'
+  | 'sovereign_studio';
 
 interface SidebarProps {
   currentTab: NavTab;
@@ -71,6 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Executive Dashboard', shortLabel: 'Home', icon: LayoutDashboard, category: 'Core OS' },
     { id: 'tasks', label: 'Task Intelligence', shortLabel: 'Tasks', icon: CheckSquare, category: 'Productivity' },
     { id: 'knowledge', label: 'Knowledge Vault', shortLabel: 'Vault', icon: BookOpen, category: 'Core OS' },
+    { id: 'sovereign_studio', label: 'Sovereign Studio V2', shortLabel: 'Studio', icon: Sparkles, category: 'Core OS' },
     { id: 'pranayama', label: 'Pranayama & Breathwork', shortLabel: 'Prana', icon: Wind, category: 'Metaphysical' },
     { id: 'vedic', label: 'Vedic & Shankara Bhashya', shortLabel: 'Vedic', icon: Scroll, category: 'Metaphysical' },
     { id: 'sadhana', label: 'Dream & Sadhana OS', shortLabel: 'Sadhana', icon: Moon, category: 'Metaphysical' },
@@ -87,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   // Secondary tabs that indicate "More" is active when selected
-  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets', 'analytics', 'jyotish', 'sadhana', 'vedic', 'pranayama'].includes(currentTab);
+  const isMoreActive = ['health', 'property', 'pdf', 'goals', 'journal', 'pantry', 'sheets', 'analytics', 'jyotish', 'sadhana', 'vedic', 'pranayama', 'sovereign_studio'].includes(currentTab);
 
   const handleMobileSelect = (tab: NavTab) => {
     onSelectTab(tab);

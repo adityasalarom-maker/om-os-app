@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { calculateLifeEquilibrium } from '../services/predictiveAnalytics';
 import { calculateJyotishEphemeris } from '../services/jyotishEngine';
+import { SovereignStudioV2 } from './SovereignStudioV2';
 
 interface ExecutiveDashboardProps {
   onNavigate: (tab: any) => void;
@@ -368,6 +369,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
               ))}
             </div>
           </div>
+
+          {/* ॐ Om Sanctuary Studio (Version 2 Real Data Dashboard) */}
+          <SovereignStudioV2 embedded={true} />
 
         </div>
 

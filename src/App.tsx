@@ -19,6 +19,7 @@ import { JyotishView } from './components/JyotishView';
 import { DreamSadhanaView } from './components/DreamSadhanaView';
 import { VedicConcordanceView } from './components/VedicConcordanceView';
 import { PranayamaView } from './components/PranayamaView';
+import { SovereignStudioV2 } from './components/SovereignStudioV2';
 
 // Code-split heavy libraries (pdfjs-dist, tesseract.js)
 const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
@@ -38,6 +39,31 @@ export function App() {
   const [isMobileDeployOpen, setIsMobileDeployOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
+  // Dual-Version Operating Support: Version 1 (Technical Cockpit) vs Version 2 (Sovereign Studio)
+  const [osVersion, setOsVersion] = useState<'v1' | 'v2'>(() => {
+    if (typeof window !== 'undefined' && window.location.hash.toLowerCase().includes('v2')) {
+      return 'v2';
+    }
+    return 'v1';
+  });
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash.toLowerCase().includes('v2')) {
+        setOsVersion('v2');
+      } else {
+        setOsVersion('v1');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const switchOsVersion = (ver: 'v1' | 'v2') => {
+    setOsVersion(ver);
+    window.location.hash = `#/${ver}`;
+  };
+
   const pendingQueueCount = useLiveQuery(() => db.syncQueue.where('status').equals('pending').count(), []) || 0;
   const conflictCount = useLiveQuery(() => db.syncConflicts.toArray(), [])?.filter(c => !c.resolved).length || 0;
 
@@ -55,12 +81,17 @@ export function App() {
     return (
       <div className="min-h-screen bg-[#0f1117] flex flex-col items-center justify-center text-white space-y-3">
         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold shadow-xl shadow-indigo-500/30 animate-pulse">
-          à¥
+          ॐ
         </div>
         <p className="text-sm font-semibold tracking-wide">Initializing Om Knowledge OS...</p>
         <p className="text-xs text-gray-500 font-mono">Loading local-first encrypted tables</p>
       </div>
     );
+  }
+
+  // Render Version 2 Sovereign Studio if v2 route is active
+  if (osVersion === 'v2') {
+    return <SovereignStudioV2 onSwitchToV1={() => switchOsVersion('v1')} />;
   }
 
   return (
@@ -105,6 +136,16 @@ export function App() {
               <Search size={14} className="text-indigo-400" />
               <span>Jump to note or task...</span>
               <kbd className="bg-[#141622] px-1 py-0.5 rounded text-[10px] font-mono border border-[#272b3d]">Ctrl+P</kbd>
+            </button>
+
+            {/* Version 2: Sovereign Studio Switcher Button */}
+            <button
+              onClick={() => switchOsVersion('v2')}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 hover:from-amber-500/25 hover:to-orange-500/25 border border-amber-500/30 text-amber-300 hover:text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-sm"
+              title="Open Version 2: Sovereign Studio (Grounded in your authentic Notion OS & My Notes archives)"
+            >
+              <Sparkles size={13} className="text-amber-400" />
+              <span>✦ V2: Sovereign Studio</span>
             </button>
 
             {/* Multimodal OCR Scanner Button */}
@@ -197,6 +238,12 @@ export function App() {
             {currentTab === 'sadhana' && <DreamSadhanaView />}
             {currentTab === 'vedic' && <VedicConcordanceView />}
             {currentTab === 'pranayama' && <PranayamaView />}
+            {currentTab === 'sovereign_studio' && (
+              <SovereignStudioV2 
+                onSwitchToV1={() => switchOsVersion('v1')} 
+                embedded={true} 
+              />
+            )}
           </div>
         </main>
       </div>

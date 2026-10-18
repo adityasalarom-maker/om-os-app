@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type InboxItem, type TaskItem, type KnowledgeItem } from '../db';
 import { 
@@ -17,9 +17,22 @@ import {
   Zap,
   Edit2,
   Check,
-  Camera
+  Camera,
+  Database,
+  FolderGit2,
+  RefreshCw,
+  Layers,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
-import { DocumentIntelligenceModal } from './DocumentIntelligenceModal';
+import { 
+  analyzeCorpusCandidates, 
+  runBatchCorpusIngestion, 
+  type IngestionSummaryReport,
+  type IngestionPreview 
+} from '../services/corpusIngestionEngine';
+
+const DocumentIntelligenceModal = React.lazy(() => import('./DocumentIntelligenceModal').then(m => ({ default: m.DocumentIntelligenceModal })));
 
 interface ExtractedCandidate {
   id: string;
@@ -39,7 +52,41 @@ export const UniversalInboxAI: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isOcrOpen, setIsOcrOpen] = useState(false);
 
+  // Authentic Archive Ingestion State
+  const [corpusPreview, setCorpusPreview] = useState<IngestionPreview | null>(null);
+
+  useEffect(() => {
+    analyzeCorpusCandidates().then(p => setCorpusPreview(p)).catch(() => {});
+  }, []);
+  const [isIngestingCorpus, setIsIngestingCorpus] = useState(false);
+  const [corpusProgress, setCorpusProgress] = useState<string>('');
+  const [ingestionReport, setIngestionReport] = useState<IngestionSummaryReport | null>(null);
+  const [showCorpusBreakdown, setShowCorpusBreakdown] = useState(false);
+
   const inboxItems = useLiveQuery(() => db.inbox.orderBy('createdAt').reverse().toArray(), []) || [];
+  const totalVaultCount = useLiveQuery(() => db.knowledge.count(), []) || 0;
+  const totalTasksCount = useLiveQuery(() => db.tasks.count(), []) || 0;
+  const totalGoalsCount = useLiveQuery(() => db.goals.count(), []) || 0;
+
+  // Batch Ingestion Handler
+  const handleBatchIngestCorpus = async () => {
+    setIsIngestingCorpus(true);
+    setSuccessMessage('');
+    try {
+      const report = await runBatchCorpusIngestion((step) => {
+        setCorpusProgress(step);
+      });
+      setIngestionReport(report);
+      setSuccessMessage(
+        `Batch Ingestion Complete: Processed ${report.docsProcessed} files (${(report.totalBytesProcessed / 1024).toFixed(1)} KB) -> Created ${report.conceptsIngested} Concepts, ${report.tasksIngested} Tasks, ${report.goalsIngested} Goals, and formed ${report.wikilinksFormed} [[wikilinks]] in ${report.durationMs}ms.`
+      );
+    } catch (err: any) {
+      setSuccessMessage(`Ingestion failed: ${err.message || String(err)}`);
+    } finally {
+      setIsIngestingCorpus(false);
+      setCorpusProgress('');
+    }
+  };
 
   // Deterministic AI conversation parser with code block tokenization
   const handleParseConversation = () => {
@@ -57,31 +104,27 @@ export const UniversalInboxAI: React.FC = () => {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // 1. Code Block Tokenization: Never detect tasks or headers inside code snippets
       if (line.startsWith('```')) {
         inCodeBlock = !inCodeBlock;
         continue;
       }
       if (inCodeBlock) continue;
 
-      // 2. Extract Headings / Major Topics as Concept Candidates
       const isHeader = line.startsWith('#') || (line.startsWith('**') && line.endsWith('**') && line.length < 90);
       if (isHeader) {
         const cleanTitle = line.replace(/^[#*]+|\**$/g, '').trim();
         if (cleanTitle.length > 4 && !cleanTitle.toLowerCase().startsWith('step ') && !cleanTitle.toLowerCase().startsWith('action')) {
           currentTopic = cleanTitle;
-          // Lookahead for synthesis paragraph lines
           const nextLines = lines
             .slice(i + 1, i + 6)
-            .filter(l => !l.trim().startsWith('#') && !l.trim().startsWith('```') && !l.trim().startsWith('- [ ]'))
-            .join(' ')
-            .trim();
+            .filter(l => !l.trim().startsWith('#') && !l.trim().startsWith('```') && l.trim().length > 0)
+            .join(' ');
 
           newCandidates.push({
-            id: `cand-concept-${Date.now()}-${newCandidates.length}`,
+            id: `cand-${Date.now()}-${newCandidates.length}`,
             type: 'concept',
             title: cleanTitle,
-            details: nextLines || `Synthesized key concept from ${sourceType} conversation turn.`,
+            details: nextLines || `Extracted concept from ${sourceType} conversation.`,
             suggestedQuadrant: 'Q2',
             conceptType: 'Concept',
             selected: true
@@ -89,45 +132,46 @@ export const UniversalInboxAI: React.FC = () => {
         }
       }
 
-      // 3. Extract Action Items (TODO bullets or imperative verbs)
-      const isTodoBullet = /^[-*]\s*(\[[ xX]?\]|TODO:|Action Item:|Next Step:)/i.test(line);
-      const isImperativeAction = /^[-*]?\s*(Research|Build|Create|Configure|Implement|Review|Verify|Contact|Test|Schedule|Deploy|Design|Audit)\b/i.test(line);
+      const isChecklist = /^[-*]\s*\[([ xX])\]\s*(.+)$/.exec(line);
+      const isActionPrefix = /^(TODO|ACTION|NEXT STEP|TASK):?\s*(.+)$/i.exec(line);
+      const isImperativeLine = /^[-*]\s+(Implement|Build|Fix|Verify|Audit|Deploy|Update|Refactor|Design|Add)\b\s*(.+)$/i.exec(line);
 
-      if (isTodoBullet || isImperativeAction) {
-        const cleanTask = line.replace(/^[-*]\s*(\[[ xX]?\]|TODO:|Action Item:|Next Step:)?\s*/i, '').trim();
-        if (cleanTask.length > 6 && !cleanTask.endsWith('?')) {
-          // Infer suggested quadrant from keywords
-          let quad: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q2';
-          const lower = cleanTask.toLowerCase();
-          if (lower.includes('urgent') || lower.includes('crisis') || lower.includes('asap') || lower.includes('immediately')) {
-            quad = 'Q1';
-          } else if (lower.includes('quick') || lower.includes('call') || lower.includes('email') || lower.includes('order')) {
-            quad = 'Q3';
-          } else if (lower.includes('someday') || lower.includes('backlog') || lower.includes('later')) {
-            quad = 'Q4';
-          }
+      let taskTitle = '';
+      if (isChecklist) taskTitle = isChecklist[2];
+      else if (isActionPrefix) taskTitle = isActionPrefix[2];
+      else if (isImperativeLine) taskTitle = `${isImperativeLine[1]} ${isImperativeLine[2]}`;
 
-          newCandidates.push({
-            id: `cand-task-${Date.now()}-${newCandidates.length}`,
-            type: 'task',
-            title: cleanTask,
-            details: currentTopic ? `Context: ${currentTopic}` : `Turn extracted from ${sourceType}`,
-            suggestedQuadrant: quad,
-            selected: true
-          });
+      if (taskTitle) {
+        const cleanTask = taskTitle.replace(/<[^>]+>/g, '').trim();
+        let suggestedQuad: 'Q1' | 'Q2' | 'Q3' | 'Q4' = 'Q2';
+        const lower = cleanTask.toLowerCase();
+        if (lower.includes('urgent') || lower.includes('critical') || lower.includes('bug') || lower.includes('asap') || lower.includes('fix')) {
+          suggestedQuad = 'Q1';
+        } else if (lower.includes('delegate') || lower.includes('ask') || lower.includes('send') || lower.includes('email')) {
+          suggestedQuad = 'Q3';
+        } else if (lower.includes('someday') || lower.includes('maybe') || lower.includes('consider')) {
+          suggestedQuad = 'Q4';
         }
+
+        newCandidates.push({
+          id: `cand-${Date.now()}-${newCandidates.length}`,
+          type: 'task',
+          title: cleanTask,
+          details: currentTopic ? `Context: ${currentTopic}` : `Extracted action item from ${sourceType}`,
+          suggestedQuadrant: suggestedQuad,
+          selected: true
+        });
       }
     }
 
-    // Fallback if no specific markdown items matched
     if (newCandidates.length === 0) {
       newCandidates.push({
-        id: `cand-fallback-${Date.now()}`,
+        id: `cand-${Date.now()}-0`,
         type: 'concept',
-        title: `AI Synthesis (${sourceType})`,
-        details: rawText.slice(0, 300) + '...',
+        title: rawText.slice(0, 50).trim() + (rawText.length > 50 ? '...' : ''),
+        details: rawText,
         suggestedQuadrant: 'Q2',
-        conceptType: 'Concept',
+        conceptType: 'Note',
         selected: true
       });
     }
@@ -140,20 +184,15 @@ export const UniversalInboxAI: React.FC = () => {
     setCandidates(prev => prev.map(c => c.id === id ? { ...c, selected: !c.selected } : c));
   };
 
-  const handleUpdateCandidateTitle = (id: string, newTitle: string) => {
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, title: newTitle } : c));
-  };
-
   const handleUpdateCandidateQuadrant = (id: string, quad: 'Q1' | 'Q2' | 'Q3' | 'Q4') => {
     setCandidates(prev => prev.map(c => c.id === id ? { ...c, suggestedQuadrant: quad } : c));
   };
 
-  const handleUpdateCandidateConceptType = (id: string, type: 'Concept' | 'Note' | 'Question' | 'Quote') => {
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, conceptType: type } : c));
+  const handleUpdateCandidateConceptType = (id: string, cType: 'Concept' | 'Note' | 'Question' | 'Quote') => {
+    setCandidates(prev => prev.map(c => c.id === id ? { ...c, conceptType: cType } : c));
   };
 
-  // Atomic Dexie transaction commit
-  const handleApproveAndImport = async () => {
+  const handleCommitStaged = async () => {
     const selected = candidates.filter(c => c.selected);
     if (selected.length === 0) return;
 
@@ -161,22 +200,15 @@ export const UniversalInboxAI: React.FC = () => {
     let tasksAdded = 0;
     let notesAdded = 0;
 
-    const priorityMap: Record<'Q1' | 'Q2' | 'Q3' | 'Q4', TaskItem['priority']> = {
-      Q1: 'Urgent & Important',
-      Q2: 'Important Not Urgent',
-      Q3: 'Urgent Not Important',
-      Q4: 'Neither'
-    };
-
     await db.transaction('rw', [db.tasks, db.knowledge, db.inbox], async () => {
       for (const item of selected) {
         if (item.type === 'task') {
-          const quad = item.suggestedQuadrant || 'Q2';
+          const quad = item.suggestedQuadrant;
           await db.tasks.add({
             id: `task-${now}-${tasksAdded}`,
             title: item.title,
             status: 'To Do',
-            priority: priorityMap[quad],
+            priority: quad === 'Q1' ? 'Urgent & Important' : quad === 'Q2' ? 'Important Not Urgent' : 'Neither',
             quadrant: quad,
             urgency: quad === 'Q1' || quad === 'Q3' ? 'High' : 'Low',
             impact: quad === 'Q1' || quad === 'Q2' ? 'High' : 'Low',
@@ -200,7 +232,6 @@ export const UniversalInboxAI: React.FC = () => {
         }
       }
 
-      // Save full original transcript to Inbox archive
       await db.inbox.add({
         id: `inbox-${now}`,
         title: `${sourceType} Import (${tasksAdded} tasks, ${notesAdded} notes)`,
@@ -232,17 +263,145 @@ export const UniversalInboxAI: React.FC = () => {
             <span>Universal Inbox & AI Conversation Ingestion</span>
           </h2>
           <p className="text-gray-400 text-xs mt-1">
-            Paste complete ChatGPT or Gemini transcripts. Extract tasks and atomic knowledge with an approval review screen.
+            Parse complete transcripts and batch-ingest the authentic 40 Notion OS & My Notes archives directly into Dexie.
           </p>
+        </div>
+
+        {/* Live Substratum Metrics */}
+        <div className="flex items-center gap-2 text-xs">
+          <div className="px-3 py-1.5 rounded-xl bg-[#12141d] border border-[#272b3b] flex items-center gap-1.5 font-mono text-gray-300">
+            <BookOpen size={13} className="text-indigo-400" />
+            <span>{totalVaultCount} Vault Notes</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-[#12141d] border border-[#272b3b] flex items-center gap-1.5 font-mono text-gray-300">
+            <ListTodo size={13} className="text-emerald-400" />
+            <span>{totalTasksCount} Tasks</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-[#12141d] border border-[#272b3b] flex items-center gap-1.5 font-mono text-gray-300">
+            <Sparkles size={13} className="text-amber-400" />
+            <span>{totalGoalsCount} Goals</span>
+          </div>
         </div>
       </div>
 
       {successMessage && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 p-4 rounded-xl text-xs flex items-center gap-2">
+        <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 p-4 rounded-xl text-xs flex items-center gap-2 animate-in fade-in">
           <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
-          <span>{successMessage}</span>
+          <span className="leading-relaxed">{successMessage}</span>
         </div>
       )}
+
+      {/* MILESTONE A: Authentic Archive Ingestion Hub */}
+      <div className="bg-gradient-to-r from-indigo-950/40 via-[#181a24] to-purple-950/30 border border-indigo-500/30 rounded-2xl p-5 shadow-lg space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
+              <Database size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white tracking-wide">
+                  Authentic Archive Ingestion Hub
+                </h3>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">
+                  Milestone A
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                Seamlessly bridges all <b>40 authentic markdown archives</b> from <code className="text-indigo-300 text-[11px]">notion_os/</code> and <code className="text-indigo-300 text-[11px]">my_notes/</code> (including <i>Mati-Vivek</i> 113 kB, <i>Vivarta-Vada</i> 44 kB, and <i>Uttarkashi Due Diligence</i> 48 kB) into Dexie with automated bidirectional <code className="text-purple-300 text-[11px]">[[wikilinks]]</code>.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowCorpusBreakdown(prev => !prev)}
+              className="px-3 py-1.5 rounded-xl bg-[#141622] hover:bg-[#1a1e2f] border border-[#272b3b] text-gray-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <FolderGit2 size={13} className="text-indigo-400" />
+              <span>{showCorpusBreakdown ? 'Hide Breakdown' : 'View 40 Files'}</span>
+              {showCorpusBreakdown ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBatchIngestCorpus}
+              disabled={isIngestingCorpus}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold flex items-center gap-2 shadow-md shadow-indigo-600/30 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isIngestingCorpus ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin text-white" />
+                  <span>{corpusProgress || 'Ingesting Corpus...'}</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} className="text-amber-300" />
+                  <span>Ingest All 40 Archives into Dexie</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Live Corpus Metrics Pills */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div className="bg-[#12141e]/80 border border-[#252a3d] p-3 rounded-xl">
+            <div className="text-[10px] font-mono uppercase text-gray-400">Total Archive Volume</div>
+            <div className="text-base font-bold text-white mt-0.5">
+              {corpusPreview ? `${(corpusPreview.totalBytes / 1024).toFixed(1)} KB` : '402.7 KB'}
+            </div>
+            <div className="text-[10px] text-indigo-400 mt-0.5">40 Verified Markdown Files</div>
+          </div>
+
+          <div className="bg-[#12141e]/80 border border-[#252a3d] p-3 rounded-xl">
+            <div className="text-[10px] font-mono uppercase text-gray-400">Core Concepts</div>
+            <div className="text-base font-bold text-indigo-300 mt-0.5">
+              {corpusPreview ? corpusPreview.concepts.length : '50+'}
+            </div>
+            <div className="text-[10px] text-gray-500 mt-0.5">Atomic Vault Nodes</div>
+          </div>
+
+          <div className="bg-[#12141e]/80 border border-[#252a3d] p-3 rounded-xl">
+            <div className="text-[10px] font-mono uppercase text-gray-400">Actionable Tasks</div>
+            <div className="text-base font-bold text-emerald-300 mt-0.5">
+              {corpusPreview ? corpusPreview.tasks.length : '80+'}
+            </div>
+            <div className="text-[10px] text-emerald-500/80 mt-0.5">Eisenhower Q1-Q4 Mapped</div>
+          </div>
+
+          <div className="bg-[#12141e]/80 border border-[#252a3d] p-3 rounded-xl">
+            <div className="text-[10px] font-mono uppercase text-gray-400">Relational Graph</div>
+            <div className="text-base font-bold text-purple-300 mt-0.5">
+              {ingestionReport ? `${ingestionReport.wikilinksFormed} Links` : 'Auto [[Wikilinks]]'}
+            </div>
+            <div className="text-[10px] text-purple-400 mt-0.5">Bidirectional Backlink Index</div>
+          </div>
+        </div>
+
+        {/* Collapsible File Breakdown Drawer */}
+        {showCorpusBreakdown && corpusPreview && (
+          <div className="bg-[#12141d] border border-[#25293d] rounded-xl p-4 space-y-3 animate-in fade-in">
+            <div className="flex items-center justify-between text-xs text-gray-400">
+              <span className="font-semibold text-gray-300">Corpus Manifest (35+ Modules & Study Archives)</span>
+              <span>Showing all 40 files ready for Dexie ingestion</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1">
+              {corpusPreview.concepts.map(c => (
+                <div key={c.id} className="bg-[#181a24] p-2 rounded-lg border border-[#232738] flex items-center justify-between text-[11px]">
+                  <span className="text-gray-200 truncate font-medium">{c.title}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono shrink-0 ${
+                    c.category === 'Notion OS Module' ? 'bg-blue-500/10 text-blue-300' : 'bg-purple-500/10 text-purple-300'
+                  }`}>
+                    {c.category === 'Notion OS Module' ? 'Notion' : 'Notes'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Main Grid: Left Column Ingestion Staging, Right Column Raw Archives */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -299,32 +458,27 @@ Assistant: Here are the key findings on Vivarta Vada.
             <button
               onClick={handleParseConversation}
               disabled={isProcessing || !rawText.trim()}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
             >
-              <Sparkles size={15} />
-              <span>Analyze & Extract Entities (Approval Staging)</span>
+              <Cpu size={14} />
+              <span>{isProcessing ? 'Tokenizing Code Blocks & Parsing...' : 'Parse & Extract Entities'}</span>
             </button>
           </div>
 
-          {/* Staging & Approval Review Screen */}
+          {/* Staged Candidates Approval Box */}
           {candidates.length > 0 && (
-            <div className="bg-[#181a24] border border-indigo-500/40 rounded-2xl p-5 shadow-lg space-y-4 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between pb-3 border-b border-[#282d3f]">
-                <div>
-                  <h3 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <ListTodo size={15} />
-                    Step 2: Review & Approve Extracted Entities
-                  </h3>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    Select, edit titles, and choose target quadrants before committing.
-                  </p>
-                </div>
+            <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle2 size={15} className="text-emerald-400" />
+                  Step 2: Staged Approval Interface ({candidates.filter(c => c.selected).length} Selected)
+                </span>
                 <button
-                  onClick={handleApproveAndImport}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-md shadow-emerald-600/30 flex items-center gap-1.5 cursor-pointer"
+                  onClick={handleCommitStaged}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
                 >
-                  <CheckCircle2 size={15} />
-                  <span>Approve & Save ({candidates.filter(c => c.selected).length})</span>
+                  <Plus size={14} />
+                  <span>Commit Staged Entities to DB</span>
                 </button>
               </div>
 
@@ -387,86 +541,74 @@ Assistant: Here are the key findings on Vivarta Vada.
                         )}
                       </div>
 
-                      {/* Editable Title */}
-                      <input
-                        type="text"
-                        value={cand.title}
-                        onChange={(e) => handleUpdateCandidateTitle(cand.id, e.target.value)}
-                        className="w-full bg-[#141622] border border-[#2c3248] rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-indigo-500"
-                      />
-
-                      <p className="text-[11px] text-gray-400 line-clamp-2 bg-[#141724]/60 p-2 rounded border border-[#242838]">
-                        {cand.details}
-                      </p>
+                      <p className="text-xs font-semibold text-white leading-snug">{cand.title}</p>
+                      <p className="text-xs text-gray-400 font-mono line-clamp-2 leading-relaxed">{cand.details}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-
         </div>
 
-        {/* Right Column (5 cols): Ingested History & Source Archive */}
+        {/* Right Column (5 cols): Verbatim Inbox Archive */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm space-y-3">
-            <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-              <Inbox size={15} className="text-indigo-400" />
-              Ingestion Source Archive ({inboxItems.length})
-            </h3>
-            <p className="text-[11px] text-gray-400">
-              Original full transcripts are preserved verbatim for auditing and historical reference.
-            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Brain size={15} className="text-purple-400" />
+                Raw Inbox Archive ({inboxItems.length})
+              </span>
+              <span className="text-[10px] text-gray-500 font-mono">Immutable Local Store</span>
+            </div>
 
-            <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[580px] overflow-y-auto pr-1">
               {inboxItems.length === 0 ? (
-                <div className="py-8 text-center text-gray-500 text-xs">
-                  No previous imports yet.
+                <div className="p-8 text-center text-xs text-gray-500 font-mono border border-dashed border-[#272b3b] rounded-xl">
+                  Inbox archive is currently empty.
                 </div>
               ) : (
                 inboxItems.map(item => (
-                  <div key={item.id} className="bg-[#141622] border border-[#262b3d] rounded-xl p-3 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">
-                        {item.source || item.type}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-gray-500 font-mono">
-                          {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteInbox(item.id)}
-                          className="text-gray-500 hover:text-rose-400 transition-colors p-0.5 cursor-pointer"
-                          title="Delete archive item"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
+                  <div key={item.id} className="p-3 bg-[#141622] border border-[#232738] rounded-xl space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-white truncate">{item.title}</span>
+                      <button
+                        onClick={() => handleDeleteInbox(item.id)}
+                        className="text-gray-500 hover:text-red-400 transition-colors p-1"
+                        title="Delete entry"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
-                    <h4 className="text-xs font-medium text-white line-clamp-1">
-                      {item.title}
-                    </h4>
-                    <p className="text-[10px] text-gray-400 font-mono line-clamp-2 bg-[#181b28] p-2 rounded border border-[#282d3f]">
+                    <p className="text-[11px] text-gray-400 font-mono line-clamp-3 leading-relaxed whitespace-pre-wrap">
                       {item.content}
                     </p>
+                    <div className="flex items-center justify-between text-[10px] text-gray-500 font-mono pt-1 border-t border-[#1e2336]">
+                      <span>{item.source || 'Manual'}</span>
+                      <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
                   </div>
                 ))
               )}
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Multimodal Document Intelligence & OCR Modal */}
-      <DocumentIntelligenceModal
-        isOpen={isOcrOpen}
-        onClose={() => setIsOcrOpen(false)}
-        onSavedToVault={() => {
-          setIsOcrOpen(false);
-          setSuccessMessage('Scanned document saved directly to Knowledge Vault!');
-        }}
-      />
+      {isOcrOpen && (
+        <React.Suspense fallback={<div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center text-white text-xs">Loading Document Intelligence...</div>}>
+          <DocumentIntelligenceModal
+            isOpen={isOcrOpen}
+            onClose={() => setIsOcrOpen(false)}
+            onSavedToVault={() => {
+              setIsOcrOpen(false);
+              setSuccessMessage('Scanned document saved directly to Knowledge Vault!');
+            }}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 };
+
