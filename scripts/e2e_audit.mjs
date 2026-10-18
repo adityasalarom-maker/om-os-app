@@ -149,6 +149,20 @@ async function runAudit() {
 
     const sadhanaSoundEnginePath = path.join(rootDir, 'src', 'services', 'sadhanaSoundEngine.ts');
     recordTest('Database', 'Sadhana Harmonic Sound & Haptic Engine active', fs.existsSync(sadhanaSoundEnginePath));
+
+    const corpusEnginePath = path.join(rootDir, 'src', 'services', 'corpusIngestionEngine.ts');
+    recordTest('Database', 'Authentic Archive Corpus Ingestion Engine active (Milestone A)', fs.existsSync(corpusEnginePath));
+
+    const vaultExporterPath = path.join(rootDir, 'src', 'services', 'vaultExporter.ts');
+    const exporterExists = fs.existsSync(vaultExporterPath);
+    recordTest('Database', 'Two-Way Living Markdown Vault Exporter active (Milestone B)', exporterExists);
+    if (exporterExists) {
+      const expContent = fs.readFileSync(vaultExporterPath, 'utf8');
+      const hasZip = expContent.includes('exportVaultToZip') && expContent.includes('buildZipArchive');
+      const hasDir = expContent.includes('exportVaultToDirectoryPicker') && expContent.includes('showDirectoryPicker');
+      const hasYaml = expContent.includes('formatNoteWithYAML') && expContent.includes('generateVaultIndex');
+      recordTest('Database', 'Zero-dependency PKZip & Directory Picker APIs verified', hasZip && hasDir && hasYaml);
+    }
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }

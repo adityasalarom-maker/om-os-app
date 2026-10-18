@@ -50,6 +50,15 @@ import {
   isSessionUnlocked, 
   setSessionPassphrase 
 } from '../services/vaultCrypto';
+import { 
+  formatNoteWithYAML, 
+  exportVaultToZip, 
+  exportVaultToDirectoryPicker, 
+  exportVaultAsMasterMarkdown, 
+  downloadBlob, 
+  isFileSystemAccessSupported, 
+  sanitizeNoteFilename 
+} from '../services/vaultExporter';
 import { KnowledgeGraphView } from './KnowledgeGraphView';
 import { 
   getBacklinksForNote, 
@@ -70,6 +79,9 @@ export const KnowledgeVault: React.FC = () => {
   const [importNotification, setImportNotification] = useState<string | null>(null);
   const [linkingNotification, setLinkingNotification] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'notes' | 'graph'>('notes');
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [exportStatusMessage, setExportStatusMessage] = useState<string | null>(null);
   const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
 
   // Form state
@@ -298,63 +310,66 @@ export const KnowledgeVault: React.FC = () => {
   };
 
   // Generate GFM Markdown with YAML frontmatter
-  const buildGFMMarkdown = (note: KnowledgeItem): string => {
-    const content = decryptedCache[note.id] || note.content;
-    const dateStr = new Date(note.updatedAt).toISOString().split('T')[0];
-    const frontmatter = [
-      '---',
-      `title: "${note.title.replace(/"/g, '\\"')}"`,
-      `type: ${note.type}`,
-      `tags: [${note.tags.join(', ')}]`,
-      `updatedAt: "${dateStr}"`,
-      '---',
-      '',
-      content
-    ].join('\n');
-    return frontmatter;
+  // Two-Way Living Markdown Vault Export Handlers
+  const handleExportToDirectory = async () => {
+    if (notes.length === 0) return;
+    setIsExporting(true);
+    setExportStatusMessage(null);
+    try {
+      const result = await exportVaultToDirectoryPicker(notes, { decryptedCache });
+      if (result.success) {
+        setExportStatusMessage(`Synced ${result.count} notes directly to folder "${result.folderName}".`);
+      } else if (!result.userCancelled && result.error) {
+        setExportStatusMessage(`Error: ${result.error}`);
+      }
+    } catch (err: any) {
+      setExportStatusMessage(`Failed: ${err?.message || 'Directory export failed'}`);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
-  // Export single note as .md file
+  const handleExportZip = async () => {
+    if (notes.length === 0) return;
+    setIsExporting(true);
+    setExportStatusMessage(null);
+    try {
+      const zipBlob = await exportVaultToZip(notes, { decryptedCache });
+      const timestamp = new Date().toISOString().split('T')[0];
+      downloadBlob(zipBlob, `om_knowledge_vault_export_${timestamp}.zip`);
+      setExportStatusMessage(`Packaged ${notes.length} notes into ZIP archive.`);
+    } catch (err: any) {
+      setExportStatusMessage(`Failed to build ZIP: ${err?.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportAllNotesMaster = () => {
+    if (notes.length === 0) return;
+    const blob = exportVaultAsMasterMarkdown(notes, { decryptedCache });
+    const timestamp = new Date().toISOString().split('T')[0];
+    downloadBlob(blob, `om_knowledge_vault_master_${timestamp}.md`);
+    setExportStatusMessage(`Downloaded master archive (${notes.length} notes).`);
+  };
+
+  // Export single note as .md file with standardized YAML frontmatter
   const handleExportMarkdown = (note: KnowledgeItem) => {
-    const markdown = buildGFMMarkdown(note);
+    const markdown = formatNoteWithYAML(note, decryptedCache);
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const filename = sanitizeNoteFilename(note.title, note.id);
+    downloadBlob(blob, filename);
   };
 
-  // Copy raw GFM Markdown to clipboard
+  // Copy raw GFM Markdown with YAML frontmatter to clipboard
   const handleCopyMarkdown = async (note: KnowledgeItem) => {
-    const markdown = buildGFMMarkdown(note);
+    const markdown = formatNoteWithYAML(note, decryptedCache);
     await navigator.clipboard.writeText(markdown);
     setCopiedId(note.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Export entire Knowledge Vault as a combined master archive
-  const handleExportAllNotes = () => {
-    if (notes.length === 0) return;
-    const timestamp = new Date().toISOString().split('T')[0];
-    const separator = '\n\n' + '='.repeat(80) + '\n\n';
-    
-    const combined = [
-      `# Om Knowledge OS — Knowledge Vault Master Archive`,
-      `*Generated on ${new Date().toLocaleString()} | Total Notes: ${notes.length}*`,
-      separator,
-      notes.map(note => buildGFMMarkdown(note)).join(separator)
-    ].join('\n');
 
-    const blob = new Blob([combined], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `om_knowledge_vault_master_${timestamp}.md`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   // Import external .md file into Knowledge Vault
   const handleImportMarkdownFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -555,14 +570,17 @@ export const KnowledgeVault: React.FC = () => {
             </button>
           </div>
 
-          {/* Export All Notes Button */}
+                    {/* Export Vault to Markdown Action */}
           <button
-            onClick={handleExportAllNotes}
-            title="Download complete Knowledge Vault as combined GFM Markdown"
-            className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all bg-[#141622] hover:bg-[#202538] text-gray-300 hover:text-white border border-[#282d3e]"
+            onClick={() => {
+              setIsExportModalOpen(true);
+              setExportStatusMessage(null);
+            }}
+            title="Export Vault to Markdown (Directory Sync, ZIP Archive, or Master File)"
+            className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all bg-gradient-to-r from-indigo-600/20 to-indigo-500/10 hover:from-indigo-600/30 hover:to-indigo-500/20 text-indigo-300 hover:text-white border border-indigo-500/30 shadow-sm cursor-pointer"
           >
             <FolderArchive size={14} className="text-indigo-400" />
-            <span className="hidden sm:inline">Export All (.md)</span>
+            <span className="hidden sm:inline">Export Vault</span>
           </button>
 
           {/* Import Markdown File */}
@@ -1315,6 +1333,120 @@ export const KnowledgeVault: React.FC = () => {
             }}
           />
         </React.Suspense>
+      )}
+
+
+      {/* Two-Way Living Markdown Vault Exporter Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#181a24] border border-[#2c334d] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-[#2c334d] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-600/20 text-indigo-400 rounded-xl border border-indigo-500/30">
+                  <FolderArchive size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Export Vault to Markdown</h3>
+                  <p className="text-[11px] text-gray-400">Two-way bridge preserving YAML frontmatter & tag taxonomies ({notes.length} notes)</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="text-gray-400 hover:text-white text-xs p-1.5 rounded-lg hover:bg-[#202538] transition-colors cursor-pointer"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Status Message */}
+            {exportStatusMessage && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+                <Check size={16} className="shrink-0 text-emerald-400" />
+                <span>{exportStatusMessage}</span>
+              </div>
+            )}
+
+            {/* Export Options Grid */}
+            <div className="space-y-3">
+              {/* Option 1: Native Directory Picker */}
+              <div className="p-4 bg-[#141622] border border-[#282d3e] hover:border-indigo-500/50 rounded-xl transition-all">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-semibold text-white">Sync Directly to Disk Folder</h4>
+                      {isFileSystemAccessSupported() ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                          Native API Supported
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                          Browser Unsupported
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      Select a local folder (e.g. <code>my_notes/</code>, Obsidian vault). Writes each note as an individual <code>.md</code> file with YAML frontmatter + <code>INDEX.md</code>.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  disabled={isExporting || !isFileSystemAccessSupported() || notes.length === 0}
+                  onClick={handleExportToDirectory}
+                  className="w-full mt-2 py-2 px-3 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md shadow-indigo-600/30"
+                >
+                  <FolderArchive size={14} />
+                  <span>{isExporting ? 'Syncing Notes to Disk...' : 'Select Target Folder & Sync'}</span>
+                </button>
+              </div>
+
+              {/* Option 2: Download ZIP Archive */}
+              <div className="p-4 bg-[#141622] border border-[#282d3e] hover:border-purple-500/50 rounded-xl transition-all">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-semibold text-white">Download Multi-File ZIP Archive</h4>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/30">
+                        Zero-Dependency PKZip
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      Packages all {notes.length} notes into a portable <code>.zip</code> file with discrete <code>.md</code> files and <code>INDEX.md</code>. Universal cross-platform support.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  disabled={isExporting || notes.length === 0}
+                  onClick={handleExportZip}
+                  className="w-full mt-2 py-2 px-3 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md shadow-purple-600/30"
+                >
+                  <Download size={14} />
+                  <span>Download All Notes (.zip)</span>
+                </button>
+              </div>
+
+              {/* Option 3: Consolidated Master File */}
+              <div className="p-4 bg-[#141622] border border-[#282d3e] hover:border-indigo-500/30 rounded-xl transition-all">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <h4 className="text-xs font-semibold text-white">Download Master Combined File</h4>
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      All notes concatenated into a single large master markdown file with divider headers. Ideal for LLM feeding or offline search.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  disabled={isExporting || notes.length === 0}
+                  onClick={handleExportAllNotesMaster}
+                  className="w-full mt-2 py-2 px-3 rounded-lg text-xs font-semibold bg-[#202538] hover:bg-[#282d3e] text-gray-200 border border-[#2c334d] flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <BookOpen size={14} className="text-indigo-400" />
+                  <span>Download Master Archive (.md)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
