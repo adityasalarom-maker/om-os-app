@@ -163,6 +163,19 @@ async function runAudit() {
       const hasYaml = expContent.includes('formatNoteWithYAML') && expContent.includes('generateVaultIndex');
       recordTest('Database', 'Zero-dependency PKZip & Directory Picker APIs verified', hasZip && hasDir && hasYaml);
     }
+
+    const reviewModalPath = path.join(rootDir, 'src', 'components', 'ReviewCadenceModal.tsx');
+    const reviewModalExists = fs.existsSync(reviewModalPath);
+    recordTest('Database', 'Guided Review Cadence Engine active (Milestone C)', reviewModalExists);
+    if (reviewModalExists) {
+      const revContent = fs.readFileSync(reviewModalPath, 'utf8');
+      const hasSteps = revContent.includes('Universal Inbox Sweep') && 
+                       revContent.includes('Task Roll-Over') && 
+                       revContent.includes('Life Goals Progress Check') && 
+                       revContent.includes('Sadhana') && 
+                       revContent.includes('MIT');
+      recordTest('Database', '5-Step Weekly/Monthly Triage Wizard verified', hasSteps);
+    }
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }
@@ -170,7 +183,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 4. MODULE SUBSYSTEM COMPONENT AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 20 Subsystem Module Components Verification${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 21 Subsystem Module Components Verification${colors.reset}`);
   const modules = [
     { name: 'ExecutiveDashboard', file: 'src/components/ExecutiveDashboard.tsx' },
     { name: 'TaskIntelligence', file: 'src/components/TaskIntelligence.tsx' },
@@ -192,6 +205,7 @@ async function runAudit() {
     { name: 'VedicConcordanceView', file: 'src/components/VedicConcordanceView.tsx' },
     { name: 'PranayamaView', file: 'src/components/PranayamaView.tsx' },
     { name: 'SovereignStudioV2', file: 'src/components/SovereignStudioV2.tsx' },
+    { name: 'ReviewCadenceModal', file: 'src/components/ReviewCadenceModal.tsx' },
   ];
 
   for (const mod of modules) {

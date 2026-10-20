@@ -10,6 +10,7 @@ import {
   ArrowUpRight, 
   Plus, 
   Calendar,
+  CalendarCheck,
   Flame,
   ShieldCheck,
   Utensils,
@@ -21,6 +22,7 @@ import {
 import { calculateLifeEquilibrium } from '../services/predictiveAnalytics';
 import { calculateJyotishEphemeris } from '../services/jyotishEngine';
 import { SovereignStudioV2 } from './SovereignStudioV2';
+import { ReviewCadenceModal } from './ReviewCadenceModal';
 
 interface ExecutiveDashboardProps {
   onNavigate: (tab: any) => void;
@@ -34,6 +36,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   onOpenMobileDeploy 
 }) => {
   const [quickInput, setQuickInput] = useState('');
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [quickType, setQuickType] = useState<'task' | 'inbox'>('task');
 
   // Live queries from local SQLite/IndexedDB
@@ -143,6 +146,14 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
             >
               <TrendingUp size={14} className="text-cyan-400" />
               <span>Life Radar & Runway</span>
+            </button>
+            <button 
+              onClick={() => setIsReviewModalOpen(true)}
+              className="bg-gradient-to-r from-amber-600/30 to-purple-600/30 hover:from-amber-600/50 hover:to-purple-600/50 border border-amber-500/40 text-amber-200 text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+              title="Open 5-Step Guided Review Cadence (Weekly / Monthly / Annual)"
+            >
+              <CalendarCheck size={14} className="text-amber-400" />
+              <span>Weekly Review</span>
             </button>
             <button 
               onClick={() => onNavigate('tasks')}
@@ -597,6 +608,12 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         </div>
 
       </div>
+
+      {/* Guided Review Cadence Modal (Milestone C) */}
+      <ReviewCadenceModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+      />
     </div>
   );
 };

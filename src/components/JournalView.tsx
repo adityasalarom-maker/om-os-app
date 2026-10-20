@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type JournalEntry, type TaskItem } from '../db';
 import { calculateJyotishEphemeris } from '../services/jyotishEngine';
+import { ReviewCadenceModal } from './ReviewCadenceModal';
 import { 
   BookHeart, 
-  Calendar, 
+  Calendar,
+  CalendarCheck, 
   Sun, 
   Moon, 
   Smile, 
@@ -54,6 +56,7 @@ export const JournalView: React.FC = () => {
   const [savedStatus, setSavedStatus] = useState(false);
   const [copiedStatus, setCopiedStatus] = useState(false);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   // Queries
   const entries = useLiveQuery(() => db.journal.orderBy('date').reverse().toArray(), []) || [];
@@ -317,6 +320,15 @@ ${content ? content : '_No contemplation written._'}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="bg-[#141622] border border-[#282d3e] text-xs text-white rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 font-mono"
           />
+
+          <button
+            onClick={() => setIsReviewModalOpen(true)}
+            className="bg-gradient-to-r from-amber-600/30 to-purple-600/30 hover:from-amber-600/50 hover:to-purple-600/50 border border-amber-500/40 text-amber-200 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            title="Open 5-Step Guided Review Cadence (Weekly / Monthly / Annual)"
+          >
+            <CalendarCheck size={14} className="text-amber-400" />
+            <span>Weekly Review</span>
+          </button>
 
           <button
             onClick={handleCopyMarkdown}
@@ -799,6 +811,12 @@ ${content ? content : '_No contemplation written._'}
         </div>
 
       </div>
+
+      {/* Guided Review Cadence Modal (Milestone C) */}
+      <ReviewCadenceModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+      />
     </div>
   );
 };
