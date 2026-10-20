@@ -3,7 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { 
   LayoutDashboard,
-  FlaskConical, 
+  FlaskConical,
+  FolderKanban, 
   CheckSquare, 
   BookOpen, 
   Inbox, 
@@ -31,6 +32,7 @@ import {
 
 export type NavTab = 
   | 'dashboard' 
+  | 'projects' 
   | 'tasks' 
   | 'knowledge' 
   | 'pdf' 
@@ -72,6 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navItems = [
     { id: 'dashboard', label: 'Executive Dashboard', shortLabel: 'Home', icon: LayoutDashboard, category: 'Core OS' },
+    { id: 'projects', label: 'Project Portfolio', shortLabel: 'Projects', icon: FolderKanban, category: 'Core OS' },
     { id: 'tasks', label: 'Task Intelligence', shortLabel: 'Tasks', icon: CheckSquare, category: 'Productivity' },
     { id: 'knowledge', label: 'Knowledge Vault', shortLabel: 'Vault', icon: BookOpen, category: 'Core OS' },
     { id: 'sovereign_studio', label: 'Sovereign Studio V2', shortLabel: 'Studio', icon: Sparkles, category: 'Core OS' },

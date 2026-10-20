@@ -237,6 +237,31 @@ async function runAudit() {
       recordTest('Database', 'Evidence Levels A-E & Confidence Grading verified', hasEvidence);
       recordTest('Database', '1-Click [[Wikilink]] Vault Synthesis & Decision Log verified', hasSynthesis);
     }
+
+    // Milestone G: Project Portfolio Roadmap & Task Completion Rollup
+    const projectPortfolioPath = path.join(rootDir, 'src', 'components', 'ProjectPortfolioView.tsx');
+    const projectPortfolioExists = fs.existsSync(projectPortfolioPath);
+    recordTest('Database', 'Project Portfolio Roadmap Module active (Milestone G)', projectPortfolioExists);
+    if (projectPortfolioExists) {
+      const ppContent = fs.readFileSync(projectPortfolioPath, 'utf8');
+      const hasRollup = ppContent.includes('totalTasks') &&
+                        ppContent.includes('completedTasks') &&
+                        ppContent.includes('rollupProgress');
+      const hasHealth = ppContent.includes('derivedHealth') &&
+                        ppContent.includes('On Track') &&
+                        ppContent.includes('At Risk') &&
+                        ppContent.includes('Behind') &&
+                        ppContent.includes('Critical');
+      const hasGoalLadder = ppContent.includes('Life Goal') &&
+                            ppContent.includes('goalsMap') &&
+                            ppContent.includes('handleLinkGoal');
+      const hasMilestones = ppContent.includes('milestones') &&
+                            ppContent.includes('handleToggleMilestone') &&
+                            ppContent.includes('Milestone Roadmap');
+      recordTest('Database', 'Dynamic Task Completion Rollup formula verified', hasRollup);
+      recordTest('Database', 'Formula-Derived Project Health Signals (On Track / At Risk / Behind / Critical) verified', hasHealth);
+      recordTest('Database', 'Life Goals Pyramid laddering & Milestone Timeline Roadmap verified', hasGoalLadder && hasMilestones);
+    }
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }
@@ -244,7 +269,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 4. MODULE SUBSYSTEM COMPONENT AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 23 Subsystem Module Components Verification${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 24 Subsystem Module Components Verification${colors.reset}`);
   const modules = [
     { name: 'ExecutiveDashboard', file: 'src/components/ExecutiveDashboard.tsx' },
     { name: 'TaskIntelligence', file: 'src/components/TaskIntelligence.tsx' },
@@ -269,6 +294,7 @@ async function runAudit() {
     { name: 'ReviewCadenceModal', file: 'src/components/ReviewCadenceModal.tsx' },
     { name: 'WikilinkAutoLinkerModal', file: 'src/components/WikilinkAutoLinkerModal.tsx' },
     { name: 'ResearchHubView', file: 'src/components/ResearchHubView.tsx' },
+    { name: 'ProjectPortfolioView', file: 'src/components/ProjectPortfolioView.tsx' },
   ];
 
   for (const mod of modules) {

@@ -341,10 +341,10 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
                 <h3 className="font-semibold text-white text-sm">Active Projects & Milestones</h3>
               </div>
               <button 
-                onClick={() => onNavigate('tasks')}
+                onClick={() => onNavigate('projects')}
                 className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
               >
-                All Projects <ArrowUpRight size={13} />
+                Project Roadmap <ArrowUpRight size={13} />
               </button>
             </div>
 

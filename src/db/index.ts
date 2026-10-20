@@ -1,15 +1,25 @@
 import Dexie, { type Table } from 'dexie';
 
+export interface ProjectMilestone {
+  id: string;
+  title: string;
+  targetDate?: string;
+  isCompleted: boolean;
+}
+
 export interface Project {
   id: string;
   name: string;
   status: 'Not Started' | 'In Progress' | 'On Hold' | 'Completed';
   priority: 'High' | 'Medium' | 'Low';
-  healthStatus: 'On Track' | 'At Risk' | 'Behind';
+  healthStatus: 'On Track' | 'At Risk' | 'Behind' | 'Critical';
   progress: number; // 0 - 100
   budget?: string;
   deadline?: string;
   tags: string[];
+  goalId?: string; // Relation to Life Goals Pyramid
+  milestones?: ProjectMilestone[];
+  notes?: string;
   createdAt: number;
   updatedAt: number;
 }

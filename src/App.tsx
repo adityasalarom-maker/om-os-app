@@ -24,6 +24,7 @@ import { SovereignStudioV2 } from './components/SovereignStudioV2';
 // Code-split heavy libraries (pdfjs-dist, tesseract.js)
 const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
 const ResearchHubView = React.lazy(() => import('./components/ResearchHubView').then(m => ({ default: m.ResearchHubView })));
+const ProjectPortfolioView = React.lazy(() => import('./components/ProjectPortfolioView').then(m => ({ default: m.ProjectPortfolioView })));
 const DocumentIntelligenceModal = React.lazy(() => import('./components/DocumentIntelligenceModal').then(m => ({ default: m.DocumentIntelligenceModal })));
 import { db, initializeSeedDataIfEmpty } from './db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -221,6 +222,14 @@ export function App() {
               />
             )}
             {currentTab === 'tasks' && <TaskIntelligence />}
+            {currentTab === 'projects' && (
+              <React.Suspense fallback={<div className="p-8 text-center text-xs text-gray-400">Loading Project Portfolio & Roadmaps...</div>}>
+                <ProjectPortfolioView 
+                  onNavigateToTasks={(projId) => setCurrentTab('tasks')}
+                  onNavigateToGoals={() => setCurrentTab('goals')}
+                />
+              </React.Suspense>
+            )}
             {currentTab === 'knowledge' && <KnowledgeVault />}
             {currentTab === 'health' && <HealthTracker />}
             {currentTab === 'property' && <PropertyTracker />}
