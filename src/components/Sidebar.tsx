@@ -79,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'jyotish', label: 'Metaphysical & Jyotish', shortLabel: 'Jyotish', icon: Sparkles, category: 'Metaphysical' },
     { id: 'health', label: 'Health & Ayurveda', shortLabel: 'Health', icon: Heart, category: 'Life & Vitality' },
     { id: 'property', label: 'Himalayan Spatial GIS', shortLabel: 'GIS', icon: Mountain, category: 'Asset Diligence' },
-    { id: 'pdf', label: 'PDF Research Reader', shortLabel: 'PDFs', icon: FileText, category: 'Study Archive' },
+    { id: 'pdf', label: 'Reading Library & Knowledge Hub', shortLabel: 'Library', icon: BookOpen, category: 'Study Archive' },
     { id: 'inbox', label: 'Universal Inbox & AI', shortLabel: 'Capture', icon: Inbox, category: 'Input Hub' },
     { id: 'goals', label: 'Goals (Life Pyramid)', shortLabel: 'Goals', icon: Compass, category: 'Life & Vitality' },
     { id: 'journal', label: 'Journal & Reflection', shortLabel: 'Journal', icon: BookHeart, category: 'Life & Vitality' },

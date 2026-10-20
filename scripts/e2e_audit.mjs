@@ -188,6 +188,34 @@ async function runAudit() {
                             graphEngineContent.includes('autoLinkAllHighConfidenceMentions');
       recordTest('Database', 'Vault-wide scanner & batch wikilink converter verified', hasAutoLinker);
     }
+
+    // Milestone E: Unified Reading Library & Knowledge Extraction Hub
+    const pdfReaderPath = path.join(rootDir, 'src', 'components', 'pdf', 'PdfReaderView.tsx');
+    const selectionModalPath = path.join(rootDir, 'src', 'components', 'pdf', 'SelectionToNoteModal.tsx');
+    const pdfReaderExists = fs.existsSync(pdfReaderPath);
+    const selectionModalExists = fs.existsSync(selectionModalPath);
+    
+    recordTest('Database', 'Unified Reading Library & Pipeline View active (Milestone E)', pdfReaderExists);
+    if (pdfReaderExists) {
+      const pdfReaderContent = fs.readFileSync(pdfReaderPath, 'utf8');
+      const hasPipeline = pdfReaderContent.includes('Reading Now') &&
+                          pdfReaderContent.includes('To Read') &&
+                          pdfReaderContent.includes('Completed') &&
+                          pdfReaderContent.includes('velocityMetrics') &&
+                          pdfReaderContent.includes('readingStatesMap');
+      recordTest('Database', 'Reading Pipeline Shelf (To Read / Reading Now / Completed) & Velocity metrics verified', hasPipeline);
+    }
+
+    recordTest('Database', '1-Click [[Wikilink]] Knowledge Vault Extraction Hub active (Milestone E)', selectionModalExists);
+    if (selectionModalExists) {
+      const modalContent = fs.readFileSync(selectionModalPath, 'utf8');
+      const hasExtraction = modalContent.includes('Extraction Type') &&
+                            modalContent.includes('Quote') &&
+                            modalContent.includes('Key Takeaway') &&
+                            modalContent.includes('documentTitle') &&
+                            modalContent.includes('Reading-Extraction');
+      recordTest('Database', 'Notion OS extraction taxonomy (Quote/Highlight/Takeaway) & [[Wikilink]] backlink verified', hasExtraction);
+    }
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }

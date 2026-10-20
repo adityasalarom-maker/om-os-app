@@ -128,6 +128,9 @@ export interface SyncQueueItem {
   errorMessage?: string;
 }
 
+export type ReadingStatus = 'To Read' | 'Reading Now' | 'Completed';
+export type ReadingDocType = 'Book' | 'Article' | 'Paper' | 'PDF' | 'Manuscript';
+
 export interface PdfDocument {
   id: string;
   title: string;
@@ -139,6 +142,14 @@ export interface PdfDocument {
   dataBlob: Blob;
   createdAt: number;
   lastOpenedAt: number;
+  author?: string;
+  readingStatus?: ReadingStatus;
+  readingProgress?: number; // 0 to 100 percentage
+  type?: ReadingDocType;
+  sourceUrl?: string;
+  keyTakeaways?: string[];
+  notes?: string;
+  reviewTags?: string[];
 }
 
 export interface PdfReadingState {

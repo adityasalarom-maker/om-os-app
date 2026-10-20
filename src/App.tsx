@@ -122,7 +122,7 @@ export function App() {
                  currentTab === 'sadhana' ? 'Metaphysical Dream & Sadhana OS' : 
                  currentTab === 'vedic' ? 'Vedic & Shankara Bhashya Concordance' : 
                  currentTab === 'pranayama' ? 'Prāṇāyāma & Bio-Energy Engine' : 
-                 currentTab.replace('-', ' ')}
+                 currentTab === 'pdf' ? 'Reading Library & Knowledge Hub' : currentTab.replace('-', ' ')}
               </span>
             </span>
           </div>
@@ -224,7 +224,7 @@ export function App() {
             {currentTab === 'health' && <HealthTracker />}
             {currentTab === 'property' && <PropertyTracker />}
             {currentTab === 'pdf' && (
-              <React.Suspense fallback={<div className="p-8 text-center text-xs text-gray-400">Loading PDF Research Reader...</div>}>
+              <React.Suspense fallback={<div className="p-8 text-center text-xs text-gray-400">Loading Reading Library & Knowledge Hub...</div>}>
                 <PdfReaderView />
               </React.Suspense>
             )}
