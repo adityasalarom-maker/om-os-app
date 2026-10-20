@@ -60,6 +60,7 @@ import {
   sanitizeNoteFilename 
 } from '../services/vaultExporter';
 import { KnowledgeGraphView } from './KnowledgeGraphView';
+import { WikilinkAutoLinkerModal } from './WikilinkAutoLinkerModal';
 import { 
   getBacklinksForNote, 
   getUnlinkedMentionsForNote, 
@@ -80,6 +81,7 @@ export const KnowledgeVault: React.FC = () => {
   const [linkingNotification, setLinkingNotification] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'notes' | 'graph'>('notes');
   const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isAutoLinkerOpen, setIsAutoLinkerOpen] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportStatusMessage, setExportStatusMessage] = useState<string | null>(null);
   const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
@@ -570,7 +572,17 @@ export const KnowledgeVault: React.FC = () => {
             </button>
           </div>
 
-                    {/* Export Vault to Markdown Action */}
+                    {/* Bidirectional Wikilink Auto-Linker */}
+          <button
+            onClick={() => setIsAutoLinkerOpen(true)}
+            title="Scan & Auto-Link Unlinked Mentions across all 40+ Vault Archives"
+            className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all bg-gradient-to-r from-purple-600/20 to-indigo-600/20 hover:from-purple-600/30 hover:to-indigo-600/30 text-purple-300 hover:text-white border border-purple-500/30 shadow-sm cursor-pointer"
+          >
+            <Sparkles size={14} className="text-purple-400" />
+            <span className="hidden sm:inline">Auto-Linker</span>
+          </button>
+
+          {/* Export Vault to Markdown Action */}
           <button
             onClick={() => {
               setIsExportModalOpen(true);
@@ -1449,6 +1461,13 @@ export const KnowledgeVault: React.FC = () => {
         </div>
       )}
 
+
+      {/* Bidirectional Wikilink Auto-Linker Modal (Milestone D) */}
+      <WikilinkAutoLinkerModal
+        isOpen={isAutoLinkerOpen}
+        notes={notes}
+        onClose={() => setIsAutoLinkerOpen(false)}
+      />
     </div>
   );
 };

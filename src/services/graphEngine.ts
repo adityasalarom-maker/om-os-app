@@ -232,3 +232,287 @@ export const convertMentionToWikilink = async (
 
   return false;
 };
+
+
+// ---------------------------------------------------------------------------
+// VAULT-WIDE BIDIRECTIONAL AUTO-LINKER & UNLINKED MENTIONS ENGINE (Milestone D)
+// ---------------------------------------------------------------------------
+
+export interface VaultUnlinkedMention {
+  id: string; // unique key: `${sourceNoteId}-${targetNoteId}-${startIndex}`
+  sourceNoteId: string;
+  sourceNoteTitle: string;
+  targetNoteId: string;
+  targetTitle: string;
+  matchedText: string;
+  snippet: string;
+  startIndex: number;
+  endIndex: number;
+}
+
+export interface VaultUnlinkedScanResult {
+  totalMentions: number;
+  distinctTargetsCount: number;
+  mentions: VaultUnlinkedMention[];
+  byTargetTitle: Record<string, VaultUnlinkedMention[]>;
+}
+
+export interface AutoLinkExecutionResult {
+  updatedNotesCount: number;
+  linksCreatedCount: number;
+  details: {
+    noteId: string;
+    noteTitle: string;
+    linksAdded: string[];
+  }[];
+}
+
+/**
+ * Computes protected text ranges that must not have plain mentions converted:
+ * - YAML frontmatter: ^---...---
+ * - Code blocks: ```...```
+ * - Inline code: `...`
+ * - Existing wikilinks: [[...]]
+ * - Markdown links: [...](...)
+ * - URLs: https?://...
+ */
+export function getProtectedRanges(text: string): [number, number][] {
+  const ranges: [number, number][] = [];
+
+  // Frontmatter
+  const fmMatch = text.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+  if (fmMatch) {
+    ranges.push([0, fmMatch[0].length]);
+  }
+
+  // Code blocks ```...```
+  const codeBlockRegex = /```[\s\S]*?```/g;
+  let m: RegExpExecArray | null;
+  while ((m = codeBlockRegex.exec(text)) !== null) {
+    ranges.push([m.index, m.index + m[0].length]);
+  }
+
+  // Inline code `...`
+  const inlineCodeRegex = /`[^`\n]+`/g;
+  while ((m = inlineCodeRegex.exec(text)) !== null) {
+    ranges.push([m.index, m.index + m[0].length]);
+  }
+
+  // Existing wikilinks [[...]]
+  const wikilinkRegex = /\[\[[^\]]+\]\]/g;
+  while ((m = wikilinkRegex.exec(text)) !== null) {
+    ranges.push([m.index, m.index + m[0].length]);
+  }
+
+  // Markdown links [...](...)
+  const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  while ((m = mdLinkRegex.exec(text)) !== null) {
+    ranges.push([m.index, m.index + m[0].length]);
+  }
+
+  // Raw URLs
+  const urlRegex = /https?:\/\/[^\s)]+/g;
+  while ((m = urlRegex.exec(text)) !== null) {
+    ranges.push([m.index, m.index + m[0].length]);
+  }
+
+  return ranges;
+}
+
+/**
+ * Checks if a match index overlaps with any protected range.
+ */
+export function isInsideProtected(index: number, length: number, ranges: [number, number][]): boolean {
+  const matchEnd = index + length;
+  for (const [start, end] of ranges) {
+    if (index >= start && index < end) return true;
+    if (matchEnd > start && matchEnd <= end) return true;
+    if (index <= start && matchEnd >= end) return true;
+  }
+  return false;
+}
+
+/**
+ * Scans the entire vault across all notes to identify unlinked concept mentions.
+ */
+export function scanVaultForUnlinkedMentions(notes: KnowledgeItem[]): VaultUnlinkedScanResult {
+  const mentions: VaultUnlinkedMention[] = [];
+  const byTargetTitle: Record<string, VaultUnlinkedMention[]> = {};
+
+  // Build list of eligible target titles (length >= 3, excluding generic single words)
+  const genericExclusions = new Set([
+    'note', 'notes', 'concept', 'page', 'type', 'database', 'table', 'view', 
+    'overview', 'summary', 'template', 'home', 'dashboard', 'daily', 'weekly', 'annual'
+  ]);
+
+  interface TargetCandidate {
+    id: string;
+    title: string;
+    searchPhrase: string;
+  }
+
+  const candidates: TargetCandidate[] = [];
+
+  for (const note of notes) {
+    const rawTitle = note.title.trim();
+    if (rawTitle.length < 3) continue;
+    if (genericExclusions.has(rawTitle.toLowerCase())) continue;
+
+    candidates.push({
+      id: note.id,
+      title: rawTitle,
+      searchPhrase: rawTitle
+    });
+
+    // Also support aliases for numbered files like "04_Mati vivek" -> "Mati vivek"
+    const cleanedNumbered = rawTitle.replace(/^\d{1,3}[_\s-]+/i, '').trim();
+    if (cleanedNumbered.length >= 4 && cleanedNumbered.toLowerCase() !== rawTitle.toLowerCase()) {
+      candidates.push({
+        id: note.id,
+        title: rawTitle,
+        searchPhrase: cleanedNumbered
+      });
+    }
+  }
+
+  // Scan each source note's content
+  for (const sourceNote of notes) {
+    const content = sourceNote.content || '';
+    if (!content || content.length < 10) continue;
+
+    const protectedRanges = getProtectedRanges(content);
+
+    for (const target of candidates) {
+      // Don't search for self-mentions
+      if (sourceNote.id === target.id) continue;
+      if (sourceNote.title.toLowerCase() === target.title.toLowerCase()) continue;
+
+      const escapedPhrase = target.searchPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const phraseRegex = new RegExp(`\\b(${escapedPhrase})\\b`, 'gi');
+
+      let m: RegExpExecArray | null;
+      while ((m = phraseRegex.exec(content)) !== null) {
+        const matchIdx = m.index;
+        const matchLen = m[0].length;
+
+        if (!isInsideProtected(matchIdx, matchLen, protectedRanges)) {
+          const snippet = extractContextSnippet(content, target.searchPhrase);
+          const mentionItem: VaultUnlinkedMention = {
+            id: `${sourceNote.id}-${target.id}-${matchIdx}`,
+            sourceNoteId: sourceNote.id,
+            sourceNoteTitle: sourceNote.title,
+            targetNoteId: target.id,
+            targetTitle: target.title,
+            matchedText: m[0],
+            snippet,
+            startIndex: matchIdx,
+            endIndex: matchIdx + matchLen
+          };
+
+          mentions.push(mentionItem);
+
+          if (!byTargetTitle[target.title]) {
+            byTargetTitle[target.title] = [];
+          }
+          byTargetTitle[target.title].push(mentionItem);
+        }
+      }
+    }
+  }
+
+  return {
+    totalMentions: mentions.length,
+    distinctTargetsCount: Object.keys(byTargetTitle).length,
+    mentions,
+    byTargetTitle
+  };
+}
+
+/**
+ * Batch converts approved plain-text mentions into formal [[wikilinks]] in Dexie.
+ * Applies replacements in reverse order of index to preserve offset integrity.
+ */
+export async function batchConvertMentionsToWikilinks(
+  mentionsToLink: VaultUnlinkedMention[]
+): Promise<AutoLinkExecutionResult> {
+  const bySourceNote: Record<string, VaultUnlinkedMention[]> = {};
+
+  for (const m of mentionsToLink) {
+    if (!bySourceNote[m.sourceNoteId]) {
+      bySourceNote[m.sourceNoteId] = [];
+    }
+    bySourceNote[m.sourceNoteId].push(m);
+  }
+
+  let updatedNotesCount = 0;
+  let linksCreatedCount = 0;
+  const details: { noteId: string; noteTitle: string; linksAdded: string[] }[] = [];
+
+  for (const [sourceId, list] of Object.entries(bySourceNote)) {
+    const note = await db.knowledge.get(sourceId);
+    if (!note || !note.content) continue;
+
+    // Re-verify protected ranges on active content
+    const protectedRanges = getProtectedRanges(note.content);
+
+    // Sort descending by startIndex so replacements don't shift prior indices
+    const sortedMentions = [...list].sort((a, b) => b.startIndex - a.startIndex);
+    let updatedContent = note.content;
+    const linksAddedForNote: string[] = [];
+
+    for (const m of sortedMentions) {
+      // Re-verify that this specific occurrence is still valid and not protected
+      if (!isInsideProtected(m.startIndex, m.matchedText.length, protectedRanges)) {
+        const currentSlice = updatedContent.slice(m.startIndex, m.endIndex);
+        if (currentSlice.toLowerCase() === m.matchedText.toLowerCase()) {
+          const replacement = `[[${m.targetTitle}]]`;
+          updatedContent = 
+            updatedContent.slice(0, m.startIndex) + 
+            replacement + 
+            updatedContent.slice(m.endIndex);
+          
+          linksCreatedCount++;
+          if (!linksAddedForNote.includes(m.targetTitle)) {
+            linksAddedForNote.push(m.targetTitle);
+          }
+        }
+      }
+    }
+
+    if (updatedContent !== note.content) {
+      await db.knowledge.update(sourceId, {
+        content: updatedContent,
+        updatedAt: Date.now()
+      });
+      updatedNotesCount++;
+      details.push({
+        noteId: sourceId,
+        noteTitle: note.title,
+        linksAdded: linksAddedForNote
+      });
+    }
+  }
+
+  return {
+    updatedNotesCount,
+    linksCreatedCount,
+    details
+  };
+}
+
+/**
+ * 1-Click Vault-Wide Auto-Linker: Scans all notes and automatically converts high-confidence mentions.
+ */
+export async function autoLinkAllHighConfidenceMentions(
+  notes: KnowledgeItem[]
+): Promise<AutoLinkExecutionResult> {
+  const scan = scanVaultForUnlinkedMentions(notes);
+  if (scan.totalMentions === 0) {
+    return {
+      updatedNotesCount: 0,
+      linksCreatedCount: 0,
+      details: []
+    };
+  }
+  return await batchConvertMentionsToWikilinks(scan.mentions);
+}

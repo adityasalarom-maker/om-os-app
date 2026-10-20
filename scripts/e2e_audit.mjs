@@ -176,6 +176,18 @@ async function runAudit() {
                        revContent.includes('MIT');
       recordTest('Database', '5-Step Weekly/Monthly Triage Wizard verified', hasSteps);
     }
+
+    const autoLinkerModalPath = path.join(rootDir, 'src', 'components', 'WikilinkAutoLinkerModal.tsx');
+    const autoLinkerModalExists = fs.existsSync(autoLinkerModalPath);
+    recordTest('Database', 'Wikilink Auto-Linker & Resolver active (Milestone D)', autoLinkerModalExists);
+    if (autoLinkerModalExists) {
+      const graphEnginePath = path.join(rootDir, 'src', 'services', 'graphEngine.ts');
+      const graphEngineContent = fs.readFileSync(graphEnginePath, 'utf8');
+      const hasAutoLinker = graphEngineContent.includes('scanVaultForUnlinkedMentions') && 
+                            graphEngineContent.includes('batchConvertMentionsToWikilinks') &&
+                            graphEngineContent.includes('autoLinkAllHighConfidenceMentions');
+      recordTest('Database', 'Vault-wide scanner & batch wikilink converter verified', hasAutoLinker);
+    }
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }
@@ -183,7 +195,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 4. MODULE SUBSYSTEM COMPONENT AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 21 Subsystem Module Components Verification${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 22 Subsystem Module Components Verification${colors.reset}`);
   const modules = [
     { name: 'ExecutiveDashboard', file: 'src/components/ExecutiveDashboard.tsx' },
     { name: 'TaskIntelligence', file: 'src/components/TaskIntelligence.tsx' },
@@ -206,6 +218,7 @@ async function runAudit() {
     { name: 'PranayamaView', file: 'src/components/PranayamaView.tsx' },
     { name: 'SovereignStudioV2', file: 'src/components/SovereignStudioV2.tsx' },
     { name: 'ReviewCadenceModal', file: 'src/components/ReviewCadenceModal.tsx' },
+    { name: 'WikilinkAutoLinkerModal', file: 'src/components/WikilinkAutoLinkerModal.tsx' },
   ];
 
   for (const mod of modules) {

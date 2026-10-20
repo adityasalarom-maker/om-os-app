@@ -5,6 +5,7 @@ import {
   buildKnowledgeGraph 
 } from '../services/graphEngine';
 import { type KnowledgeItem } from '../db';
+import { WikilinkAutoLinkerModal } from './WikilinkAutoLinkerModal';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -51,6 +52,7 @@ export const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(activeNoteId || null);
+  const [isAutoLinkerOpen, setIsAutoLinkerOpen] = useState<boolean>(false);
 
   // Viewport transforms (Pan & Zoom)
   const [zoom, setZoom] = useState<number>(1.0);
@@ -705,6 +707,14 @@ export const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
             <ZoomOut size={15} />
           </button>
           <button
+            onClick={() => setIsAutoLinkerOpen(true)}
+            title="Scan & Auto-Link Plain Text Concept Mentions into Graph Edges"
+            className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-500/40 text-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm mr-1"
+          >
+            <Sparkles size={13} className="text-purple-400" />
+            <span className="hidden sm:inline">Auto-Linker</span>
+          </button>
+          <button
             onClick={handleResetView}
             title="Reset Center & Zoom"
             className="p-1.5 rounded-lg bg-[#191c2b] hover:bg-[#23283c] text-gray-400 hover:text-white border border-white/5 transition-colors"
@@ -855,6 +865,13 @@ export const KnowledgeGraphView: React.FC<KnowledgeGraphViewProps> = ({
           <span>Zoom: <strong className="text-gray-300">{Math.round(zoom * 100)}%</strong></span>
         </div>
       </div>
+
+      {/* Bidirectional Wikilink Auto-Linker Modal (Milestone D) */}
+      <WikilinkAutoLinkerModal
+        isOpen={isAutoLinkerOpen}
+        notes={notes}
+        onClose={() => setIsAutoLinkerOpen(false)}
+      />
     </div>
   );
 };
