@@ -23,6 +23,7 @@ import { SovereignStudioV2 } from './components/SovereignStudioV2';
 
 // Code-split heavy libraries (pdfjs-dist, tesseract.js)
 const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
+const ResearchHubView = React.lazy(() => import('./components/ResearchHubView').then(m => ({ default: m.ResearchHubView })));
 const DocumentIntelligenceModal = React.lazy(() => import('./components/DocumentIntelligenceModal').then(m => ({ default: m.DocumentIntelligenceModal })));
 import { db, initializeSeedDataIfEmpty } from './db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -122,7 +123,7 @@ export function App() {
                  currentTab === 'sadhana' ? 'Metaphysical Dream & Sadhana OS' : 
                  currentTab === 'vedic' ? 'Vedic & Shankara Bhashya Concordance' : 
                  currentTab === 'pranayama' ? 'Prāṇāyāma & Bio-Energy Engine' : 
-                 currentTab === 'pdf' ? 'Reading Library & Knowledge Hub' : currentTab.replace('-', ' ')}
+                 currentTab === 'research' ? 'Structured Research Hub & Evidence Pipeline' : currentTab === 'pdf' ? 'Reading Library & Knowledge Hub' : currentTab.replace('-', ' ')}
               </span>
             </span>
           </div>

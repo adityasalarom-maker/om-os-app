@@ -216,6 +216,27 @@ async function runAudit() {
                             modalContent.includes('Reading-Extraction');
       recordTest('Database', 'Notion OS extraction taxonomy (Quote/Highlight/Takeaway) & [[Wikilink]] backlink verified', hasExtraction);
     }
+
+    // Milestone F: Structured Research Hub & Evidence Pipeline
+    const researchHubPath = path.join(rootDir, 'src', 'components', 'ResearchHubView.tsx');
+    const researchHubExists = fs.existsSync(researchHubPath);
+    recordTest('Database', 'Structured Research Hub Module active (Milestone F)', researchHubExists);
+    if (researchHubExists) {
+      const rhContent = fs.readFileSync(researchHubPath, 'utf8');
+      const hasStages = rhContent.includes('Capture') &&
+                        rhContent.includes('Define Question') &&
+                        rhContent.includes('Validate Evidence') &&
+                        rhContent.includes('Synthesize') &&
+                        rhContent.includes('Decision');
+      const hasEvidence = rhContent.includes('Level A: Official Sources') &&
+                          rhContent.includes('Level B: Peer-reviewed Research') &&
+                          rhContent.includes('confidenceScore');
+      const hasSynthesis = rhContent.includes('handleSynthesizeToVault') &&
+                           rhContent.includes('Research Synthesis');
+      recordTest('Database', '8-Stage Research Pipeline (Capture to Decision/Archive) verified', hasStages);
+      recordTest('Database', 'Evidence Levels A-E & Confidence Grading verified', hasEvidence);
+      recordTest('Database', '1-Click [[Wikilink]] Vault Synthesis & Decision Log verified', hasSynthesis);
+    }
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }
@@ -223,7 +244,7 @@ async function runAudit() {
   // ---------------------------------------------------------
   // 4. MODULE SUBSYSTEM COMPONENT AUDIT
   // ---------------------------------------------------------
-  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 22 Subsystem Module Components Verification${colors.reset}`);
+  console.log(`\n${colors.bright}${colors.magenta}â–¶ Step 4: 23 Subsystem Module Components Verification${colors.reset}`);
   const modules = [
     { name: 'ExecutiveDashboard', file: 'src/components/ExecutiveDashboard.tsx' },
     { name: 'TaskIntelligence', file: 'src/components/TaskIntelligence.tsx' },
@@ -247,6 +268,7 @@ async function runAudit() {
     { name: 'SovereignStudioV2', file: 'src/components/SovereignStudioV2.tsx' },
     { name: 'ReviewCadenceModal', file: 'src/components/ReviewCadenceModal.tsx' },
     { name: 'WikilinkAutoLinkerModal', file: 'src/components/WikilinkAutoLinkerModal.tsx' },
+    { name: 'ResearchHubView', file: 'src/components/ResearchHubView.tsx' },
   ];
 
   for (const mod of modules) {

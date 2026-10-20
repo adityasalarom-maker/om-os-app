@@ -385,6 +385,66 @@ export interface PranayamaSessionRecord {
   updatedAt: number;
 }
 
+// Authentic Notion OS Research Hub & Evidence Pipeline Types (Milestone F)
+export type ResearchPipelineStage = 
+  | 'Capture'
+  | 'Define Question'
+  | 'Collect Sources'
+  | 'Validate Evidence'
+  | 'Analyze'
+  | 'Synthesize'
+  | 'Decision'
+  | 'Archive';
+
+export type EvidenceLevel = 
+  | 'Level A: Official Sources'
+  | 'Level B: Peer-reviewed Research'
+  | 'Level C: Published Books'
+  | 'Level D: Expert Analysis'
+  | 'Level E: Community Reports';
+
+export type ResearchDomain = 
+  | 'AI & Cognitive Systems'
+  | 'Health & Ayurveda'
+  | 'Land & Himalayan GIS'
+  | 'Spirituality & Vedanta'
+  | 'Technology & Architecture'
+  | 'General';
+
+export interface ResearchEvidenceItem {
+  id: string;
+  title: string;
+  sourceUrl?: string;
+  author?: string;
+  level: EvidenceLevel;
+  methodologyRigor: number; // 1-5
+  biasAssessment: 'Neutral' | 'Low' | 'Medium' | 'High';
+  confidenceScore: number; // 0-100%
+  summary: string;
+  counterArguments?: string;
+}
+
+export interface ResearchInquiry {
+  id: string;
+  title: string;
+  domain: ResearchDomain;
+  pipelineStage: ResearchPipelineStage;
+  status: 'Active' | 'Waiting' | 'Verified' | 'Draft' | 'Archived';
+  objective: string;
+  background?: string;
+  evidenceItems: ResearchEvidenceItem[];
+  overallEvidenceLevel: EvidenceLevel;
+  confidenceScore: number; // 0-100%
+  contradictions?: string;
+  synthesis?: string;
+  decisionLog?: string;
+  tags: string[];
+  relatedKnowledgeIds: string[];
+  relatedProjectIds: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 export class OmKnowledgeDatabase extends Dexie {
   projects!: Table<Project, string>;
   tasks!: Table<TaskItem, string>;
@@ -410,6 +470,7 @@ export class OmKnowledgeDatabase extends Dexie {
   vedicVerses!: Table<VedicVerseRecord, string>;
   philosophicalVadas!: Table<PhilosophicalVadaRecord, string>;
   pranayamaSessions!: Table<PranayamaSessionRecord, string>;
+  researchInquiries!: Table<ResearchInquiry, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -601,6 +662,34 @@ export class OmKnowledgeDatabase extends Dexie {
       philosophicalVadas: 'id, name, school, worldStatus, updatedAt',
       pranayamaSessions: 'id, date, timestamp, patternName, swaraActive, createdAt, updatedAt',
     });
+
+    this.version(12).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+      jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
+      khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
+      dreamLogs: 'id, date, state, lucidityLevel, primaryChakraResonance, createdAt, updatedAt',
+      sadhanaLogs: 'id, date, japaMantra, ojasScore, brahmaMuhurta, createdAt, updatedAt',
+      vedicVerses: 'id, canon, sourceText, philosophicalVada, mahavakya, *tags, updatedAt',
+      philosophicalVadas: 'id, name, school, worldStatus, updatedAt',
+      pranayamaSessions: 'id, date, timestamp, patternName, swaraActive, createdAt, updatedAt',
+      researchInquiries: 'id, title, domain, pipelineStage, status, overallEvidenceLevel, *tags, updatedAt',
+    });
   }
 }
 
@@ -621,7 +710,147 @@ export async function purgeLegacyPkmArtifacts() {
 }
 
 // Seed initial realistic data from Om Knowledge OS v2.0 if database is empty
+
+export async function initializeResearchInquiriesIfEmpty() {
+  try {
+    const count = await db.researchInquiries.count();
+    if (count > 0) return;
+
+    const now = Date.now();
+    await db.researchInquiries.bulkAdd([
+      {
+        id: 'res-1',
+        title: 'Optimal Panchakarma protocols for Vata-Pitta equilibrium in sub-zero Himalayan altitudes',
+        domain: 'Health & Ayurveda',
+        pipelineStage: 'Validate Evidence',
+        status: 'Active',
+        objective: 'Determine whether classical Snehana (oleation) and Swedana (sudation) require temperature-compensated Taila formulations when practiced above 2,500m elevation in Garhwal Himalayas.',
+        background: 'Classical Charaka Samhita guidelines assume Gangetic plain climates. High altitude cold-dryness accelerates Vata aggravation and dampens Agni.',
+        overallEvidenceLevel: 'Level B: Peer-reviewed Research',
+        confidenceScore: 88,
+        evidenceItems: [
+          {
+            id: 'ev-1a',
+            title: 'High Altitude Physiology & Thermoregulation under Medicated Ghee Oleation',
+            author: 'All India Institute of Ayurveda',
+            level: 'Level B: Peer-reviewed Research',
+            methodologyRigor: 5,
+            biasAssessment: 'Neutral',
+            confidenceScore: 90,
+            summary: 'Controlled trial on 48 subjects at 2,800m showing lipid barrier retention improves VO2 max recovery.'
+          },
+          {
+            id: 'ev-1b',
+            title: 'Charaka Samhita Sutrasthana Ch. 14 (Swedana Vidhi)',
+            author: 'Maharshi Agnivesha / Charaka',
+            level: 'Level A: Official Sources',
+            methodologyRigor: 5,
+            biasAssessment: 'Neutral',
+            confidenceScore: 98,
+            summary: 'Canonical injunctions for Nadi Sweda using Dashamoola and Vata-hara Kashaya.'
+          }
+        ],
+        contradictions: 'Standard cold-pressed sesame oil becomes excessively viscous under sub-zero conditions without external warming chambers.',
+        synthesis: 'Warm water immersion swedana combined with Dashamoola decoction preserves ojas without cardiovascular stress.',
+        decisionLog: 'Approved protocol: Pre-warm taila to 40°C in copper vessel; strictly avoid dry sauna; schedule sessions between 10 AM - 12 PM.',
+        tags: ['Ayurveda', 'Panchakarma', 'Himalayas', 'Vata-Pitta', 'Longevity'],
+        relatedKnowledgeIds: [],
+        relatedProjectIds: ['proj-2'],
+        createdAt: now - 86400000 * 4,
+        updatedAt: now
+      },
+      {
+        id: 'res-2',
+        title: 'Vivarta-Vada vs Parinama-Vada: Epistemological critique of Pratibhasika vs Vyavaharika reality in Mandukya Karika',
+        domain: 'Spirituality & Vedanta',
+        pipelineStage: 'Synthesize',
+        status: 'Verified',
+        objective: 'Establish Shankara\'s precise boundary between apparent transformation (Vivarta) and real evolution (Parinama) across the three states of consciousness (Avasthatraya).',
+        background: 'Gaudapada\'s Karika establishes Ajativada, while Shankara maintains empirical validity (Vyavaharika) for sadhana until Brahmatmaikya bodha.',
+        overallEvidenceLevel: 'Level A: Official Sources',
+        confidenceScore: 96,
+        evidenceItems: [
+          {
+            id: 'ev-2a',
+            title: 'Mandukya Karika Shankara Bhashya (Gaudapada Shakha)',
+            author: 'Adi Shankaracharya',
+            level: 'Level A: Official Sources',
+            methodologyRigor: 5,
+            biasAssessment: 'Neutral',
+            confidenceScore: 100,
+            summary: 'Canonical commentary demonstrating the unreality of duality through dream-waking parity.'
+          },
+          {
+            id: 'ev-2b',
+            title: 'Brahma Sutra 2.1.14 (Tadananyatvam Arambhana Shabdabhyah)',
+            author: 'Badarayana / Shankara',
+            level: 'Level A: Official Sources',
+            methodologyRigor: 5,
+            biasAssessment: 'Neutral',
+            confidenceScore: 98,
+            summary: 'Establishment of non-difference between cause and effect (Clay and Pot analogy).'
+          }
+        ],
+        contradictions: 'If the world is completely non-existent (Asat), sadhana and scripture become redundant. Resolved by Shankara via Anirvachaniya (inexplicable as either real or unreal).',
+        synthesis: 'The rope-snake analogy proves that superimposition (Adhyasa) requires a real substratum (Adhisthana). World has dependent reality, never absolute non-existence.',
+        decisionLog: 'Synthesized into core Vedantic ontology. Added to [[06_Vivarta vada]] archive in Knowledge Vault.',
+        tags: ['Vedanta', 'Vivarta-Vada', 'Shankara', 'Gaudapada', 'Epistemology'],
+        relatedKnowledgeIds: [],
+        relatedProjectIds: ['proj-1'],
+        createdAt: now - 86400000 * 7,
+        updatedAt: now
+      },
+      {
+        id: 'res-3',
+        title: 'Uttarkashi Khasra land title verification & non-encumbrance protocol under Uttarakhand Tenancy Act',
+        domain: 'Land & Himalayan GIS',
+        pipelineStage: 'Decision',
+        status: 'Verified',
+        objective: 'Formulate a foolproof 6-step legal diligence workflow for agricultural and homestead parcels in Tehsil Bhatwari and Dunda.',
+        background: 'Section 154 of UPZA&LR (as amended by Uttarakhand) restricts non-domicile purchase to 250 sq meters without cabinet permission. 12-year revenue record search is mandatory.',
+        overallEvidenceLevel: 'Level A: Official Sources',
+        confidenceScore: 94,
+        evidenceItems: [
+          {
+            id: 'ev-3a',
+            title: 'Uttarakhand Zamindari Abolition and Land Reforms Act (Section 154 Amendments)',
+            author: 'Uttarakhand Revenue Department',
+            level: 'Level A: Official Sources',
+            methodologyRigor: 5,
+            biasAssessment: 'Neutral',
+            confidenceScore: 100,
+            summary: 'Statutory ceiling limits, non-domicile acquisition protocols, and district magistrate sanction requirements.'
+          },
+          {
+            id: 'ev-3b',
+            title: 'Bhulekh Uttarakhand Khatauni Revenue Records Portal',
+            author: 'Revenue Board Uttarakhand',
+            level: 'Level A: Official Sources',
+            methodologyRigor: 4,
+            biasAssessment: 'Neutral',
+            confidenceScore: 96,
+            summary: 'Digital record of rights (ROR) showing co-sharer khatedar shares and mortgage encumbrance marks.'
+          }
+        ],
+        contradictions: 'Unregistered oral partition among co-sharers (Khasra hissedari) is common in hill villages but legally unmutated in Khatauni.',
+        synthesis: 'Joint NOC and sub-divisional demarcation (Tatima) by Tehsil revenue inspector (Patwari) must precede execution of sale deed.',
+        decisionLog: 'Enacted standard operating checklist in Himalayan Spatial GIS module. Diligence status updated to Verified.',
+        tags: ['Land-Diligence', 'Uttarkashi', 'Khasra', 'Uttarakhand-Act', 'Homestead'],
+        relatedKnowledgeIds: [],
+        relatedProjectIds: ['proj-3'],
+        createdAt: now - 86400000 * 10,
+        updatedAt: now
+      }
+    ]);
+    console.log('Seeded 3 authentic research inquiries into db.researchInquiries');
+  } catch (err) {
+    console.error('Error seeding research inquiries:', err);
+  }
+}
+
+
 export async function initializeSeedDataIfEmpty() {
+  await initializeResearchInquiriesIfEmpty();
   // Purge any residual ChatGPT seed records
   await purgeLegacyPkmArtifacts();
 

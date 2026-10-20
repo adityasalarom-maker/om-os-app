@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { 
-  LayoutDashboard, 
+  LayoutDashboard,
+  FlaskConical, 
   CheckSquare, 
   BookOpen, 
   Inbox, 
@@ -33,6 +34,7 @@ export type NavTab =
   | 'tasks' 
   | 'knowledge' 
   | 'pdf' 
+  | 'research' 
   | 'inbox' 
   | 'goals' 
   | 'journal' 
@@ -80,6 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'health', label: 'Health & Ayurveda', shortLabel: 'Health', icon: Heart, category: 'Life & Vitality' },
     { id: 'property', label: 'Himalayan Spatial GIS', shortLabel: 'GIS', icon: Mountain, category: 'Asset Diligence' },
     { id: 'pdf', label: 'Reading Library & Knowledge Hub', shortLabel: 'Library', icon: BookOpen, category: 'Study Archive' },
+    { id: 'research', label: 'Structured Research Hub', shortLabel: 'Research', icon: FlaskConical, category: 'Study Archive' },
     { id: 'inbox', label: 'Universal Inbox & AI', shortLabel: 'Capture', icon: Inbox, category: 'Input Hub' },
     { id: 'goals', label: 'Goals (Life Pyramid)', shortLabel: 'Goals', icon: Compass, category: 'Life & Vitality' },
     { id: 'journal', label: 'Journal & Reflection', shortLabel: 'Journal', icon: BookHeart, category: 'Life & Vitality' },
