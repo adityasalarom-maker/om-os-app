@@ -34,6 +34,21 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+    
+        <!-- TASK-20: Personal Daily Life Tracker Native AppWidget -->
+        <receiver
+            android:name=".DailyTrackerWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.omknowledge.os.ACTION_REFRESH_WIDGET" />
+                <action android:name="com.omknowledge.os.ACTION_WAKE" />
+                <action android:name="com.omknowledge.os.ACTION_STOP_TIMER" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/daily_tracker_widget_info" />
+        </receiver>
     </application>
 
     <!-- Permissions -->

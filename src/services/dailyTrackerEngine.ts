@@ -1,0 +1,819 @@
+/**
+ * TASK-20: Personal Daily Life Tracker — Core Domain Model & Temporal Engine
+ * 
+ * Reconciled against Master PRD & User Decision Record (3 November 2026):
+ * - Three Capture Modes (Instant Event, Start/Stop Interval, Retrospective Batch)
+ * - Half-open intervals [start, end)
+ * - Strict non-overlapping Primary timeline + Secondary overlays
+ * - Prompt-first primary closure (End at current time vs Set actual earlier end time)
+ * - Wake closes Sleep (Wake now vs Retrospective actual wake time)
+ * - Hybrid Interruption Model (Secondary overlay vs Primary split)
+ * - Decomposed Confidence (CaptureMethod, StartConfidence, EndConfidence, SequenceOrder)
+ * - No auto-division of gaps for sequence-only activities
+ * - Calendar Day & Wake Cycle projections from single canonical records
+ */
+
+// ============================================================================
+// 1. CORE DOMAIN TYPES & ENUMS
+// ============================================================================
+
+export type CaptureMethod = 'LIVE' | 'RETROSPECTIVE' | 'SYSTEM_DERIVED' | 'IMPORTED';
+
+export type BoundaryConfidence = 'EXACT' | 'ESTIMATED' | 'UNKNOWN';
+
+export type DurationConfidence = 'EXACT' | 'ESTIMATED' | 'UNKNOWN';
+
+export type ActivityKind = 'EVENT' | 'INTERVAL' | 'SEQUENCE_ONLY';
+
+export type ActivityRole = 'PRIMARY' | 'SECONDARY';
+
+export type TimerState = 'RUNNING' | 'PAUSED' | 'STOPPED' | 'NEEDS_REVIEW' | 'CONFLICTED';
+
+export type ReconstructionStatus = 
+  | 'FULL' 
+  | 'PARTIAL' 
+  | 'ESTIMATED' 
+  | 'SEQUENCE_ONLY' 
+  | 'UNRECONSTRUCTED' 
+  | 'NEEDS_REVIEW';
+
+export type UserFacingConfidenceLabel = 
+  | 'Exact — Live'
+  | 'Exact — Retrospective'
+  | 'Estimated'
+  | 'Sequence Only'
+  | 'Unknown';
+
+export interface ActivityDefinition {
+  id: string;
+  name: string;
+  categoryId?: string;
+  defaultMode: 'EVENT' | 'INTERVAL';
+  defaultRole: ActivityRole;
+  icon?: string;
+  color?: string;
+  isArchived?: boolean;
+  reviewThresholdMinutes?: number; // e.g. 180 min (3h) warning
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ActivityOccurrence {
+  id: string;
+  activityId: string;
+  kind: ActivityKind;
+  source: CaptureMethod;
+  status: TimerState;
+  occurredAt?: number; // Epoch ms for instant events or initial anchor
+  recordedAt: number;   // Epoch ms when user or system actually recorded
+  updatedAt: number;
+  timeZone: string;     // IANA time zone identifier, e.g. 'Asia/Kolkata'
+  utcOffsetMinutes: number; // Stored offset at capture time
+  notes?: string;
+}
+
+export interface TimeSegment {
+  id: string;
+  occurrenceId: string;
+  startAt: number;      // Epoch ms (inclusive)
+  endAt?: number;       // Epoch ms (exclusive). Undefined if currently RUNNING
+  role: ActivityRole;
+  startConfidence: BoundaryConfidence;
+  endConfidence: BoundaryConfidence;
+  durationConfidence?: DurationConfidence;
+  sequenceOrder?: number;
+  isPaused?: boolean;
+}
+
+export interface ReconstructionBatch {
+  id: string;
+  windowStart: number;
+  windowEnd: number;
+  occurrenceIds: string[];
+  status: ReconstructionStatus;
+  createdAt: number;
+}
+
+export interface RecordRevision {
+  id: string;
+  recordId: string;
+  recordType: 'OCCURRENCE' | 'SEGMENT' | 'BATCH';
+  action: 'CREATE' | 'UPDATE' | 'SPLIT' | 'MERGE' | 'CLOSE' | 'DELETE' | 'RESTORE';
+  previousSnapshot?: string; // JSON stringified
+  newSnapshot: string;      // JSON stringified
+  reason?: string;
+  timestamp: number;
+}
+
+export interface SyncOperation {
+  id: string; // Idempotency UUID
+  recordId: string;
+  table: string;
+  action: 'UPSERT' | 'DELETE';
+  payload: string;
+  timestamp: number;
+  status: 'PENDING' | 'SYNCED' | 'FAILED_RETRYING' | 'CONFLICT';
+}
+
+// ============================================================================
+// 2. TIMELINE PROJECTION & AUDIT TYPES
+// ============================================================================
+
+export interface TimelineGap {
+  startAt: number;
+  endAt: number;
+  durationMs: number;
+}
+
+export interface TimelineConflict {
+  segmentAId: string;
+  segmentBId: string;
+  overlapStart: number;
+  overlapEnd: number;
+  overlapDurationMs: number;
+  reason: string;
+}
+
+export interface ProjectedSegment {
+  occurrenceId: string;
+  activityId: string;
+  segmentId: string;
+  role: ActivityRole;
+  startAt: number;
+  endAt: number;
+  durationMs: number;
+  startConfidence: BoundaryConfidence;
+  endConfidence: BoundaryConfidence;
+  confidenceLabel: UserFacingConfidenceLabel;
+  isCrossMidnight?: boolean;
+}
+
+export interface DayProjectionReport {
+  reportingWindow: {
+    start: number;
+    end: number;
+    type: 'CALENDAR_DAY' | 'WAKE_CYCLE';
+    timeZone: string;
+  };
+  totalWindowDurationMs: number;
+  exactPrimaryDurationMs: number;
+  estimatedPrimaryDurationMs: number;
+  secondaryDurationMs: number;
+  untrackedDurationMs: number;
+  primarySegments: ProjectedSegment[];
+  secondarySegments: ProjectedSegment[];
+  untrackedGaps: TimelineGap[];
+  conflicts: TimelineConflict[];
+}
+
+// ============================================================================
+// 3. INTERVAL MATH & OVERLAP LOGIC (HALF-OPEN [start, end))
+// ============================================================================
+
+/**
+ * Checks if two half-open intervals [aStart, aEnd) and [bStart, bEnd) overlap.
+ * Adjacent intervals where aEnd === bStart do NOT overlap.
+ */
+export function intervalsOverlap(
+  aStart: number,
+  aEnd: number,
+  bStart: number,
+  bEnd: number
+): boolean {
+  return aStart < bEnd && bStart < aEnd;
+}
+
+/**
+ * Computes the intersection of two half-open intervals.
+ * Returns null if they do not intersect.
+ */
+export function intervalIntersection(
+  aStart: number,
+  aEnd: number,
+  bStart: number,
+  bEnd: number
+): { start: number; end: number; durationMs: number } | null {
+  const start = Math.max(aStart, bStart);
+  const end = Math.min(aEnd, bEnd);
+  if (start < end) {
+    return { start, end, durationMs: end - start };
+  }
+  return null;
+}
+
+/**
+ * Finds all primary conflicts between a set of segments.
+ * Primary segments must never overlap.
+ */
+export function detectPrimaryConflicts(segments: TimeSegment[]): TimelineConflict[] {
+  const primarySegments = segments.filter(
+    (s) => s.role === 'PRIMARY' && s.startAt != null && s.endAt != null && !s.isPaused
+  );
+  const conflicts: TimelineConflict[] = [];
+
+  for (let i = 0; i < primarySegments.length; i++) {
+    for (let j = i + 1; j < primarySegments.length; j++) {
+      const a = primarySegments[i];
+      const b = primarySegments[j];
+      const intersection = intervalIntersection(a.startAt, a.endAt!, b.startAt, b.endAt!);
+      if (intersection) {
+        conflicts.push({
+          segmentAId: a.id,
+          segmentBId: b.id,
+          overlapStart: intersection.start,
+          overlapEnd: intersection.end,
+          overlapDurationMs: intersection.durationMs,
+          reason: `Primary conflict between segment ${a.id} and ${b.id} over ${intersection.durationMs / 60000} mins`,
+        });
+      }
+    }
+  }
+
+  return conflicts;
+}
+
+// ============================================================================
+// 4. CONFIDENCE DECOMPOSITION & LABELS
+// ============================================================================
+
+/**
+ * Derives user-facing confidence label from underlying domain dimensions.
+ */
+export function deriveConfidenceLabel(
+  source: CaptureMethod,
+  startConf: BoundaryConfidence,
+  endConf: BoundaryConfidence,
+  kind: ActivityKind
+): UserFacingConfidenceLabel {
+  if (kind === 'SEQUENCE_ONLY') {
+    return 'Sequence Only';
+  }
+
+  if (startConf === 'UNKNOWN' && endConf === 'UNKNOWN') {
+    return 'Unknown';
+  }
+
+  if (startConf === 'ESTIMATED' || endConf === 'ESTIMATED') {
+    return 'Estimated';
+  }
+
+  if (startConf === 'EXACT' && endConf === 'EXACT') {
+    return source === 'LIVE' ? 'Exact — Live' : 'Exact — Retrospective';
+  }
+
+  // If one is exact and the other unknown or partial
+  return 'Estimated';
+}
+
+// ============================================================================
+// 5. PRIMARY TIMER CLOSURE & CONFLICT EVALUATION
+// ============================================================================
+
+export interface PrimaryStartConflictResolution {
+  hasConflict: boolean;
+  activeSegment?: TimeSegment;
+  activeOccurrenceId?: string;
+  proposedAction: 'NONE' | 'PROMPT_CLOSURE';
+}
+
+/**
+ * Evaluates whether starting a new Primary activity conflicts with an already running Primary timer.
+ */
+export function evaluatePrimaryStartConflict(
+  runningSegments: TimeSegment[],
+  _newStartTime: number
+): PrimaryStartConflictResolution {
+  const activePrimary = runningSegments.find(
+    (s) => s.role === 'PRIMARY' && s.endAt === undefined && !s.isPaused
+  );
+
+  if (!activePrimary) {
+    return { hasConflict: false, proposedAction: 'NONE' };
+  }
+
+  return {
+    hasConflict: true,
+    activeSegment: activePrimary,
+    activeOccurrenceId: activePrimary.occurrenceId,
+    proposedAction: 'PROMPT_CLOSURE',
+  };
+}
+
+/**
+ * Closes an active Primary timer upon user confirmation.
+ * 
+ * Case A (End at current time):
+ *   closes activeSegment at current time.
+ * 
+ * Case B (Set actual end time):
+ *   closes activeSegment at earlier actualEndTime.
+ *   leaves [actualEndTime, newActivityStartTime) as UNTRACKED GAP. Never auto-fills.
+ */
+export function closePrimaryTimerWithConfirmation(params: {
+  activeSegment: TimeSegment;
+  closureType: 'CURRENT_TIME' | 'ACTUAL_END_TIME';
+  closureTime: number; // Epoch ms
+  confidence: BoundaryConfidence;
+  newActivityStartTime: number;
+}): {
+  closedSegment: TimeSegment;
+  untrackedGap?: TimelineGap;
+} {
+  const { activeSegment, closureTime, confidence, newActivityStartTime } = params;
+
+  if (closureTime <= activeSegment.startAt) {
+    throw new Error('Closure time cannot be earlier than or equal to segment start time.');
+  }
+
+  const closedSegment: TimeSegment = {
+    ...activeSegment,
+    endAt: closureTime,
+    endConfidence: confidence,
+  };
+
+  let untrackedGap: TimelineGap | undefined = undefined;
+
+  // If closed at an earlier time (e.g. 12:30 PM) while new activity starts later (1:00 PM),
+  // leave 12:30-1:00 PM as Untracked Time
+  if (closureTime < newActivityStartTime) {
+    untrackedGap = {
+      startAt: closureTime,
+      endAt: newActivityStartTime,
+      durationMs: newActivityStartTime - closureTime,
+    };
+  }
+
+  return { closedSegment, untrackedGap };
+}
+
+// ============================================================================
+// 6. WAKE CLOSES SLEEP ENGINE
+// ============================================================================
+
+export interface WakeSleepResolution {
+  closedSleepSegment: TimeSegment;
+  wakeOccurrence: ActivityOccurrence;
+  untrackedGap?: TimelineGap;
+}
+
+/**
+ * Recording Wake while Sleep is running automatically closes Sleep at the selected Wake time.
+ * Supports:
+ * - 'WAKE_NOW': closes Sleep at current recording time
+ * - 'RETROSPECTIVE': closes Sleep at actual earlier wake time, preserving recording time separately
+ */
+export function recordWakeClosesSleep(params: {
+  activeSleepSegment: TimeSegment;
+  wakeActivityId: string;
+  wakeTime: number;          // Actual occurrence time of wake
+  recordingTime: number;      // When the user tapped/entered
+  mode: 'WAKE_NOW' | 'RETROSPECTIVE';
+  confidence: BoundaryConfidence;
+  timeZone: string;
+  utcOffsetMinutes: number;
+}): WakeSleepResolution {
+  const {
+    activeSleepSegment,
+    wakeActivityId,
+    wakeTime,
+    recordingTime,
+    mode,
+    confidence,
+    timeZone,
+    utcOffsetMinutes,
+  } = params;
+
+  if (wakeTime <= activeSleepSegment.startAt) {
+    throw new Error('Wake time cannot be before or at Sleep start time.');
+  }
+
+  const closedSleepSegment: TimeSegment = {
+    ...activeSleepSegment,
+    endAt: wakeTime,
+    endConfidence: confidence,
+  };
+
+  const wakeOccurrence: ActivityOccurrence = {
+    id: `occ_wake_${Date.now()}`,
+    activityId: wakeActivityId,
+    kind: 'EVENT',
+    source: mode === 'WAKE_NOW' ? 'LIVE' : 'RETROSPECTIVE',
+    status: 'STOPPED',
+    occurredAt: wakeTime,
+    recordedAt: recordingTime,
+    updatedAt: recordingTime,
+    timeZone,
+    utcOffsetMinutes,
+    notes: mode === 'RETROSPECTIVE' ? 'Retrospective wake time' : 'Live wake event',
+  };
+
+  let untrackedGap: TimelineGap | undefined = undefined;
+  if (wakeTime < recordingTime) {
+    untrackedGap = {
+      startAt: wakeTime,
+      endAt: recordingTime,
+      durationMs: recordingTime - wakeTime,
+    };
+  }
+
+  return { closedSleepSegment, wakeOccurrence, untrackedGap };
+}
+
+// ============================================================================
+// 7. HYBRID INTERRUPTION ENGINE
+// ============================================================================
+
+export type InterruptionHandling = 'SECONDARY_OVERLAY' | 'SPLIT_PRIMARY';
+
+/**
+ * Handles an interruption during an ongoing Primary activity.
+ * 
+ * Option 1: SECONDARY_OVERLAY
+ *   The primary activity continues unbroken; the interruption is logged as SECONDARY.
+ *   Does not double-count primary time.
+ * 
+ * Option 2: SPLIT_PRIMARY
+ *   The primary activity is stopped at interruptionStart, interruption runs as PRIMARY,
+ *   and resuming creates a new segment for the original activity.
+ */
+export function handleInterruption(params: {
+  activePrimarySegment: TimeSegment;
+  interruptionActivityId: string;
+  interruptionStart: number;
+  interruptionEnd: number;
+  handling: InterruptionHandling;
+  confidence: BoundaryConfidence;
+  timeZone: string;
+  utcOffsetMinutes: number;
+}): {
+  modifiedPrimarySegments: TimeSegment[];
+  interruptionSegment: TimeSegment;
+  interruptionOccurrence: ActivityOccurrence;
+} {
+  const {
+    activePrimarySegment,
+    interruptionActivityId,
+    interruptionStart,
+    interruptionEnd,
+    handling,
+    confidence,
+    timeZone,
+    utcOffsetMinutes,
+  } = params;
+
+  const interruptionOccurrence: ActivityOccurrence = {
+    id: `occ_int_${Date.now()}`,
+    activityId: interruptionActivityId,
+    kind: 'INTERVAL',
+    source: 'LIVE',
+    status: 'STOPPED',
+    occurredAt: interruptionStart,
+    recordedAt: Date.now(),
+    updatedAt: Date.now(),
+    timeZone,
+    utcOffsetMinutes,
+  };
+
+  if (handling === 'SECONDARY_OVERLAY') {
+    const interruptionSegment: TimeSegment = {
+      id: `seg_int_${Date.now()}`,
+      occurrenceId: interruptionOccurrence.id,
+      startAt: interruptionStart,
+      endAt: interruptionEnd,
+      role: 'SECONDARY',
+      startConfidence: confidence,
+      endConfidence: confidence,
+    };
+
+    return {
+      modifiedPrimarySegments: [activePrimarySegment],
+      interruptionSegment,
+      interruptionOccurrence,
+    };
+  } else {
+    // SPLIT_PRIMARY
+    const part1: TimeSegment = {
+      ...activePrimarySegment,
+      endAt: interruptionStart,
+      endConfidence: confidence,
+    };
+
+    const interruptionSegment: TimeSegment = {
+      id: `seg_int_${Date.now()}`,
+      occurrenceId: interruptionOccurrence.id,
+      startAt: interruptionStart,
+      endAt: interruptionEnd,
+      role: 'PRIMARY',
+      startConfidence: confidence,
+      endConfidence: confidence,
+    };
+
+    const part2: TimeSegment = {
+      id: `seg_resumed_${Date.now()}`,
+      occurrenceId: activePrimarySegment.occurrenceId,
+      startAt: interruptionEnd,
+      endAt: activePrimarySegment.endAt, // preserves undefined if running
+      role: 'PRIMARY',
+      startConfidence: confidence,
+      endConfidence: activePrimarySegment.endConfidence,
+    };
+
+    return {
+      modifiedPrimarySegments: [part1, part2],
+      interruptionSegment,
+      interruptionOccurrence,
+    };
+  }
+}
+
+// ============================================================================
+// 8. RETROSPECTIVE BATCH RECONSTRUCTION (NO EQUAL DIVISION)
+// ============================================================================
+
+export interface RetrospectiveActivityInput {
+  activityId: string;
+  durationMinutes?: number; // Optional! Can be undefined for Sequence Only
+  startAt?: number;
+  endAt?: number;
+  startConfidence?: BoundaryConfidence;
+  endConfidence?: BoundaryConfidence;
+}
+
+/**
+ * Reconstructs a past window.
+ * CRITICAL RULE: Never divide a window equally among sequence-only items.
+ * If durations are unspecified, they are recorded as SEQUENCE_ONLY with zero duration allocation.
+ * Untracked time is preserved honestly.
+ */
+export function reconstructBatchWindow(params: {
+  windowStart: number;
+  windowEnd: number;
+  activities: RetrospectiveActivityInput[];
+  timeZone: string;
+  utcOffsetMinutes: number;
+}): {
+  batch: ReconstructionBatch;
+  occurrences: ActivityOccurrence[];
+  segments: TimeSegment[];
+  untrackedGaps: TimelineGap[];
+} {
+  const { windowStart, windowEnd, activities, timeZone, utcOffsetMinutes } = params;
+
+  if (windowEnd <= windowStart) {
+    throw new Error('Window end must be strictly after window start.');
+  }
+
+  const batchId = `batch_${Date.now()}`;
+  const now = Date.now();
+  const occurrences: ActivityOccurrence[] = [];
+  const segments: TimeSegment[] = [];
+
+  let currentCursor = windowStart;
+  let hasSequenceOnly = false;
+  let hasEstimated = false;
+
+  activities.forEach((act, idx) => {
+    const occId = `occ_rec_${now}_${idx}`;
+    const isSequenceOnly = act.durationMinutes == null && act.startAt == null && act.endAt == null;
+
+    if (isSequenceOnly) {
+      hasSequenceOnly = true;
+      occurrences.push({
+        id: occId,
+        activityId: act.activityId,
+        kind: 'SEQUENCE_ONLY',
+        source: 'RETROSPECTIVE',
+        status: 'STOPPED',
+        recordedAt: now,
+        updatedAt: now,
+        timeZone,
+        utcOffsetMinutes,
+      });
+
+      segments.push({
+        id: `seg_rec_${now}_${idx}`,
+        occurrenceId: occId,
+        startAt: windowStart,
+        endAt: windowStart, // 0 duration
+        role: 'PRIMARY',
+        startConfidence: 'UNKNOWN',
+        endConfidence: 'UNKNOWN',
+        sequenceOrder: idx + 1,
+      });
+    } else {
+      // User entered duration or boundaries
+      const start = act.startAt ?? currentCursor;
+      const durationMs = act.durationMinutes ? act.durationMinutes * 60000 : (act.endAt! - start);
+      const end = act.endAt ?? (start + durationMs);
+
+      const startConf = act.startConfidence ?? 'ESTIMATED';
+      const endConf = act.endConfidence ?? 'ESTIMATED';
+      if (startConf === 'ESTIMATED' || endConf === 'ESTIMATED') {
+        hasEstimated = true;
+      }
+
+      occurrences.push({
+        id: occId,
+        activityId: act.activityId,
+        kind: 'INTERVAL',
+        source: 'RETROSPECTIVE',
+        status: 'STOPPED',
+        occurredAt: start,
+        recordedAt: now,
+        updatedAt: now,
+        timeZone,
+        utcOffsetMinutes,
+      });
+
+      segments.push({
+        id: `seg_rec_${now}_${idx}`,
+        occurrenceId: occId,
+        startAt: start,
+        endAt: end,
+        role: 'PRIMARY',
+        startConfidence: startConf,
+        endConfidence: endConf,
+        durationConfidence: 'ESTIMATED',
+        sequenceOrder: idx + 1,
+      });
+
+      currentCursor = end;
+    }
+  });
+
+  // Calculate untracked gaps in the window
+  const primarySegments = segments.filter((s) => s.startAt < s.endAt!);
+  primarySegments.sort((a, b) => a.startAt - b.startAt);
+
+  const untrackedGaps: TimelineGap[] = [];
+  let gapCursor = windowStart;
+
+  for (const seg of primarySegments) {
+    if (seg.startAt > gapCursor) {
+      untrackedGaps.push({
+        startAt: gapCursor,
+        endAt: seg.startAt,
+        durationMs: seg.startAt - gapCursor,
+      });
+    }
+    gapCursor = Math.max(gapCursor, seg.endAt!);
+  }
+
+  if (gapCursor < windowEnd) {
+    untrackedGaps.push({
+      startAt: gapCursor,
+      endAt: windowEnd,
+      durationMs: windowEnd - gapCursor,
+    });
+  }
+
+  let batchStatus: ReconstructionStatus = 'FULL';
+  if (hasSequenceOnly && primarySegments.length === 0) {
+    batchStatus = 'SEQUENCE_ONLY';
+  } else if (hasSequenceOnly || untrackedGaps.length > 0) {
+    batchStatus = 'PARTIAL';
+  } else if (hasEstimated) {
+    batchStatus = 'ESTIMATED';
+  }
+
+  const batch: ReconstructionBatch = {
+    id: batchId,
+    windowStart,
+    windowEnd,
+    occurrenceIds: occurrences.map((o) => o.id),
+    status: batchStatus,
+    createdAt: now,
+  };
+
+  return { batch, occurrences, segments, untrackedGaps };
+}
+
+// ============================================================================
+// 9. DAY PROJECTION ENGINE (CALENDAR DAY & WAKE CYCLE)
+// ============================================================================
+
+/**
+ * Projects canonical occurrences and time segments onto a target reporting window.
+ * Supports:
+ * - 00:00 to 24:00 Calendar Day
+ * - Wake to Wake Cycle
+ * Clamps intervals to window boundaries without duplicating source database rows.
+ * Separates exact and estimated duration and computes honest untracked gaps.
+ */
+export function projectDayTimeline(params: {
+  windowStart: number;
+  windowEnd: number;
+  windowType: 'CALENDAR_DAY' | 'WAKE_CYCLE';
+  timeZone: string;
+  occurrences: ActivityOccurrence[];
+  segments: TimeSegment[];
+}): DayProjectionReport {
+  const { windowStart, windowEnd, windowType, timeZone, occurrences, segments } = params;
+  const occMap = new Map<string, ActivityOccurrence>(occurrences.map((o) => [o.id, o]));
+
+  const projectedPrimary: ProjectedSegment[] = [];
+  const projectedSecondary: ProjectedSegment[] = [];
+
+  for (const seg of segments) {
+    if (seg.isPaused) continue;
+    const end = seg.endAt ?? windowEnd; // If running, clamp to window end for display
+    if (!intervalsOverlap(seg.startAt, end, windowStart, windowEnd)) {
+      continue;
+    }
+
+    const occ = occMap.get(seg.occurrenceId);
+    if (!occ) continue;
+
+    const clampedStart = Math.max(seg.startAt, windowStart);
+    const clampedEnd = Math.min(end, windowEnd);
+    const durationMs = Math.max(0, clampedEnd - clampedStart);
+
+    const isCrossMidnight = seg.startAt < windowStart || end > windowEnd;
+    const confidenceLabel = deriveConfidenceLabel(
+      occ.source,
+      seg.startConfidence,
+      seg.endConfidence,
+      occ.kind
+    );
+
+    const projected: ProjectedSegment = {
+      occurrenceId: occ.id,
+      activityId: occ.activityId,
+      segmentId: seg.id,
+      role: seg.role,
+      startAt: clampedStart,
+      endAt: clampedEnd,
+      durationMs,
+      startConfidence: seg.startConfidence,
+      endConfidence: seg.endConfidence,
+      confidenceLabel,
+      isCrossMidnight,
+    };
+
+    if (seg.role === 'PRIMARY') {
+      projectedPrimary.push(projected);
+    } else {
+      projectedSecondary.push(projected);
+    }
+  }
+
+  // Sort primary segments chronologically
+  projectedPrimary.sort((a, b) => a.startAt - b.startAt);
+
+  // Compute exact vs estimated primary durations and untracked gaps
+  let exactPrimaryDurationMs = 0;
+  let estimatedPrimaryDurationMs = 0;
+  const untrackedGaps: TimelineGap[] = [];
+  let timelineCursor = windowStart;
+
+  for (const seg of projectedPrimary) {
+    if (seg.startAt > timelineCursor) {
+      untrackedGaps.push({
+        startAt: timelineCursor,
+        endAt: seg.startAt,
+        durationMs: seg.startAt - timelineCursor,
+      });
+    }
+
+    if (seg.startConfidence === 'EXACT' && seg.endConfidence === 'EXACT') {
+      exactPrimaryDurationMs += seg.durationMs;
+    } else {
+      estimatedPrimaryDurationMs += seg.durationMs;
+    }
+
+    timelineCursor = Math.max(timelineCursor, seg.endAt);
+  }
+
+  if (timelineCursor < windowEnd) {
+    untrackedGaps.push({
+      startAt: timelineCursor,
+      endAt: windowEnd,
+      durationMs: windowEnd - timelineCursor,
+    });
+  }
+
+  const secondaryDurationMs = projectedSecondary.reduce((sum, s) => sum + s.durationMs, 0);
+  const totalWindowDurationMs = windowEnd - windowStart;
+  const untrackedDurationMs = untrackedGaps.reduce((sum, g) => sum + g.durationMs, 0);
+
+  // Check conflicts
+  const conflicts = detectPrimaryConflicts(segments);
+
+  return {
+    reportingWindow: {
+      start: windowStart,
+      end: windowEnd,
+      type: windowType,
+      timeZone,
+    },
+    totalWindowDurationMs,
+    exactPrimaryDurationMs,
+    estimatedPrimaryDurationMs,
+    secondaryDurationMs,
+    untrackedDurationMs,
+    primarySegments: projectedPrimary,
+    secondarySegments: projectedSecondary,
+    untrackedGaps,
+    conflicts,
+  };
+}

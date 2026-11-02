@@ -20,6 +20,7 @@ import { DreamSadhanaView } from './components/DreamSadhanaView';
 import { VedicConcordanceView } from './components/VedicConcordanceView';
 import { PranayamaView } from './components/PranayamaView';
 import { SovereignStudioV2 } from './components/SovereignStudioV2';
+import { DailyTrackerView } from './components/tracker/DailyTrackerView';
 
 // Code-split heavy libraries (pdfjs-dist, tesseract.js)
 const PdfReaderView = React.lazy(() => import('./components/pdf/PdfReaderView').then(m => ({ default: m.PdfReaderView })));
@@ -117,7 +118,8 @@ export function App() {
             <span className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
               <span className="text-indigo-400">à¥</span>
               <span className="capitalize">
-                {currentTab === 'inbox' ? 'Universal Inbox & AI' : 
+                {currentTab === 'tracker' ? 'Personal Daily Life Tracker' :
+                 currentTab === 'inbox' ? 'Universal Inbox & AI' : 
                  currentTab === 'sheets' ? 'Google Sheets Bridge' : 
                  currentTab === 'analytics' ? 'Predictive Analytics & Life Balance' : 
                  currentTab === 'jyotish' ? 'Metaphysical & Jyotish Ephemeris' : 
@@ -221,6 +223,7 @@ export function App() {
                 onOpenMobileDeploy={() => setIsMobileDeployOpen(true)}
               />
             )}
+            {currentTab === 'tracker' && <DailyTrackerView />}
             {currentTab === 'tasks' && <TaskIntelligence />}
             {currentTab === 'projects' && (
               <React.Suspense fallback={<div className="p-8 text-center text-xs text-gray-400">Loading Project Portfolio & Roadmaps...</div>}>

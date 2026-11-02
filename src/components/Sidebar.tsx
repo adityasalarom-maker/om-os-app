@@ -27,11 +27,13 @@ import {
   TrendingUp,
   Moon,
   Scroll,
-  Wind
+  Wind,
+  Clock
 } from 'lucide-react';
 
-export type NavTab = 
-  | 'dashboard' 
+export type NavTab =
+  | 'dashboard'
+  | 'tracker' 
   | 'projects' 
   | 'tasks' 
   | 'knowledge' 
@@ -73,7 +75,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const conflictCount = useLiveQuery(() => db.syncConflicts.toArray(), [])?.filter(c => !c.resolved).length || 0;
 
   const navItems = [
-    { id: 'dashboard', label: 'Executive Dashboard', shortLabel: 'Home', icon: LayoutDashboard, category: 'Core OS' },
+    {
+      id: 'dashboard',
+      label: 'Executive Dashboard',
+      shortLabel: 'Home',
+      icon: LayoutDashboard,
+      category: 'Core OS'
+    },
+    {
+      id: 'tracker',
+      label: 'Daily Life Tracker',
+      shortLabel: 'Tracker',
+      icon: Clock,
+      category: 'Core OS'
+    },
     { id: 'projects', label: 'Project Portfolio', shortLabel: 'Projects', icon: FolderKanban, category: 'Core OS' },
     { id: 'tasks', label: 'Task Intelligence', shortLabel: 'Tasks', icon: CheckSquare, category: 'Productivity' },
     { id: 'knowledge', label: 'Knowledge Vault', shortLabel: 'Vault', icon: BookOpen, category: 'Core OS' },

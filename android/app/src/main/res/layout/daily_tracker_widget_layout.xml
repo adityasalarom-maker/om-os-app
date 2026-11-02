@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="#161822">
+
+    <!-- Header Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Om Daily Tracker"
+            android:textColor="#818cf8"
+            android:textStyle="bold"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_sync_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="● Synced"
+            android:textColor="#34d399"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <!-- 1. Dedicated Ongoing Timer Panel -->
+    <LinearLayout
+        android:id="@+id/panel_ongoing_timer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#1f2333"
+        android:padding="8dp"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_active_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Deep Study / Work"
+                android:textColor="#ffffff"
+                android:textStyle="bold"
+                android:textSize="13sp" />
+
+            <!-- Platform Native Chronometer: ZERO 1-minute background polling -->
+            <Chronometer
+                android:id="@+id/widget_chronometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#a5b4fc"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_widget_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="Stop"
+            android:textColor="#f87171"
+            android:textSize="11sp"
+            android:background="#2e1065" />
+    </LinearLayout>
+
+    <!-- 2. Recent Saved Entries (3 Slots Contract) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RECENT SAVED ENTRIES"
+            android:textColor="#64748b"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
+
+        <TextView
+            android:id="@+id/widget_recent_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1. Wake Up — 06:45 AM (Exact)"
+            android:textColor="#cbd5e1"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/widget_recent_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="2. Bath — 07:10 AM - 07:35 AM (25m)"
+            android:textColor="#94a3b8"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/widget_recent_3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="3. Breakfast — 08:00 AM (40m)"
+            android:textColor="#94a3b8"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- 3. Expandable Multi Quick Actions Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btn_action_wake"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="Wake"
+            android:textSize="10sp"
+            android:textColor="#fcd34d"
+            android:background="#1e293b"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btn_action_bath"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="Bath"
+            android:textSize="10sp"
+            android:textColor="#6ee7b7"
+            android:background="#1e293b"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btn_action_study"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="Study"
+            android:textSize="10sp"
+            android:textColor="#93c5fd"
+            android:background="#1e293b"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btn_action_open"
+            android:layout_width="0dp"
+            android:layout_height="32dp"
+            android:layout_weight="1"
+            android:text="App"
+            android:textSize="10sp"
+            android:textColor="#c084fc"
+            android:background="#1e293b" />
+    </LinearLayout>
+
+</LinearLayout>

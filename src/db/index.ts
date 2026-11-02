@@ -1,3 +1,9 @@
+import type {
+  ActivityDefinition,
+  ActivityOccurrence,
+  TimeSegment,
+  ReconstructionBatch
+} from '../services/dailyTrackerEngine';
 import Dexie, { type Table } from 'dexie';
 
 export interface ProjectMilestone {
@@ -519,6 +525,10 @@ export class OmKnowledgeDatabase extends Dexie {
   philosophicalVadas!: Table<PhilosophicalVadaRecord, string>;
   pranayamaSessions!: Table<PranayamaSessionRecord, string>;
   researchInquiries!: Table<ResearchInquiry, string>;
+  activities!: Table<ActivityDefinition, string>;
+  activityOccurrences!: Table<ActivityOccurrence, string>;
+  timeSegments!: Table<TimeSegment, string>;
+  reconstructionBatches!: Table<ReconstructionBatch, string>;
 
   constructor() {
     super('OmKnowledgeOS_DB');
@@ -738,6 +748,38 @@ export class OmKnowledgeDatabase extends Dexie {
       pranayamaSessions: 'id, date, timestamp, patternName, swaraActive, createdAt, updatedAt',
       researchInquiries: 'id, title, domain, pipelineStage, status, overallEvidenceLevel, *tags, updatedAt',
     });
+
+    this.version(13).stores({
+      projects: 'id, name, status, priority, healthStatus, updatedAt',
+      tasks: 'id, title, projectId, status, priority, quadrant, isCompleted, energyRequired, deadline, updatedAt',
+      knowledge: 'id, title, type, *tags, projectId, updatedAt',
+      goals: 'id, title, level, status, lifeArea, updatedAt',
+      inbox: 'id, title, type, status, createdAt',
+      journal: 'id, date, entryType, moodScore, energyScore, createdAt, updatedAt',
+      pantry: 'id, itemName, category, status, updatedAt',
+      syncConflicts: 'id, table, recordId, resolved, timestamp',
+      syncSettings: 'id, value, updatedAt',
+      syncQueue: 'id, table, action, recordId, timestamp, status',
+      pdfDocuments: 'id, title, category, *tags, lastOpenedAt',
+      pdfReadingStates: 'documentId, lastPage, updatedAt',
+      pdfAnnotations: 'id, documentId, pageNumber, type, createdAt',
+      noteDestinations: 'id, title, format, lastUsedAt',
+      health: 'id, date, pranaScore, createdAt, updatedAt',
+      properties: 'id, title, location, status, updatedAt',
+      semanticEmbeddings: 'id, itemId, itemType, updatedAt',
+      jyotishCharts: 'id, title, dateTime, locationName, createdAt, updatedAt',
+      khasraParcels: 'id, khasraNumber, khataNumber, villageTehsil, propertyId, diligenceStatus, updatedAt',
+      dreamLogs: 'id, date, state, lucidityLevel, primaryChakraResonance, createdAt, updatedAt',
+      sadhanaLogs: 'id, date, japaMantra, ojasScore, brahmaMuhurta, createdAt, updatedAt',
+      vedicVerses: 'id, canon, sourceText, philosophicalVada, mahavakya, *tags, updatedAt',
+      philosophicalVadas: 'id, name, school, worldStatus, updatedAt',
+      pranayamaSessions: 'id, date, timestamp, patternName, swaraActive, createdAt, updatedAt',
+      researchInquiries: 'id, title, domain, pipelineStage, status, overallEvidenceLevel, *tags, updatedAt',
+      activities: 'id, name, defaultMode, defaultRole, isArchived, updatedAt',
+      activityOccurrences: 'id, activityId, kind, source, status, occurredAt, recordedAt, updatedAt',
+      timeSegments: 'id, occurrenceId, startAt, endAt, role, startConfidence, endConfidence',
+      reconstructionBatches: 'id, windowStart, windowEnd, status, createdAt',
+    });
   }
 }
 
@@ -897,7 +939,31 @@ export async function initializeResearchInquiriesIfEmpty() {
 }
 
 
+
+export async function initializeDailyTrackerIfEmpty() {
+  try {
+    const count = await db.activities.count();
+    if (count > 0) return;
+    const now = Date.now();
+    await db.activities.bulkAdd([
+      { id: 'act_wake', name: 'Wake Up', defaultMode: 'EVENT', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_washroom', name: 'Washroom & Hygiene', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_bath', name: 'Bath', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_exercise', name: 'Exercise & Yoga', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_meditation', name: 'Meditation', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_breakfast', name: 'Breakfast', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_study', name: 'Deep Study / Work', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_music', name: 'Music / Audio', defaultMode: 'INTERVAL', defaultRole: 'SECONDARY', createdAt: now, updatedAt: now },
+      { id: 'act_medicine', name: 'Medicine', defaultMode: 'EVENT', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+      { id: 'act_sleep', name: 'Night Sleep', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: now, updatedAt: now },
+    ]);
+  } catch (err) {
+    console.warn('Failed to seed starter activities:', err);
+  }
+}
+
 export async function initializeSeedDataIfEmpty() {
+  await initializeDailyTrackerIfEmpty();
   await initializeResearchInquiriesIfEmpty();
   // Purge any residual ChatGPT seed records
   await purgeLegacyPkmArtifacts();
