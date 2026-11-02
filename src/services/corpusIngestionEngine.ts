@@ -1,4 +1,4 @@
-﻿import { db, type KnowledgeItem, type TaskItem, type GoalItem } from '../db';
+import { db, type KnowledgeItem, type TaskItem, type GoalItem, type IngestionCandidate } from '../db';
 import type { RawCorpusDoc } from '../data/authenticCorpusArchive';
 
 export interface IngestionPreview {
@@ -333,4 +333,95 @@ function extractSubSections(doc: RawCorpusDoc, baseTags: string[]): KnowledgeIte
 
 function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Processes a single transcript turn according to TASK-18 Ingestion Engine specs.
+ * Shields code blocks, extracts Task candidates via imperative verbs/checkboxes,
+ * extracts Concept candidates via markdown headings, and returns structured IngestionCandidate records.
+ */
+export function processTranscriptTurn(turnText: string, sourceFile = 'Universal-Inbox-Turn'): IngestionCandidate[] {
+  // Step 1: Shield code blocks using regex mask
+  const codeBlocks: string[] = [];
+  const maskedText = turnText.replace(/```[\s\S]*?```/g, (match) => {
+    codeBlocks.push(match);
+    return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+  });
+
+  const candidates: IngestionCandidate[] = [];
+
+  const restoreCodeBlocks = (text: string): string => {
+    return text.replace(/__CODE_BLOCK_(\d+)__/g, (_, idx) => codeBlocks[Number(idx)] || '');
+  };
+
+  const cleanMarkdown = (str: string): string => {
+    return str.replace(/^[#*-\s\[\]xX]+|[:*]+$/g, '').trim();
+  };
+
+  const determineQuadrant = (line: string): 'Q1' | 'Q2' | 'Q3' | 'Q4' => {
+    const lower = line.toLowerCase();
+    if (lower.includes('urgent') || lower.includes('critical') || lower.includes('bug') || lower.includes('asap') || lower.includes('fix')) {
+      return 'Q1';
+    }
+    if (lower.includes('delegate') || lower.includes('ask') || lower.includes('send') || lower.includes('email')) {
+      return 'Q3';
+    }
+    return 'Q2';
+  };
+
+  const calculateScore = (str: string): number => {
+    let score = 0.7;
+    if (str.length > 30) score += 0.15;
+    if (/\[[ xX]\]/.test(str)) score += 0.1;
+    return Math.min(1.0, score);
+  };
+
+  // Step 2: Extract Task Candidates via Imperative Verbs and Checklist Tokens
+  const lines = maskedText.split('\n');
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (/^[-*]\s*\[([ xX])\]/.test(line) || /^(TODO|ACTION|NEXT STEP|TASK):/i.test(line) || /^[-*]\s+(Implement|Build|Fix|Verify|Audit|Deploy|Update|Refactor|Design|Add)\b/i.test(line)) {
+      candidates.push({
+        id: makeStableId('task-cand', line),
+        sourceFile,
+        turnRole: 'assistant',
+        score: calculateScore(line),
+        rawText: restoreCodeBlocks(line),
+        suggestedType: 'Task',
+        extractedMetadata: {
+          title: cleanMarkdown(line),
+          quadrant: determineQuadrant(line),
+          energyLevel: line.length > 50 ? 'Deep Work' : 'Quick Win',
+          tags: ['Extracted-Task', 'AI-Ingestion']
+        },
+        approvalStatus: 'Pending'
+      });
+    }
+  }
+
+  // Step 3: Extract Conceptual Headings and Wikilinks
+  const headingMatches = maskedText.match(/^(#{1,3})\s+(.+)$/gm);
+  if (headingMatches) {
+    for (const heading of headingMatches) {
+      const cleanTitle = cleanMarkdown(heading);
+      if (cleanTitle.length > 4 && !cleanTitle.toLowerCase().startsWith('step ') && !cleanTitle.toLowerCase().startsWith('action')) {
+        candidates.push({
+          id: makeStableId('concept-cand', cleanTitle),
+          sourceFile,
+          turnRole: 'assistant',
+          score: calculateScore(heading),
+          rawText: restoreCodeBlocks(heading),
+          suggestedType: 'Concept',
+          extractedMetadata: {
+            title: cleanTitle,
+            tags: ['Extracted-Concept', 'Knowledge-Vault']
+          },
+          approvalStatus: 'Pending'
+        });
+      }
+    }
+  }
+
+  return candidates;
 }

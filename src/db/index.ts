@@ -53,6 +53,44 @@ export interface KnowledgeItem {
   updatedAt: number;
 }
 
+/**
+ * Universal Inbox Ingestion Staging Candidate (TASK-18 Spec)
+ */
+export interface IngestionCandidate {
+  id: string;
+  sourceFile: string;
+  turnRole: 'user' | 'assistant' | 'system';
+  score: number;
+  rawText: string;
+  suggestedType: 'Task' | 'Concept' | 'Goal' | 'LandRecord' | 'VedicNode';
+  extractedMetadata: {
+    title: string;
+    quadrant?: 'Q1' | 'Q2' | 'Q3' | 'Q4';
+    energyLevel?: 'Deep Work' | 'Quick Win' | 'Low Energy';
+    tags: string[];
+  };
+  approvalStatus: 'Pending' | 'Approved' | 'Rejected';
+}
+
+/**
+ * 2D Knowledge Graph Node & Edge Models (TASK-18 Spec)
+ */
+export interface KnowledgeGraphNode {
+  id: string;
+  label: string;
+  type: string;
+  degree: number; // In-degree + Out-degree of backlinks
+  x?: number;
+  y?: number;
+  color: string;
+}
+
+export interface KnowledgeGraphEdge {
+  source: string;
+  target: string;
+  relationType: 'wikilink' | 'parent_project' | 'cross_reference';
+}
+
 export interface GoalItem {
   id: string;
   title: string;

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 /**
  * à¥ Om Knowledge OS â€” Automated Headless E2E Diagnostic & Lighthouse PWA Audit Suite
  * 
@@ -262,6 +262,14 @@ async function runAudit() {
       recordTest('Database', 'Formula-Derived Project Health Signals (On Track / At Risk / Behind / Critical) verified', hasHealth);
       recordTest('Database', 'Life Goals Pyramid laddering & Milestone Timeline Roadmap verified', hasGoalLadder && hasMilestones);
     }
+
+    // Milestone H: TASK-18 Strategic Inflection & System Plan Reconciliation
+    const hasTask18Contracts = dbContent.includes('IngestionCandidate') &&
+                               dbContent.includes('KnowledgeGraphNode') &&
+                               dbContent.includes('KnowledgeGraphEdge');
+    const corpusEngineContent = fs.readFileSync(corpusEnginePath, 'utf8');
+    const hasProcessTranscriptTurn = corpusEngineContent.includes('processTranscriptTurn');
+    recordTest('Database', 'Strategic Inflection Data Contracts & Ingestion Engine active (Task 18)', hasTask18Contracts && hasProcessTranscriptTurn);
   } else {
     recordTest('Database', 'src/db/index.ts exists', false);
   }
