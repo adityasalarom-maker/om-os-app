@@ -122,20 +122,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Desktop Left Rail Sidebar (Hidden on mobile) */}
       <aside 
         data-ag-id="Sidebar_Navigation_Drawer"
-        className={`hidden md:flex flex-col bg-[#161822] border-r border-[#272b3b] transition-all duration-200 select-none z-20 ${
+        className={`hidden md:flex flex-col border-r transition-all duration-200 select-none z-20 ${
           isCollapsed ? 'w-18' : 'w-64'
         }`}
+        style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}
       >
         {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#272b3b]">
+        <div className="h-16 flex items-center justify-between px-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
           {!isCollapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-500/20">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-500/20 shrink-0">
                 ॐ
               </div>
               <div>
-                <h1 className="font-semibold text-sm tracking-wide text-white">Om Knowledge OS</h1>
-                <span className="text-[10px] text-indigo-400 font-mono tracking-wider">v2.0 LOCAL-FIRST</span>
+                <h1 className="font-semibold text-sm tracking-wide" style={{ color: 'var(--text-main)' }}>Om Knowledge OS</h1>
+                <span className="text-[10px] font-mono tracking-wider font-semibold" style={{ color: 'var(--accent)' }}>v2.0 LOCAL-FIRST</span>
               </div>
             </div>
           )}
@@ -146,7 +147,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
           <button 
             onClick={onToggleCollapse}
-            className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-[#212536] transition-colors"
+            className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-100 opacity-60"
+            style={{ color: 'var(--text-main)' }}
             title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
             {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -157,16 +159,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-3">
           <button
             onClick={onOpenSearch}
-            className={`w-full flex items-center gap-2 bg-[#1e2230] hover:bg-[#252a3d] border border-[#2e3347] text-gray-400 hover:text-white px-3 py-2 rounded-lg text-xs transition-all shadow-sm ${
+            className={`w-full flex items-center gap-2 border px-3 py-2 rounded-xl text-xs transition-all shadow-sm cursor-pointer ${
               isCollapsed ? 'justify-center' : 'justify-between'
             }`}
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              borderColor: 'var(--border-color)',
+              color: 'var(--text-muted)'
+            }}
           >
             <div className="flex items-center gap-2">
-              <Search size={15} className="text-indigo-400" />
-              {!isCollapsed && <span>Search & Jump...</span>}
+              <Search size={15} style={{ color: 'var(--accent)' }} />
+              {!isCollapsed && <span style={{ color: 'var(--text-main)' }}>Search & Jump...</span>}
             </div>
             {!isCollapsed && (
-              <kbd className="bg-[#161822] px-1.5 py-0.5 rounded text-[10px] font-mono text-gray-400 border border-[#2e3347]">
+              <kbd 
+                className="px-1.5 py-0.5 rounded text-[10px] font-mono border"
+                style={{
+                  backgroundColor: 'var(--bg-primary)',
+                  borderColor: 'var(--border-color)',
+                  color: 'var(--text-muted)'
+                }}
+              >
                 Ctrl+P
               </kbd>
             )}
@@ -182,20 +196,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id as NavTab)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-indigo-600/15 text-indigo-300 border border-indigo-500/30'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1f2333]'
+                    ? 'font-semibold shadow-sm'
+                    : 'hover:opacity-100 opacity-80'
                 } ${isCollapsed ? 'justify-center' : 'justify-start'}`}
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: 'var(--bg-card)',
+                        color: 'var(--accent)',
+                        border: '1px solid var(--accent)',
+                        boxShadow: '0 1px 4px rgba(0, 0, 0, 0.08)'
+                      }
+                    : {
+                        color: 'var(--text-main)',
+                        backgroundColor: 'transparent'
+                      }
+                }
                 title={isCollapsed ? item.label : undefined}
               >
-                <Icon size={18} className={isActive ? 'text-indigo-400' : 'text-gray-400'} />
+                <Icon 
+                  size={18} 
+                  style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)' }} 
+                />
                 {!isCollapsed && <span className="flex-1 text-left">{item.label}</span>}
                 {!isCollapsed && item.id === 'sheets' && (conflictCount > 0 || pendingQueueCount > 0) && (
                   <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
                     conflictCount > 0 
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
-                      : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                      ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' 
+                      : 'bg-cyan-500/20 text-cyan-500 border border-cyan-500/30'
                   }`}>
                     {conflictCount > 0 ? `${conflictCount}!` : `${pendingQueueCount}`}
                   </span>
@@ -207,12 +237,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Footer info */}
         {!isCollapsed && (
-          <div className="p-4 border-t border-[#272b3b] text-[11px] text-gray-500 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <div 
+            className="p-4 border-t text-[11px] flex items-center justify-between"
+            style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
+          >
+            <span className="flex items-center gap-1.5 text-emerald-500 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
               Offline Ready
             </span>
-            <span className="font-mono text-gray-400">Win11 & S25</span>
+            <span className="font-mono" style={{ color: 'var(--text-muted)' }}>Win11 & S25</span>
           </div>
         )}
       </aside>

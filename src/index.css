@@ -70,6 +70,36 @@ html, body {
 .bg-\[\#1c2030\],
 .bg-\[\#202538\],
 .bg-\[\#262c40\],
+.bg-\[\#1d202e\],
+.bg-\[\#161824\],
+.bg-\[\#12141c\],
+.bg-\[\#141624\],
+.bg-\[\#121522\],
+.bg-\[\#12141f\],
+.bg-\[\#1b1e2e\],
+.bg-\[\#202436\],
+.bg-\[\#12141d\],
+.bg-\[\#171926\],
+.bg-\[\#171a26\],
+.bg-\[\#181a26\],
+.bg-\[\#1b1f30\],
+.bg-\[\#1e2336\],
+.bg-\[\#1a1c29\],
+.bg-\[\#1f2436\],
+.bg-\[\#11131c\],
+.bg-\[\#10121d\],
+.bg-\[\#1b1e2c\],
+.bg-\[\#0b0c12\],
+.bg-\[\#1c2132\],
+.bg-\[\#1f191a\],
+.bg-\[\#252a3d\],
+.bg-\[\#1e2333\],
+.bg-\[\#212536\],
+.bg-\[\#232738\],
+.bg-\[\#23283c\],
+.bg-\[\#22283a\],
+.bg-\[\#272b3c\],
+.bg-\[\#2d3246\],
 .bg-slate-850,
 .bg-slate-800,
 .bg-slate-800\/60,
@@ -219,6 +249,40 @@ html, body {
 .light-mode textarea,
 .light-mode select {
   color: var(--text-main) !important;
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Sidebar & Left-rail Navigation High-Contrast Sync in Light Mode */
+.light-mode aside,
+.light-mode nav[data-ag-id*="Sidebar"] {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode aside button:hover {
+  background-color: var(--bg-card-hover) !important;
+}
+
+.light-mode aside kbd {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Universal hover protection against dark background flashes in Light Mode */
+.light-mode [class*="hover:bg-\[\#"]:hover {
+  background-color: var(--bg-card-hover) !important;
+}
+
+.light-mode [class*="hover:bg-slate-"]:hover {
+  background-color: var(--bg-card-hover) !important;
+}
+
+/* Embedded task items and list rows inside boards */
+.light-mode [class*="bg-\[\#1d202e\]"],
+.light-mode [class*="bg-\[\#1e2230\]"],
+.light-mode [class*="bg-\[\#1b1e2c\]"] {
   background-color: var(--bg-card) !important;
   border-color: var(--border-color) !important;
 }
