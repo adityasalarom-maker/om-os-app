@@ -91,9 +91,10 @@ export function QuickCaptureBar({
         <button
           onClick={onOpenRetrospective}
           className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-indigo-300 hover:text-white border border-slate-700/80 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all shadow-sm"
+          title="Log activities you did earlier today"
         >
           <History className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Reconstruct Past Window</span>
+          <span>+ Log Past Missed Time</span>
         </button>
       </div>
 

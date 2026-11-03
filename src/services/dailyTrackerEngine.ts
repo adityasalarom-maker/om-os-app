@@ -146,6 +146,7 @@ export interface ProjectedSegment {
   endConfidence: BoundaryConfidence;
   confidenceLabel: UserFacingConfidenceLabel;
   isCrossMidnight?: boolean;
+  isRunning?: boolean;
 }
 
 export interface DayProjectionReport {
@@ -714,10 +715,19 @@ export function projectDayTimeline(params: {
   const projectedPrimary: ProjectedSegment[] = [];
   const projectedSecondary: ProjectedSegment[] = [];
 
+  const now = Date.now();
+  const maxElapsed = Math.min(now, windowEnd);
+
   for (const seg of segments) {
     if (seg.isPaused) continue;
-    const end = seg.endAt ?? windowEnd; // If running, clamp to window end for display
-    if (!intervalsOverlap(seg.startAt, end, windowStart, windowEnd)) {
+    const isRunning = seg.endAt === undefined || seg.endAt === null;
+    const effectiveEnd: number = isRunning ? Math.min(now, windowEnd) : (seg.endAt as number);
+    
+    // Allow fresh running timer (< 1s old) to be included in projection
+    if (!isRunning && !intervalsOverlap(seg.startAt, effectiveEnd, windowStart, windowEnd)) {
+      continue;
+    }
+    if (isRunning && (seg.startAt > windowEnd || effectiveEnd < windowStart)) {
       continue;
     }
 
@@ -725,16 +735,18 @@ export function projectDayTimeline(params: {
     if (!occ) continue;
 
     const clampedStart = Math.max(seg.startAt, windowStart);
-    const clampedEnd = Math.min(end, windowEnd);
+    const clampedEnd = Math.max(clampedStart, Math.min(effectiveEnd, windowEnd));
     const durationMs = Math.max(0, clampedEnd - clampedStart);
 
-    const isCrossMidnight = seg.startAt < windowStart || end > windowEnd;
-    const confidenceLabel = deriveConfidenceLabel(
-      occ.source,
-      seg.startConfidence,
-      seg.endConfidence,
-      occ.kind
-    );
+    const isCrossMidnight = seg.startAt < windowStart || effectiveEnd > windowEnd;
+    const confidenceLabel: UserFacingConfidenceLabel = isRunning
+      ? 'Exact — Live'
+      : deriveConfidenceLabel(
+          occ.source,
+          seg.startConfidence,
+          seg.endConfidence,
+          occ.kind
+        );
 
     const projected: ProjectedSegment = {
       occurrenceId: occ.id,
@@ -748,6 +760,7 @@ export function projectDayTimeline(params: {
       endConfidence: seg.endConfidence,
       confidenceLabel,
       isCrossMidnight,
+      isRunning,
     };
 
     if (seg.role === 'PRIMARY') {
@@ -767,15 +780,18 @@ export function projectDayTimeline(params: {
   let timelineCursor = windowStart;
 
   for (const seg of projectedPrimary) {
-    if (seg.startAt > timelineCursor) {
-      untrackedGaps.push({
-        startAt: timelineCursor,
-        endAt: seg.startAt,
-        durationMs: seg.startAt - timelineCursor,
-      });
+    if (seg.startAt > timelineCursor && timelineCursor < maxElapsed) {
+      const gapEnd = Math.min(seg.startAt, maxElapsed);
+      if (gapEnd > timelineCursor) {
+        untrackedGaps.push({
+          startAt: timelineCursor,
+          endAt: gapEnd,
+          durationMs: gapEnd - timelineCursor,
+        });
+      }
     }
 
-    if (seg.startConfidence === 'EXACT' && seg.endConfidence === 'EXACT') {
+    if (seg.startConfidence === 'EXACT' && (seg.endConfidence === 'EXACT' || seg.isRunning)) {
       exactPrimaryDurationMs += seg.durationMs;
     } else {
       estimatedPrimaryDurationMs += seg.durationMs;
@@ -784,11 +800,12 @@ export function projectDayTimeline(params: {
     timelineCursor = Math.max(timelineCursor, seg.endAt);
   }
 
-  if (timelineCursor < windowEnd) {
+  // Only add untracked gap for elapsed past time up to now (do not treat future hours as gaps)
+  if (timelineCursor < maxElapsed) {
     untrackedGaps.push({
       startAt: timelineCursor,
-      endAt: windowEnd,
-      durationMs: windowEnd - timelineCursor,
+      endAt: maxElapsed,
+      durationMs: maxElapsed - timelineCursor,
     });
   }
 
@@ -815,5 +832,203 @@ export function projectDayTimeline(params: {
     secondarySegments: projectedSecondary,
     untrackedGaps,
     conflicts,
+  };
+}
+
+
+// ============================================================================
+// 10. CATEGORY TAXONOMY & ANALYTICS INTELLIGENCE (PRD §4.2, §4.9, §6)
+// ============================================================================
+
+export interface ActivityCategory {
+  id: string;
+  name: string;
+  color: string;
+  icon: string;
+  description?: string;
+}
+
+export const STARTER_CATEGORIES: ActivityCategory[] = [
+  { id: 'cat_sleep', name: 'Sleep & Rest', color: '#6366f1', icon: 'Moon', description: 'Night sleep, nap, rest, wake' },
+  { id: 'cat_care', name: 'Personal Care', color: '#06b6d4', icon: 'Sparkles', description: 'Washroom, brushing, bath, grooming' },
+  { id: 'cat_food', name: 'Food & Drink', color: '#f97316', icon: 'Coffee', description: 'Breakfast, lunch, dinner, tea, snacks' },
+  { id: 'cat_physical', name: 'Physical Activities', color: '#10b981', icon: 'Dumbbell', description: 'Walking, exercise, yoga, pranayama' },
+  { id: 'cat_mental', name: 'Mental Activities', color: '#8b5cf6', icon: 'Brain', description: 'Meditation, relaxation, reflection' },
+  { id: 'cat_work', name: 'Work & Learning', color: '#3b82f6', icon: 'BookOpen', description: 'Office work, study, reading, research' },
+  { id: 'cat_household', name: 'Household', color: '#eab308', icon: 'Home', description: 'Cooking, cleaning, shopping' },
+  { id: 'cat_social', name: 'Social & Family', color: '#ec4899', icon: 'Users', description: 'Conversation, family time, calls' },
+  { id: 'cat_digital', name: 'Digital Activities', color: '#a855f7', icon: 'Smartphone', description: 'Phone, videos, gaming, social media' },
+  { id: 'cat_entertainment', name: 'Entertainment', color: '#f43f5e', icon: 'Tv', description: 'Movies, music, hobbies' },
+  { id: 'cat_spiritual', name: 'Spiritual Activities', color: '#d946ef', icon: 'Flame', description: 'Prayer, spiritual study, mantra practice' },
+  { id: 'cat_other', name: 'Other', color: '#64748b', icon: 'Folder', description: 'Custom activities' },
+];
+
+export interface CategoryDistributionItem {
+  categoryId: string;
+  categoryName: string;
+  color: string;
+  durationMs: number;
+  percentage: number;
+  occurrenceCount: number;
+}
+
+export function computeCategoryDistribution(
+  segments: ProjectedSegment[],
+  activities: ActivityDefinition[],
+  categories: ActivityCategory[] = STARTER_CATEGORIES
+): CategoryDistributionItem[] {
+  const actMap = new Map(activities.map(a => [a.id, a]));
+  const catMap = new Map(categories.map(c => [c.id, c]));
+  const totals = new Map<string, { durationMs: number; count: number }>();
+
+  let totalPrimaryMs = 0;
+  for (const seg of segments) {
+    if (seg.role !== 'PRIMARY') continue;
+    totalPrimaryMs += seg.durationMs;
+    const act = actMap.get(seg.activityId);
+    const catId = act?.categoryId || 'cat_other';
+    const curr = totals.get(catId) || { durationMs: 0, count: 0 };
+    curr.durationMs += seg.durationMs;
+    curr.count += 1;
+    totals.set(catId, curr);
+  }
+
+  const result: CategoryDistributionItem[] = [];
+  totals.forEach((val, catId) => {
+    const cat = catMap.get(catId) || { name: 'Other', color: '#64748b' };
+    result.push({
+      categoryId: catId,
+      categoryName: cat.name,
+      color: cat.color,
+      durationMs: val.durationMs,
+      percentage: totalPrimaryMs > 0 ? Math.round((val.durationMs / totalPrimaryMs) * 100) : 0,
+      occurrenceCount: val.count,
+    });
+  });
+
+  return result.sort((a, b) => b.durationMs - a.durationMs);
+}
+
+export interface HourlyDistributionSlot {
+  hour: number; // 0 to 23
+  label: string; // '00:00', '01:00', ...
+  primaryDurationMs: number;
+  dominantActivityName?: string;
+  dominantCategoryColor?: string;
+  isUntracked: boolean;
+}
+
+export function computeHourlyDistribution(
+  windowStart: number,
+  segments: ProjectedSegment[],
+  activities: ActivityDefinition[],
+  categories: ActivityCategory[] = STARTER_CATEGORIES
+): HourlyDistributionSlot[] {
+  const slots: HourlyDistributionSlot[] = [];
+  const actMap = new Map(activities.map(a => [a.id, a]));
+  const catMap = new Map(categories.map(c => [c.id, c]));
+
+  for (let h = 0; h < 24; h++) {
+    const slotStart = windowStart + h * 3600000;
+    const slotEnd = slotStart + 3600000;
+    const label = `${h.toString().padStart(2, '0')}:00`;
+
+    let totalDurationMs = 0;
+    let maxSegDuration = 0;
+    let dominantName = 'Untracked';
+    let dominantColor = '#1e293b';
+
+    for (const seg of segments) {
+      if (seg.role !== 'PRIMARY') continue;
+      const inter = intervalIntersection(seg.startAt, seg.endAt, slotStart, slotEnd);
+      if (inter) {
+        totalDurationMs += inter.durationMs;
+        if (inter.durationMs > maxSegDuration) {
+          maxSegDuration = inter.durationMs;
+          const act = actMap.get(seg.activityId);
+          dominantName = act?.name || 'Activity';
+          const cat = catMap.get(act?.categoryId || 'cat_other');
+          dominantColor = cat?.color || '#3b82f6';
+        }
+      }
+    }
+
+    slots.push({
+      hour: h,
+      label,
+      primaryDurationMs: Math.min(3600000, totalDurationMs),
+      dominantActivityName: totalDurationMs > 0 ? dominantName : undefined,
+      dominantCategoryColor: totalDurationMs > 0 ? dominantColor : undefined,
+      isUntracked: totalDurationMs === 0,
+    });
+  }
+
+  return slots;
+}
+
+export interface LifeIntelligenceMetrics {
+  wakeTimeStr?: string;
+  sleepDurationMs: number;
+  deepWorkDurationMs: number;
+  physicalCareDurationMs: number;
+  mealCount: number;
+  totalTrackedMs: number;
+  untrackedMs: number;
+  completenessPercent: number;
+  exactPercent: number;
+}
+
+export function computeLifeIntelligenceMetrics(
+  report: DayProjectionReport,
+  activities: ActivityDefinition[],
+  occurrences: ActivityOccurrence[]
+): LifeIntelligenceMetrics {
+  const actMap = new Map(activities.map(a => [a.id, a]));
+
+  let sleepDurationMs = 0;
+  let deepWorkDurationMs = 0;
+  let physicalCareDurationMs = 0;
+  let mealCount = 0;
+  let wakeTimeStr: string | undefined = undefined;
+
+  for (const occ of occurrences) {
+    if (occ.activityId === 'act_wake' && occ.occurredAt) {
+      wakeTimeStr = new Date(occ.occurredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+  }
+
+  for (const seg of report.primarySegments) {
+    const act = actMap.get(seg.activityId);
+    if (!act) continue;
+    const catId = act.categoryId || '';
+    if (catId === 'cat_sleep' || act.id === 'act_sleep') {
+      sleepDurationMs += seg.durationMs;
+    } else if (catId === 'cat_work' || act.id === 'act_study') {
+      deepWorkDurationMs += seg.durationMs;
+    } else if (catId === 'cat_physical' || catId === 'cat_care' || act.id === 'act_exercise' || act.id === 'act_bath') {
+      physicalCareDurationMs += seg.durationMs;
+    } else if (catId === 'cat_food' || act.name.toLowerCase().includes('breakfast') || act.name.toLowerCase().includes('lunch') || act.name.toLowerCase().includes('dinner')) {
+      mealCount += 1;
+    }
+  }
+
+  const totalTrackedMs = report.exactPrimaryDurationMs + report.estimatedPrimaryDurationMs;
+  const completenessPercent = report.totalWindowDurationMs > 0
+    ? Math.round((totalTrackedMs / report.totalWindowDurationMs) * 100)
+    : 0;
+  const exactPercent = totalTrackedMs > 0
+    ? Math.round((report.exactPrimaryDurationMs / totalTrackedMs) * 100)
+    : 0;
+
+  return {
+    wakeTimeStr,
+    sleepDurationMs,
+    deepWorkDurationMs,
+    physicalCareDurationMs,
+    mealCount,
+    totalTrackedMs,
+    untrackedMs: report.untrackedDurationMs,
+    completenessPercent,
+    exactPercent,
   };
 }
