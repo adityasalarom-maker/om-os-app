@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   THEMES, 
   type ThemeDefinition, 
@@ -27,9 +27,22 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({
   onClose
 }) => {
   const [activeThemeId, setActiveThemeId] = useState<string>(getStoredThemeId());
-  const [selectedCategory, setSelectedCategory] = useState<ThemeCategory>('Basic Dark');
+  const [selectedCategory, setSelectedCategory] = useState<ThemeCategory>(() => {
+    const currentId = getStoredThemeId();
+    const curr = THEMES.find(t => t.id === currentId);
+    return curr ? curr.category : 'Basic Dark';
+  });
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (isOpen) {
+      const currentId = getStoredThemeId();
+      setActiveThemeId(currentId);
+      const curr = THEMES.find(t => t.id === currentId);
+      if (curr) {
+        setSelectedCategory(curr.category);
+      }
+    }
+  }, [isOpen]);
 
   const categories: { id: ThemeCategory; label: string; icon: any; count: number }[] = [
     { id: 'Basic Dark', label: 'Basic Dark (5)', icon: Moon, count: 5 },
@@ -39,6 +52,7 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({
 
   const handleSelectTheme = (theme: ThemeDefinition) => {
     setActiveThemeId(theme.id);
+    setSelectedCategory(theme.category);
     applyTheme(theme.id);
   };
 

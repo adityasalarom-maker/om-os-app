@@ -106,7 +106,7 @@ export function App() {
   }
 
   return (
-    <div key={currentThemeId} className="flex h-screen w-screen overflow-hidden text-gray-100 font-sans transition-colors duration-200" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-main)' }}>
+    <div className="flex h-screen w-screen overflow-hidden font-sans transition-colors duration-200" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-main)' }}>
       {/* Sidebar Navigation */}
       <Sidebar
         currentTab={currentTab}
@@ -121,9 +121,9 @@ export function App() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header Bar */}
-        <header className="h-16 bg-[#161822]/80 backdrop-blur-md border-b border-[#272b3b] px-6 flex items-center justify-between z-10 shrink-0">
+        <header className="h-16 backdrop-blur-md px-6 flex items-center justify-between z-10 shrink-0 border-b transition-colors" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <span className="text-lg font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-main)' }}>
               <span className="text-indigo-400">à¥</span>
               <span className="capitalize">
                 {currentTab === 'tracker' ? 'Personal Daily Life Tracker' :
@@ -143,11 +143,11 @@ export function App() {
             {/* Quick search button for desktop */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="hidden sm:flex items-center gap-2 bg-[#1c2030] hover:bg-[#23283c] border border-[#2d3246] text-gray-400 hover:text-white px-3 py-1.5 rounded-xl text-xs transition-colors"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-colors border shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
             >
               <Search size={14} className="text-indigo-400" />
               <span>Jump to note or task...</span>
-              <kbd className="bg-[#141622] px-1 py-0.5 rounded text-[10px] font-mono border border-[#272b3d]">Ctrl+P</kbd>
+              <kbd className="px-1 py-0.5 rounded text-[10px] font-mono border" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>Ctrl+P</kbd>
             </button>
 
             {/* Version 2: Sovereign Studio Switcher Button */}
@@ -163,7 +163,7 @@ export function App() {
             {/* Multimodal OCR Scanner Button */}
             <button
               onClick={() => setIsOcrOpen(true)}
-              className="flex items-center gap-1.5 bg-[#1c2030] hover:bg-[#23283c] border border-[#2d3246] text-purple-300 hover:text-white px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer border shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
               title="Multimodal Document Intelligence: Scan bills, receipts, or Sanskrit text via offline OCR"
             >
               <Camera size={14} className="text-purple-400" />
@@ -173,7 +173,7 @@ export function App() {
             {/* Visual Theme Selector Button */}
             <button
               onClick={() => setIsThemeOpen(true)}
-              className="flex items-center gap-1.5 bg-[#1c2030] hover:bg-[#23283c] border border-[#2d3246] text-indigo-300 hover:text-white px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer border shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
               title="Change Visual Theme (15 themes available across Basic Dark, High Contrast, Bright Solar)"
             >
               <Palette size={14} className="text-indigo-400" />
@@ -188,7 +188,7 @@ export function App() {
                   ? 'bg-amber-500/15 border-amber-500/40 text-amber-300' 
                   : pendingQueueCount > 0 
                   ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300' 
-                  : 'bg-[#1c2030] hover:bg-[#23283c] border-[#2d3246] text-emerald-300 hover:text-white'
+                  : 'text-emerald-500 hover:opacity-90'
               }`}
               title="Google Sheets Live Automation & Cloud Bridge"
             >
@@ -201,7 +201,7 @@ export function App() {
             {/* Mobile & S25 Ultra Deployment Hub Button */}
             <button
               onClick={() => setIsMobileDeployOpen(true)}
-              className="flex items-center gap-1.5 bg-[#1c2030] hover:bg-[#23283c] border border-[#2d3246] text-cyan-300 hover:text-white px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs transition-colors cursor-pointer border shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
               title="Mobile & Samsung Galaxy S25 Ultra Deployment Hub"
             >
               <Smartphone size={14} className="text-cyan-400" />
