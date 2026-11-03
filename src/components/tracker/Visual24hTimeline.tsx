@@ -105,11 +105,11 @@ export function Visual24hTimeline({
                 style={{
                   left: `${leftPercent}%`,
                   width: `${Math.max(1.2, widthPercent)}%`,
-                  backgroundColor: isRunning ? undefined : color,
+                  backgroundColor: isRunning ? '#059669' : color,
                 }}
-                className={`absolute top-0 bottom-0 cursor-pointer transition-all hover:brightness-125 hover:z-20 flex flex-col justify-center px-1.5 overflow-hidden group shadow-md ${
+                className={`absolute top-0 bottom-0 cursor-pointer transition-all hover:brightness-110 hover:z-20 flex flex-col justify-center px-1.5 overflow-hidden group shadow-md ${
                   isRunning
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-500 animate-pulse border-2 border-emerald-300 ring-2 ring-emerald-500/50 z-10'
+                    ? 'border-2 border-emerald-400 z-10'
                     : isEstimated
                     ? 'border-2 border-dashed border-white/40'
                     : ''
@@ -117,7 +117,7 @@ export function Visual24hTimeline({
                 title={`${act?.name || 'Activity'}: ${startTimeStr} - ${endTimeStr} (${durationMins}m) [${isRunning ? 'Live Now' : seg.confidenceLabel}]`}
               >
                 <div className="flex items-center gap-1">
-                  {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />}
+                  {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />}
                   <span className="text-[10px] font-bold text-white truncate drop-shadow-sm leading-tight">
                     {act?.name || 'Activity'}
                   </span>

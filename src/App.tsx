@@ -70,14 +70,22 @@ export function App() {
   const pendingQueueCount = useLiveQuery(() => db.syncQueue.where('status').equals('pending').count(), []) || 0;
   const conflictCount = useLiveQuery(() => db.syncConflicts.toArray(), [])?.filter(c => !c.resolved).length || 0;
 
-  useEffect(() => {
-    // Initialize user's persisted visual theme
-    initializeThemeOnStartup();
+  const [currentThemeId, setCurrentThemeId] = useState<string>('midnight-obsidian');
 
-    // Seed initial database records from Om Knowledge OS v2.0
+  useEffect(() => {
+    const initialTheme = initializeThemeOnStartup();
+    setCurrentThemeId(initialTheme.id);
+
+    const onThemeChanged = (e: any) => {
+      if (e.detail?.id) setCurrentThemeId(e.detail.id);
+    };
+    window.addEventListener('om-theme-changed', onThemeChanged);
+
     initializeSeedDataIfEmpty().then(() => {
       setIsReady(true);
     });
+
+    return () => window.removeEventListener('om-theme-changed', onThemeChanged);
   }, []);
 
   if (!isReady) {
@@ -98,7 +106,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0f1117] text-gray-100 font-sans">
+    <div key={currentThemeId} className="flex h-screen w-screen overflow-hidden text-gray-100 font-sans transition-colors duration-200" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-main)' }}>
       {/* Sidebar Navigation */}
       <Sidebar
         currentTab={currentTab}
