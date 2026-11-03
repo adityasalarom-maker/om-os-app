@@ -30,6 +30,7 @@ import { GapReviewWizardModal } from './GapReviewWizardModal';
 import { FailureRecoveryModal } from './FailureRecoveryModal';
 import { db, initializeDailyTrackerIfEmpty } from '../../db';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { CANONICAL_ACTIVITIES, seedTracker3DayMockData } from '../../services/trackerMockData';
 import {
   projectDayTimeline,
   evaluatePrimaryStartConflict,
@@ -44,28 +45,45 @@ import {
   type TimelineGap,
 } from '../../services/dailyTrackerEngine';
 
-// Default starter activities catalog fallback
-const STARTER_ACTIVITIES: ActivityDefinition[] = [
-  { id: 'act_wake', name: 'Wake Up', categoryId: 'cat_sleep', defaultMode: 'EVENT', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_washroom', name: 'Washroom & Hygiene', categoryId: 'cat_care', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_bath', name: 'Bath', categoryId: 'cat_care', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_exercise', name: 'Exercise & Yoga', categoryId: 'cat_physical', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_meditation', name: 'Meditation', categoryId: 'cat_mental', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_breakfast', name: 'Breakfast', categoryId: 'cat_food', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_study', name: 'Deep Study / Work', categoryId: 'cat_work', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_music', name: 'Music / Audio', categoryId: 'cat_entertainment', defaultMode: 'INTERVAL', defaultRole: 'SECONDARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_medicine', name: 'Medicine', categoryId: 'cat_care', defaultMode: 'EVENT', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-  { id: 'act_sleep', name: 'Night Sleep', categoryId: 'cat_sleep', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
-];
+const ACTIVITY_CATEGORY_FALLBACKS: Record<string, string> = {
+  act_wake: 'cat_sleep',
+  act_sleep: 'cat_sleep',
+  act_nap: 'cat_sleep',
+  act_morning: 'cat_morning',
+  act_water: 'cat_morning',
+  act_study: 'cat_work',
+  act_coding: 'cat_work',
+  act_research: 'cat_work',
+  act_breakfast: 'cat_food',
+  act_lunch: 'cat_food',
+  act_tea: 'cat_food',
+  act_dinner: 'cat_food',
+  act_bath: 'cat_care',
+  act_washroom: 'cat_care',
+  act_medicine: 'cat_care',
+  act_exercise: 'cat_fitness',
+  act_pranayama: 'cat_fitness',
+  act_meditation: 'cat_fitness',
+  act_walk: 'cat_fitness',
+  act_music: 'cat_leisure',
+  act_leisure_reading: 'cat_leisure',
+  act_family: 'cat_social',
+  act_calls: 'cat_social',
+  act_commute: 'cat_travel',
+  act_errands: 'cat_chores',
+  act_cleaning: 'cat_chores',
+  act_scrolling: 'cat_distracted',
+};
 
 export function DailyTrackerView() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [viewType, setViewType] = useState<'CALENDAR_DAY' | 'WAKE_CYCLE'>('CALENDAR_DAY');
   const [activeSubTab, setActiveSubTab] = useState<'TIMELINE' | 'INTELLIGENCE' | 'CATALOG'>('TIMELINE');
 
-  // Ensure starter activities are seeded into Dexie
+  // Ensure starter activities & 3-day history are seeded
   useEffect(() => {
     initializeDailyTrackerIfEmpty();
+    seedTracker3DayMockData(false);
   }, []);
 
   // Live Queries from Dexie v13 Database
@@ -73,7 +91,7 @@ export function DailyTrackerView() {
   const dbOccurrences = useLiveQuery(() => db.activityOccurrences.toArray(), []);
   const dbSegments = useLiveQuery(() => db.timeSegments.toArray(), []);
 
-  const activities = (dbActivities && dbActivities.length > 0) ? dbActivities : STARTER_ACTIVITIES;
+  const activities = (dbActivities && dbActivities.length > 0) ? dbActivities : CANONICAL_ACTIVITIES;
   const occurrences = dbOccurrences || [];
   const segments = dbSegments || [];
 
@@ -442,6 +460,17 @@ export function DailyTrackerView() {
             <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
             <span>Recovery & Backup</span>
           </button>
+
+          <button
+            onClick={async () => {
+              const res = await seedTracker3DayMockData(true);
+              showToast(res.message);
+            }}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-800 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors"
+            title="Seed 3 days of historical tracking data (Yesterday, 2 days ago, 3 days ago)"
+          >
+            <span>🌱 Seed 3-Day Demo</span>
+          </button>
         </div>
       </div>
 
@@ -651,7 +680,7 @@ export function DailyTrackerView() {
                       const catActivities = activities.filter(
                         (a) =>
                           !a.isArchived &&
-                          a.categoryId === cat.id &&
+                          (a.categoryId === cat.id || ACTIVITY_CATEGORY_FALLBACKS[a.id] === cat.id) &&
                           a.name.toLowerCase().includes(drawerSearch.toLowerCase())
                       );
                       if (drawerSearch && catActivities.length === 0) return null;
