@@ -412,7 +412,7 @@ export const PdfReaderView: React.FC = () => {
   }, [libraryDocs, statusFilter, typeFilter, searchDocQuery]);
 
   return (
-    <div className="space-y-4 pb-20 md:pb-6 select-none">
+    <div data-ag-id="PdfReader_Root_Workspace" className="space-y-4 pb-20 md:pb-6 select-none">
       
       {/* Toast Notification */}
       {notification && (
@@ -704,7 +704,7 @@ export const PdfReaderView: React.FC = () => {
         <div className="space-y-3">
           
           {/* Top Control Bar */}
-          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-3 flex items-center justify-between gap-2 flex-wrap shadow-md">
+          <div data-ag-id="PdfReader_Toolbar_Controls" className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-3 flex items-center justify-between gap-2 flex-wrap shadow-md">
             
             {/* Left: Back & Document Metadata */}
             <div className="flex items-center gap-2.5">
@@ -855,7 +855,7 @@ export const PdfReaderView: React.FC = () => {
 
           {/* Page Canvas Container with Dynamic Theme */}
           <div
-            className="rounded-2xl p-4 md:p-8 flex justify-center items-center overflow-auto min-h-[600px] transition-colors relative"
+            data-ag-id="PdfReader_Canvas_DocumentViewer" className="rounded-2xl p-4 md:p-8 flex justify-center items-center overflow-auto min-h-[600px] transition-colors relative"
             style={{ backgroundColor: activeTheme.bg }}
             onMouseUp={handleMouseUp}
           >

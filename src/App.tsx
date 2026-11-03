@@ -30,7 +30,7 @@ const DocumentIntelligenceModal = React.lazy(() => import('./components/Document
 import { db, initializeSeedDataIfEmpty } from './db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { initializeThemeOnStartup } from './services/themeEngine';
-import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera, Sheet, ShieldCheck } from 'lucide-react';
+import { Search, Sparkles, Bell, Shield, Smartphone, Palette, Camera, Sheet, ShieldCheck, Code } from 'lucide-react';
 
 export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
@@ -41,6 +41,38 @@ export function App() {
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [isMobileDeployOpen, setIsMobileDeployOpen] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isCanonicalMode, setIsCanonicalMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('om_os_canonical_names') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (isCanonicalMode) {
+      document.documentElement.classList.add('dev-canonical-mode');
+      document.body.classList.add('dev-canonical-mode');
+    } else {
+      document.documentElement.classList.remove('dev-canonical-mode');
+      document.body.classList.remove('dev-canonical-mode');
+    }
+  }, [isCanonicalMode]);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
+        e.preventDefault();
+        setIsCanonicalMode(prev => {
+          const next = !prev;
+          try { localStorage.setItem('om_os_canonical_names', String(next)); } catch {}
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   // Dual-Version Operating Support: Version 1 (Technical Cockpit) vs Version 2 (Sovereign Studio)
   const [osVersion, setOsVersion] = useState<'v1' | 'v2'>(() => {
@@ -106,7 +138,7 @@ export function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans transition-colors duration-200" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-main)' }}>
+    <div data-ag-id="App_Root_Shell" className="flex h-screen w-screen overflow-hidden font-sans transition-colors duration-200" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-main)' }}>
       {/* Sidebar Navigation */}
       <Sidebar
         currentTab={currentTab}
@@ -121,10 +153,10 @@ export function App() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Top Header Bar */}
-        <header className="h-16 backdrop-blur-md px-6 flex items-center justify-between z-10 shrink-0 border-b transition-colors" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+        <header data-ag-id="App_Header_GlobalToolbar" className="h-16 backdrop-blur-md px-6 flex items-center justify-between z-10 shrink-0 border-b transition-colors" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold tracking-tight flex items-center gap-2" style={{ color: 'var(--text-main)' }}>
-              <span className="text-indigo-400">à¥</span>
+              <span className="text-indigo-400 font-bold text-lg select-none">ॐ</span>
               <span className="capitalize">
                 {currentTab === 'tracker' ? 'Personal Daily Life Tracker' :
                  currentTab === 'inbox' ? 'Universal Inbox & AI' : 
@@ -143,7 +175,7 @@ export function App() {
             {/* Quick search button for desktop */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-colors border shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
+              data-ag-id="App_Header_Button_QuickSearch" className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-colors border shadow-sm whitespace-nowrap shrink-0" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
             >
               <Search size={14} className="text-indigo-400" />
               <span>Jump to note or task...</span>
@@ -208,6 +240,26 @@ export function App() {
               <span className="hidden sm:inline">S25 Hub</span>
             </button>
 
+            {/* Visual Canonical UI Naming Toggle */}
+            <button
+              onClick={() => setIsCanonicalMode(prev => {
+                const next = !prev;
+                try { localStorage.setItem('om_os_canonical_names', String(next)); } catch {}
+                return next;
+              })}
+              data-ag-id="App_Header_Button_CanonicalToggle"
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono font-semibold transition-colors cursor-pointer border shadow-sm ${
+                isCanonicalMode 
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 ring-1 ring-amber-500/30' 
+                  : 'text-gray-400 hover:text-white border'
+              }`}
+              style={!isCanonicalMode ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' } : undefined}
+              title="Toggle Visual Canonical UI Naming System (Ctrl+Shift+I)"
+            >
+              <Code size={13} className={isCanonicalMode ? 'text-amber-400' : 'text-gray-400'} />
+              <span className="hidden sm:inline">{isCanonicalMode ? '[UI: ON]' : '[UI]'}</span>
+            </button>
+
             {/* System Diagnostic & E2E Audit Button */}
             <button
               onClick={() => setIsDiagnosticOpen(true)}
@@ -222,7 +274,7 @@ export function App() {
         </header>
 
         {/* Scrollable Content View */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
+        <main data-ag-id="App_Main_Workspace" className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
           <div className="max-w-7xl mx-auto">
             {currentTab === 'dashboard' && (
               <ExecutiveDashboard 

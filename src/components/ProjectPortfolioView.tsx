@@ -313,7 +313,7 @@ export const ProjectPortfolioView: React.FC<ProjectPortfolioViewProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6 select-none">
+    <div data-ag-id="ProjectPortfolio_Root_Workspace" className="space-y-6 pb-20 md:pb-6 select-none">
       
       {/* Toast Notification */}
       {notification && (
@@ -324,7 +324,7 @@ export const ProjectPortfolioView: React.FC<ProjectPortfolioViewProps> = ({
       )}
 
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#181a24] p-5 rounded-2xl border border-[#272b3b] shadow-md">
+      <div data-ag-id="ProjectPortfolio_Banner_Header" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#181a24] p-5 rounded-2xl border border-[#272b3b] shadow-md">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="p-2.5 bg-indigo-600/10 rounded-xl text-indigo-400 border border-indigo-500/20">
@@ -480,7 +480,7 @@ export const ProjectPortfolioView: React.FC<ProjectPortfolioViewProps> = ({
 
       {/* VIEW 1: PROJECT COCKPIT BOARD */}
       {activeTab === 'cockpit' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div data-ag-id="ProjectPortfolio_Matrix_Container" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.length === 0 ? (
             <div className="col-span-full py-16 text-center text-gray-500 text-xs bg-[#181a24] border border-[#272b3b] rounded-2xl p-8">
               <FolderKanban size={42} className="mx-auto mb-3 text-gray-600" />

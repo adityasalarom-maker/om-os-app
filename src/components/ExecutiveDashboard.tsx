@@ -108,9 +108,9 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   });
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
+    <div data-ag-id="ExecutiveDashboard_Root_Workspace" className="space-y-6 pb-20 md:pb-6">
       {/* Top Banner / Today Focus */}
-      <div className="bg-gradient-to-r from-[#1c2030] via-[#202538] to-[#1a1d2c] border border-[#2d3246] rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div data-ag-id="ExecutiveDashboard_Banner_TodayFocus" className="bg-gradient-to-r from-[#1c2030] via-[#202538] to-[#1a1d2c] border border-[#2d3246] rounded-2xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
@@ -173,7 +173,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         </div>
 
         {/* Quick KPI Stat Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#292f44]">
+        <div data-ag-id="ExecutiveDashboard_Stats_KpiStrip" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#292f44]">
           <div className="bg-[#141622]/60 rounded-xl p-3 border border-[#262b3d]">
             <span className="text-xs text-gray-400 block font-medium">Active Tasks</span>
             <span className="text-xl font-bold text-white mt-1 block">{activeTasks.length}</span>
@@ -205,6 +205,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
       {/* Real-time Vedic Panchang & Muhurta Executive Strip */}
       <div 
         onClick={() => onNavigate('jyotish')}
+        data-ag-id="ExecutiveDashboard_Strip_Panchang"
         className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/20 via-[#181a24] to-indigo-950/20 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:border-amber-500/50 transition-all shadow-sm group"
       >
         <div className="flex items-center gap-3">
@@ -237,6 +238,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
       {/* Metaphysical Dream & Sadhana OS Executive Strip */}
       <div 
         onClick={() => onNavigate('sadhana')}
+        data-ag-id="ExecutiveDashboard_Strip_Sadhana"
         className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/20 via-[#181a24] to-emerald-950/20 border border-purple-500/30 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:border-purple-500/50 transition-all shadow-sm group"
       >
         <div className="flex items-center gap-3">
@@ -273,7 +275,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         <div className="lg:col-span-2 space-y-6">
           
           {/* Today's Focus Tasks */}
-          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
+          <div data-ag-id="ExecutiveDashboard_Card_TodayFocus" className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Flame className="text-amber-400" size={18} />
@@ -334,7 +336,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
           </div>
 
           {/* Active Projects Hub */}
-          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
+          <div data-ag-id="ExecutiveDashboard_Card_ActiveProjects" className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="text-emerald-400" size={18} />
@@ -390,7 +392,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
         <div className="space-y-6">
           
           {/* High-Speed Quick Capture */}
-          <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
+          <div data-ag-id="ExecutiveDashboard_Card_QuickCapture" className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
               <Plus className="text-indigo-400" size={17} />
               <h3 className="font-semibold text-white text-sm">High-Speed Capture</h3>

@@ -344,7 +344,7 @@ ${inquiry.decisionLog || 'Decision logged under Research Hub pipeline.'}
   };
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6 select-none">
+    <div data-ag-id="ResearchHub_Root_Workspace" className="space-y-6 pb-20 md:pb-6 select-none">
       
       {/* Toast Notification */}
       {notification && (
@@ -466,7 +466,7 @@ ${inquiry.decisionLog || 'Decision logged under Research Hub pipeline.'}
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#181a24] p-3 rounded-2xl border border-[#272b3b]">
+      <div data-ag-id="ResearchHub_Sidebar_FilterList" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#181a24] p-3 rounded-2xl border border-[#272b3b]">
         <div className="flex items-center gap-2 flex-wrap">
           {/* Domain Filter */}
           <select
@@ -507,7 +507,7 @@ ${inquiry.decisionLog || 'Decision logged under Research Hub pipeline.'}
       </div>
 
       {/* Main Grid: Research Inquiries Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div data-ag-id="ResearchHub_Table_EvidencePipeline" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredInquiries.length === 0 ? (
           <div className="col-span-full py-16 text-center text-gray-500 text-xs bg-[#181a24] border border-[#272b3b] rounded-2xl p-8">
             <FlaskConical size={42} className="mx-auto mb-3 text-gray-600" />

@@ -51,7 +51,7 @@ export function Visual24hTimeline({
   };
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+    <div data-ag-id="DailyTracker_Timeline_24hCanvas" className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-indigo-400" />

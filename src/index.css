@@ -60,12 +60,16 @@ html, body {
 /* 3. Cards & Surfaces */
 .bg-\[\#181a24\],
 .bg-\[\#141622\],
+.bg-\[\#141622\]\/60,
+.bg-\[\#141622\]\/80,
 .bg-\[\#1a1d2c\],
 .bg-\[\#1a1d27\],
 .bg-\[\#12141e\],
 .bg-\[\#1e2230\],
 .bg-\[\#1f2333\],
 .bg-\[\#1c2030\],
+.bg-\[\#202538\],
+.bg-\[\#262c40\],
 .bg-slate-850,
 .bg-slate-800,
 .bg-slate-800\/60,
@@ -83,6 +87,9 @@ html, body {
 .border-\[\#252a3b\],
 .border-\[\#232738\],
 .border-\[\#2d3246\],
+.border-\[\#292f44\],
+.border-\[\#262b3d\],
+.border-\[\#373f5c\],
 .border-slate-800,
 .border-slate-800\/60,
 .border-slate-800\/80,
@@ -95,6 +102,37 @@ html, body {
    ========================================================================== */
 .light-mode {
   color-scheme: light;
+}
+
+/* Override dark gradients on hero cards and strips in Light Mode */
+.light-mode [class*="from-\[\#1c2030\]"],
+.light-mode [class*="from-\[\#141625\]"],
+.light-mode [class*="from-amber-950\/20"],
+.light-mode [class*="from-purple-950\/20"] {
+  background-image: none !important;
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-mode .from-\[\#1c2030\],
+.light-mode .from-\[\#141622\],
+.light-mode .from-\[\#181a24\],
+.light-mode .from-\[\#0f1117\] {
+  --tw-gradient-from: var(--bg-card) var(--tw-gradient-from-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.light-mode .via-\[\#202538\],
+.light-mode .via-\[\#181a24\],
+.light-mode .via-\[\#161822\] {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--bg-card-hover) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+.light-mode .to-\[\#1a1d2c\],
+.light-mode .to-\[\#181a24\],
+.light-mode .to-\[\#141622\] {
+  --tw-gradient-to: var(--bg-card) var(--tw-gradient-to-position) !important;
 }
 
 .light-mode h1,
@@ -123,31 +161,37 @@ html, body {
 }
 
 /* High-contrast colors for pastel pill text in Light Solar mode */
+.light-mode .text-amber-200,
 .light-mode .text-amber-300,
 .light-mode .text-amber-400 {
   color: #b45309 !important; /* Dark amber */
 }
 
+.light-mode .text-emerald-200,
 .light-mode .text-emerald-300,
 .light-mode .text-emerald-400 {
   color: #047857 !important; /* Dark emerald */
 }
 
+.light-mode .text-indigo-200,
 .light-mode .text-indigo-300,
 .light-mode .text-indigo-400 {
   color: #4338ca !important; /* Deep indigo */
 }
 
+.light-mode .text-cyan-200,
 .light-mode .text-cyan-300,
 .light-mode .text-cyan-400 {
   color: #0e7490 !important; /* Deep cyan */
 }
 
+.light-mode .text-purple-200,
 .light-mode .text-purple-300,
 .light-mode .text-purple-400 {
   color: #7e22ce !important; /* Deep purple */
 }
 
+.light-mode .text-rose-200,
 .light-mode .text-rose-300,
 .light-mode .text-rose-400 {
   color: #be123c !important; /* Deep crimson */
@@ -177,6 +221,52 @@ html, body {
   color: var(--text-main) !important;
   background-color: var(--bg-card) !important;
   border-color: var(--border-color) !important;
+}
+
+/* ==========================================================================
+   TASK-21: CANONICAL UI NAMING SYSTEM (AGENT-USER DOM BRIDGE)
+   Activated by .dev-canonical-mode on body or html
+   ========================================================================== */
+.dev-canonical-mode [data-ag-id] {
+  position: relative !important;
+  outline: 1.5px dashed rgba(234, 179, 8, 0.65) !important;
+  outline-offset: -1px;
+}
+
+.dev-canonical-mode [data-ag-id]::after {
+  content: "[" attr(data-ag-id) "]";
+  position: absolute;
+  top: 3px;
+  right: 6px;
+  z-index: 50;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.025em;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  background-color: #facc15 !important; /* Vivid high-contrast yellow */
+  color: #09090b !important; /* Pure black text */
+  border: 1px solid rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dev-canonical-mode [data-ag-id]:hover {
+  outline: 2px solid #eab308 !important;
+}
+
+.dev-canonical-mode [data-ag-id]:hover::after {
+  z-index: 60;
+  background-color: #eab308 !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45) !important;
 }
 
 /* Custom scrollbar */

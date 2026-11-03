@@ -121,6 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <>
       {/* Desktop Left Rail Sidebar (Hidden on mobile) */}
       <aside 
+        data-ag-id="Sidebar_Navigation_Drawer"
         className={`hidden md:flex flex-col bg-[#161822] border-r border-[#272b3b] transition-all duration-200 select-none z-20 ${
           isCollapsed ? 'w-18' : 'w-64'
         }`}
@@ -217,7 +218,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </aside>
 
       {/* Mobile Bottom Navigation Bar (Optimized for Samsung S25 Ultra 6.8" AMOLED & Thumb Ergonomics) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#161822]/95 backdrop-blur-md border-t border-[#272b3b] z-40 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+      <nav data-ag-id="Sidebar_Navigation_BottomBar" className="md:hidden fixed bottom-0 left-0 right-0 bg-[#161822]/95 backdrop-blur-md border-t border-[#272b3b] z-40 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom,0px)] h-[calc(4rem+env(safe-area-inset-bottom,0px))]">
         {/* 1. Home Dashboard */}
         <button
           onClick={() => onSelectTab('dashboard')}

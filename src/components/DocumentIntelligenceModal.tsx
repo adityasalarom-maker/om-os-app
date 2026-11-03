@@ -361,7 +361,7 @@ export const DocumentIntelligenceModal: React.FC<DocumentIntelligenceModalProps>
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-black/80 backdrop-blur-md">
-      <div className="relative w-full max-w-5xl bg-[#161822] border border-[#2b3046] rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div data-ag-id="DocumentIntelligence_Modal_Dialog" className="relative w-full max-w-5xl bg-[#161822] border border-[#2b3046] rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-[#24283b] flex items-center justify-between bg-[#13151f]">
