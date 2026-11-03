@@ -103,7 +103,7 @@ export const SovereignStudioV2: React.FC<SovereignStudioV2Props> = ({ onSwitchTo
         <div className="space-y-6 animate-in fade-in duration-200">
           
           {/* Morning Intention & Contemplative Anchor Banner */}
-          <div className="bg-gradient-to-r from-[#171b29] via-[#1a1e2f] to-[#141724] border border-[#2b334a] rounded-2xl p-6 shadow-xl relative overflow-hidden">
+          <div data-ag-id="SovereignStudio_Banner_MorningIntention" className="bg-gradient-to-r from-[#171b29] via-[#1a1e2f] to-[#141724] border border-[#2b334a] rounded-2xl p-6 shadow-xl relative overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
             <div className="absolute right-0 top-0 bottom-0 w-64 bg-gradient-to-l from-amber-500/5 to-transparent pointer-events-none" />
             <div className="flex items-center gap-2 text-xs font-medium text-amber-400 uppercase tracking-wider mb-2">
               <Sparkles size={14} /> Morning Intention & Contemplative Anchor
@@ -146,7 +146,7 @@ export const SovereignStudioV2: React.FC<SovereignStudioV2Props> = ({ onSwitchTo
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
                   placeholder="Capture an actionable task directly..."
-                  className="flex-1 bg-[#121522] border border-[#242b3d] rounded-xl px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50"
+                  className="flex-1 bg-[#121522] border border-[#242b3d] rounded-xl px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500/50" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                 />
                 <button
                   type="submit"
@@ -167,6 +167,7 @@ export const SovereignStudioV2: React.FC<SovereignStudioV2Props> = ({ onSwitchTo
                         ? 'bg-[#0f111a]/60 border-white/5 opacity-60'
                         : 'bg-[#131724] hover:bg-[#181d2e] border-[#22293b] hover:border-[#333d59] shadow-sm'
                     }`}
+                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
                   >
                     <button className="mt-0.5 text-gray-400 group-hover:text-amber-400 transition-colors">
                       {task.status === 'Done' ? (
@@ -208,7 +209,7 @@ export const SovereignStudioV2: React.FC<SovereignStudioV2Props> = ({ onSwitchTo
 
             {/* Right Column: Contemplative Daily Rhythm (4 cols) */}
             <div className="lg:col-span-4 space-y-4">
-              <div className="bg-[#121522] border border-[#23293b] rounded-2xl p-5 space-y-4 shadow-sm">
+              <div data-ag-id="SovereignStudio_Card_DailyRhythm" className="bg-[#121522] border border-[#23293b] rounded-2xl p-5 space-y-4 shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
                   <Compass size={16} /> Sovereign Daily Rhythm
                 </div>
@@ -254,7 +255,7 @@ export const SovereignStudioV2: React.FC<SovereignStudioV2Props> = ({ onSwitchTo
               {/* Quick Link to Uttarkashi Sanctuary Progress */}
               <div 
                 onClick={() => setActiveTab('sanctuary')}
-                className="bg-[#121522] hover:bg-[#161a29] border border-[#23293b] hover:border-amber-500/30 rounded-2xl p-4 transition-all cursor-pointer group shadow-sm"
+                data-ag-id="SovereignStudio_Card_UttarkashiDiligence" className="bg-[#121522] hover:bg-[#161a29] border border-[#23293b] hover:border-amber-500/30 rounded-2xl p-4 transition-all cursor-pointer group shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
               >
                 <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
                   <span className="flex items-center gap-1.5 font-semibold text-gray-200">
@@ -609,7 +610,7 @@ export const SovereignStudioV2: React.FC<SovereignStudioV2Props> = ({ onSwitchTo
     return (
       <div className="space-y-6 pt-2">
         {/* Serene V2 Header in Embedded Dashboard Mode */}
-        <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm space-y-4">
+        <div data-ag-id="SovereignStudio_Header_Embedded" className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-5 shadow-sm space-y-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-indigo-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-serif text-2xl shadow-inner">
@@ -652,9 +653,21 @@ export const SovereignStudioV2: React.FC<SovereignStudioV2Props> = ({ onSwitchTo
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                   activeTab === tab.id
-                    ? 'bg-amber-500/15 text-amber-200 border border-amber-500/30 shadow-sm'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent'
+                    ? 'font-semibold shadow-sm'
+                    : 'hover:opacity-100 opacity-70'
                 }`}
+                style={
+                  activeTab === tab.id
+                    ? {
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--accent)',
+                        border: '1px solid var(--accent)'
+                      }
+                    : {
+                        color: 'var(--text-main)',
+                        backgroundColor: 'transparent'
+                      }
+                }
               >
                 <span>{tab.label}</span>
               </button>

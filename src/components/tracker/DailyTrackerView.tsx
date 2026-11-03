@@ -352,16 +352,8 @@ export function DailyTrackerView() {
 
       {/* Top Header & Day Navigation */}
       <div data-ag-id="DailyTracker_Header_DateNavigator" className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/70 border border-slate-800 p-4 rounded-2xl backdrop-blur-md">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-xl font-bold text-white tracking-tight">Personal Daily Life Tracker</h2>
-            <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              TASK-20 Architecture
-            </span>
-          </div>
-          <p className="text-xs text-slate-400">
-            Local-first chronological 24h ledger • 11 categories • Decomposed confidence • Zero gap fabrication
-          </p>
+        <div>
+          <h2 className="text-xl font-bold text-white tracking-tight">Personal Daily Life Tracker</h2>
         </div>
 
         {/* Date Selector & Day Navigation */}

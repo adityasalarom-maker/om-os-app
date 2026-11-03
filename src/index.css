@@ -134,6 +134,62 @@ html, body {
   color-scheme: light;
 }
 
+/* Sovereign Studio V2 dark gradients and card backgrounds override in Light Mode */
+.light-mode [class*="from-\[\#171b29\]"],
+.light-mode [class*="from-\[\#151928\]"],
+.light-mode [class*="from-\[\#1a1e2f\]"] {
+  background-image: none !important;
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-mode .from-\[\#171b29\],
+.light-mode .from-\[\#151928\] {
+  --tw-gradient-from: var(--bg-card) var(--tw-gradient-from-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.light-mode .via-\[\#1a1e2f\],
+.light-mode .via-\[\#181d2f\] {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--bg-card-hover) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+.light-mode .to-\[\#141724\],
+.light-mode .to-\[\#121522\] {
+  --tw-gradient-to: var(--bg-card) var(--tw-gradient-to-position) !important;
+}
+
+.light-mode .bg-\[\#121522\],
+.light-mode .bg-\[\#131724\],
+.light-mode .bg-\[\#171b29\],
+.light-mode .bg-\[\#161a29\],
+.light-mode .bg-\[\#0d0f17\],
+.light-mode .bg-\[\#181d2f\],
+.light-mode .bg-\[\#0d101a\],
+.light-mode .bg-\[\#0a0c13\],
+.light-mode .bg-\[\#0f111a\],
+.light-mode .bg-\[\#0f111a\]\/60,
+.light-mode .bg-\[\#1a1f33\],
+.light-mode .bg-\[\#1a1b26\],
+.light-mode .bg-\[\#101924\],
+.light-mode .bg-\[\#20263a\],
+.light-mode .bg-\[\#181d2e\] {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode .border-\[\#2b334a\],
+.light-mode .border-\[\#242b3d\],
+.light-mode .border-\[\#22293b\],
+.light-mode .border-\[\#23293b\],
+.light-mode .border-\[\#212638\],
+.light-mode .border-\[\#272e45\],
+.light-mode .border-\[\#1f2436\],
+.light-mode .border-\[\#333d59\] {
+  border-color: var(--border-color) !important;
+}
+
 /* Override dark gradients on hero cards and strips in Light Mode */
 .light-mode [class*="from-\[\#1c2030\]"],
 .light-mode [class*="from-\[\#141625\]"],
@@ -285,6 +341,37 @@ html, body {
 .light-mode [class*="bg-\[\#1b1e2c\]"] {
   background-color: var(--bg-card) !important;
   border-color: var(--border-color) !important;
+}
+
+/* Subtle borders and translucent backgrounds in Light Mode */
+.light-mode .border-white\/5,
+.light-mode .border-white\/10 {
+  border-color: var(--border-color) !important;
+}
+
+.light-mode .bg-white\/5,
+.light-mode .bg-white\/10 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.light-mode .bg-black\/40 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.light-mode .text-amber-100,
+.light-mode .text-amber-100\/90 {
+  color: #92400e !important;
+}
+
+.light-mode .prose-invert,
+.light-mode .prose-invert * {
+  color: var(--text-main) !important;
+}
+
+.light-mode input::placeholder,
+.light-mode textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.75;
 }
 
 /* ==========================================================================
