@@ -44,6 +44,17 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const categories: { id: ThemeCategory; label: string; icon: any; count: number }[] = [
     { id: 'Basic Dark', label: 'Basic Dark (5)', icon: Moon, count: 5 },
     { id: 'High Contrast', label: 'High Contrast (5)', icon: Zap, count: 5 },
@@ -59,10 +70,16 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({
   const filteredThemes = THEMES.filter(t => t.category === selectedCategory);
   const activeThemeObj = THEMES.find(t => t.id === activeThemeId) || THEMES[0];
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+      onClick={onClose}
+    >
       <div 
-        className="w-full max-w-2xl bg-[#141622] border border-[#272b3d] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl bg-[#141622] border border-[#272b3d] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in fade-in zoom-in-95 duration-200 cursor-default"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-5 border-b border-[#272b3d] flex items-center justify-between bg-[#181a26]">
@@ -85,7 +102,7 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -191,7 +208,7 @@ export const ThemeSelectorModal: React.FC<ThemeSelectorModalProps> = ({
           </span>
           <button
             onClick={onClose}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-1.5 rounded-xl transition-all shadow-md shadow-indigo-600/30"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-1.5 rounded-xl transition-all shadow-md shadow-indigo-600/30 cursor-pointer"
           >
             Done
           </button>
