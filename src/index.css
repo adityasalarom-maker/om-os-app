@@ -17,12 +17,19 @@
   box-sizing: border-box;
 }
 
+.app-shell {
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow: hidden;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   background-color: var(--bg-primary);
   color: var(--text-main);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -37,7 +44,18 @@ html, body {
 /* 1. Main Backgrounds */
 .bg-\[\#0f1117\],
 .bg-\[\#0c0e14\],
+.bg-zinc-950,
+.bg-zinc-950\/40,
+.bg-zinc-950\/50,
+.bg-zinc-950\/60,
+.bg-zinc-950\/70,
+.bg-zinc-950\/80,
+.bg-zinc-950\/90,
+.bg-zinc-950\/95,
 .bg-slate-950,
+.bg-slate-950\/40,
+.bg-slate-950\/50,
+.bg-slate-950\/60,
 .bg-slate-950\/70,
 .bg-slate-950\/80,
 .bg-slate-950\/90 {
@@ -49,6 +67,12 @@ html, body {
 .bg-\[\#161822\]\/80,
 .bg-\[\#181a26\],
 .bg-\[\#10121a\],
+.bg-zinc-900,
+.bg-zinc-900\/60,
+.bg-zinc-900\/70,
+.bg-zinc-900\/80,
+.bg-zinc-900\/90,
+.bg-zinc-900\/95,
 .bg-slate-900,
 .bg-slate-900\/60,
 .bg-slate-900\/70,
@@ -59,6 +83,9 @@ html, body {
 
 /* 3. Cards & Surfaces */
 .bg-\[\#181a24\],
+.bg-\[\#171a29\],
+.bg-\[\#1a1c2d\],
+.bg-\[\#1c1f30\],
 .bg-\[\#141622\],
 .bg-\[\#141622\]\/60,
 .bg-\[\#141622\]\/80,
@@ -100,14 +127,21 @@ html, body {
 .bg-\[\#22283a\],
 .bg-\[\#272b3c\],
 .bg-\[\#2d3246\],
+.bg-zinc-850,
+.bg-zinc-800,
+.bg-zinc-800\/60,
+.bg-zinc-800\/80,
+.bg-zinc-750,
 .bg-slate-850,
 .bg-slate-800,
 .bg-slate-800\/60,
-.bg-slate-800\/80 {
+.bg-slate-800\/80,
+.bg-slate-750 {
   background-color: var(--bg-card) !important;
 }
 
 /* 4. Borders */
+.border-\[\#e2e8f0\],
 .border-\[\#272b3b\],
 .border-\[\#272b3d\],
 .border-\[\#282d3e\],
@@ -120,10 +154,18 @@ html, body {
 .border-\[\#292f44\],
 .border-\[\#262b3d\],
 .border-\[\#373f5c\],
+.border-zinc-900,
+.border-zinc-850,
+.border-zinc-800,
+.border-zinc-800\/80,
+.border-zinc-700,
+.border-zinc-700\/80,
+.border-slate-850,
 .border-slate-800,
 .border-slate-800\/60,
 .border-slate-800\/80,
-.border-slate-700 {
+.border-slate-700,
+.border-slate-700\/80 {
   border-color: var(--border-color) !important;
 }
 
@@ -434,4 +476,504 @@ html, body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
+}
+
+/* Executive Dashboard & Universal Hex Resets in Light Mode */
+.light-mode .bg-\[\#181a24\],
+.light-mode .bg-\[\#1d202e\],
+.light-mode .bg-\[\#141622\],
+.light-mode .bg-\[\#141622\]\/60,
+.light-mode .bg-\[\#1c2030\],
+.light-mode .bg-\[\#202538\],
+.light-mode .bg-\[\#1a1d2c\],
+.light-mode .bg-\[\#262c40\],
+.light-mode .bg-\[\#252a3d\],
+.light-mode .bg-\[\#1e2334\],
+.light-mode .bg-\[\#2d344d\],
+.light-mode .bg-\[\#232738\] {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode .border-\[\#272b3b\],
+.light-mode .border-\[\#2d3246\],
+.light-mode .border-\[\#262b3d\],
+.light-mode .border-\[\#282c3d\],
+.light-mode .border-\[\#222738\],
+.light-mode .border-\[\#292f44\],
+.light-mode .border-\[\#343b54\],
+.light-mode .border-\[\#373f5c\],
+.light-mode .border-\[\#2e354f\] {
+  border-color: var(--border-color) !important;
+}
+
+.light-mode [data-ag-id="ExecutiveDashboard_Banner_TodayFocus"] {
+  background-image: none !important;
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-mode [data-ag-id="ExecutiveDashboard_Strip_Panchang"],
+.light-mode [data-ag-id="ExecutiveDashboard_Strip_Sadhana"] {
+  background-image: none !important;
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode [data-ag-id*="ExecutiveDashboard"] .text-white,
+.light-mode [data-ag-id*="ExecutiveDashboard"] .text-gray-200,
+.light-mode [data-ag-id*="ExecutiveDashboard"] .text-gray-300 {
+  color: var(--text-main) !important;
+}
+
+.light-mode [data-ag-id*="ExecutiveDashboard"] .text-gray-400,
+.light-mode [data-ag-id*="ExecutiveDashboard"] .text-gray-500 {
+  color: var(--text-muted) !important;
+}
+
+.light-mode [data-ag-id*="ExecutiveDashboard"] [class*="bg-\[\#141622\]"] {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode [data-ag-id*="ExecutiveDashboard"] [class*="bg-\[\#1d202e\]"] {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* ==========================================================================
+   TASK-22: UNIVERSAL 19-DOMAIN MODULE THEME CONTRAST ENGINE
+   Automatically maps all hardcoded dark hex backgrounds and borders to 
+   theme-adaptive CSS variables in Light Mode.
+   ========================================================================== */
+
+/* Universal Dark Surface Mappings to Card Background */
+.light-mode .bg-\[\#050000\],
+.light-mode .bg-\[\#0a0c13\],
+.light-mode .bg-\[\#0b0c12\],
+.light-mode .bg-\[\#0c0e14\],
+.light-mode .bg-\[\#0d0f17\],
+.light-mode .bg-\[\#0d101a\],
+.light-mode .bg-\[\#0e1017\],
+.light-mode .bg-\[\#0f1117\],
+.light-mode .bg-\[\#0f1118\],
+.light-mode .bg-\[\#0f111a\],
+.light-mode .bg-\[\#100000\],
+.light-mode .bg-\[\#10121a\],
+.light-mode .bg-\[\#10121b\],
+.light-mode .bg-\[\#10121d\],
+.light-mode .bg-\[\#101924\],
+.light-mode .bg-\[\#11131c\],
+.light-mode .bg-\[\#11131d\],
+.light-mode .bg-\[\#11131e\],
+.light-mode .bg-\[\#111420\],
+.light-mode .bg-\[\#12141c\],
+.light-mode .bg-\[\#12141d\],
+.light-mode .bg-\[\#12141e\],
+.light-mode .bg-\[\#12141f\],
+.light-mode .bg-\[\#121420\],
+.light-mode .bg-\[\#121520\],
+.light-mode .bg-\[\#121522\],
+.light-mode .bg-\[\#13151f\],
+.light-mode .bg-\[\#131622\],
+.light-mode .bg-\[\#131623\],
+.light-mode .bg-\[\#131724\],
+.light-mode .bg-\[\#141622\],
+.light-mode .bg-\[\#141624\],
+.light-mode .bg-\[\#141724\],
+.light-mode .bg-\[\#141824\],
+.light-mode .bg-\[\#150000\],
+.light-mode .bg-\[\#151722\],
+.light-mode .bg-\[\#151824\],
+.light-mode .bg-\[\#161822\],
+.light-mode .bg-\[\#161824\],
+.light-mode .bg-\[\#161826\],
+.light-mode .bg-\[\#161928\],
+.light-mode .bg-\[\#161a27\],
+.light-mode .bg-\[\#161a29\],
+.light-mode .bg-\[\#162028\],
+.light-mode .bg-\[\#162121\],
+.light-mode .bg-\[\#171926\],
+.light-mode .bg-\[\#171a26\],
+.light-mode .bg-\[\#171a27\],
+.light-mode .bg-\[\#171b29\],
+.light-mode .bg-\[\#180000\],
+.light-mode .bg-\[\#181a24\],
+.light-mode .bg-\[\#181a26\],
+.light-mode .bg-\[\#181a27\],
+.light-mode .bg-\[\#181a28\],
+.light-mode .bg-\[\#181b28\],
+.light-mode .bg-\[\#181b2a\],
+.light-mode .bg-\[\#181d2e\],
+.light-mode .bg-\[\#181d2f\],
+.light-mode .bg-\[\#191b29\],
+.light-mode .bg-\[\#191c2b\],
+.light-mode .bg-\[\#1a1b26\],
+.light-mode .bg-\[\#1a1c29\],
+.light-mode .bg-\[\#1a1d29\],
+.light-mode .bg-\[\#1a1d2a\],
+.light-mode .bg-\[\#1a1d2c\],
+.light-mode .bg-\[\#1a1d2e\],
+.light-mode .bg-\[\#1a1e2d\],
+.light-mode .bg-\[\#1a1e2f\],
+.light-mode .bg-\[\#1a1f33\],
+.light-mode .bg-\[\#1b1e2c\],
+.light-mode .bg-\[\#1b1e2e\],
+.light-mode .bg-\[\#1b1f2e\],
+.light-mode .bg-\[\#1b1f30\],
+.light-mode .bg-\[\#1c1f2e\],
+.light-mode .bg-\[\#1c2030\],
+.light-mode .bg-\[\#1c2032\],
+.light-mode .bg-\[\#1c2035\],
+.light-mode .bg-\[\#1c2132\],
+.light-mode .bg-\[\#1d202e\],
+.light-mode .bg-\[\#1d2134\],
+.light-mode .bg-\[\#1e1927\],
+.light-mode .bg-\[\#1e1b18\],
+.light-mode .bg-\[\#1e2130\],
+.light-mode .bg-\[\#1e2230\],
+.light-mode .bg-\[\#1e2232\],
+.light-mode .bg-\[\#1e2233\],
+.light-mode .bg-\[\#1e2235\],
+.light-mode .bg-\[\#1e2333\],
+.light-mode .bg-\[\#1e2334\],
+.light-mode .bg-\[\#1e2335\],
+.light-mode .bg-\[\#1e2336\],
+.light-mode .bg-\[\#1e2338\],
+.light-mode .bg-\[\#1f191a\],
+.light-mode .bg-\[\#1f1e18\],
+.light-mode .bg-\[\#1f2333\],
+.light-mode .bg-\[\#1f2334\],
+.light-mode .bg-\[\#1f2335\],
+.light-mode .bg-\[\#1f2436\],
+.light-mode .bg-\[\#200000\],
+.light-mode .bg-\[\#20222a\],
+.light-mode .bg-\[\#202436\],
+.light-mode .bg-\[\#202438\],
+.light-mode .bg-\[\#202538\],
+.light-mode .bg-\[\#20263a\],
+.light-mode .bg-\[\#212638\],
+.light-mode .bg-\[\#221a24\],
+.light-mode .bg-\[\#221c1f\],
+.light-mode .bg-\[\#22263a\],
+.light-mode .bg-\[\#22273b\],
+.light-mode .bg-\[\#22273d\],
+.light-mode .bg-\[\#22283a\],
+.light-mode .bg-\[\#232738\],
+.light-mode .bg-\[\#23273a\],
+.light-mode .bg-\[\#23283b\],
+.light-mode .bg-\[\#23283c\],
+.light-mode .bg-\[\#24283d\],
+.light-mode .bg-\[\#24293d\],
+.light-mode .bg-\[\#24293e\],
+.light-mode .bg-\[\#242a3e\],
+.light-mode .bg-\[\#252219\],
+.light-mode .bg-\[\#252a3b\],
+.light-mode .bg-\[\#252a3d\],
+.light-mode .bg-\[\#252b40\],
+.light-mode .bg-\[\#252b42\],
+.light-mode .bg-\[\#262c40\],
+.light-mode .bg-\[\#272b3b\],
+.light-mode .bg-\[\#282d3e\],
+.light-mode .bg-\[\#282d42\],
+.light-mode .bg-\[\#282d44\],
+.light-mode .bg-\[\#282d47\],
+.light-mode .bg-\[\#282e44\],
+.light-mode .bg-\[\#282e46\],
+.light-mode .bg-\[\#282f47\],
+.light-mode .bg-\[\#282f48\],
+.light-mode .bg-\[\#2a3048\],
+.light-mode .bg-\[\#2b324b\],
+.light-mode .bg-\[\#2c324a\],
+.light-mode .bg-\[\#2c334d\],
+.light-mode .bg-\[\#2d344d\],
+.light-mode .bg-\[\#343d5e\] {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Universal Dark Border Mappings to Theme Border Color */
+.light-mode .border-\[\#161822\],
+.light-mode .border-\[\#1e2336\],
+.light-mode .border-\[\#1f2233\],
+.light-mode .border-\[\#1f2334\],
+.light-mode .border-\[\#1f2436\],
+.light-mode .border-\[\#202333\],
+.light-mode .border-\[\#202434\],
+.light-mode .border-\[\#202435\],
+.light-mode .border-\[\#202436\],
+.light-mode .border-\[\#202538\],
+.light-mode .border-\[\#212435\],
+.light-mode .border-\[\#212638\],
+.light-mode .border-\[\#222536\],
+.light-mode .border-\[\#222538\],
+.light-mode .border-\[\#222638\],
+.light-mode .border-\[\#222738\],
+.light-mode .border-\[\#22283b\],
+.light-mode .border-\[\#22293b\],
+.light-mode .border-\[\#232738\],
+.light-mode .border-\[\#23273a\],
+.light-mode .border-\[\#23283b\],
+.light-mode .border-\[\#23293b\],
+.light-mode .border-\[\#242738\],
+.light-mode .border-\[\#24283b\],
+.light-mode .border-\[\#24283c\],
+.light-mode .border-\[\#24293d\],
+.light-mode .border-\[\#242b3d\],
+.light-mode .border-\[\#25283a\],
+.light-mode .border-\[\#25293d\],
+.light-mode .border-\[\#252a3a\],
+.light-mode .border-\[\#252a3b\],
+.light-mode .border-\[\#252a3d\],
+.light-mode .border-\[\#262a3b\],
+.light-mode .border-\[\#262a3c\],
+.light-mode .border-\[\#262a3d\],
+.light-mode .border-\[\#262b3d\],
+.light-mode .border-\[\#262c3f\],
+.light-mode .border-\[\#262c40\],
+.light-mode .border-\[\#272b3b\],
+.light-mode .border-\[\#272b3c\],
+.light-mode .border-\[\#272b3d\],
+.light-mode .border-\[\#272e45\],
+.light-mode .border-\[\#282c3d\],
+.light-mode .border-\[\#282c3e\],
+.light-mode .border-\[\#282c40\],
+.light-mode .border-\[\#282d3e\],
+.light-mode .border-\[\#282d3f\],
+.light-mode .border-\[\#282d40\],
+.light-mode .border-\[\#282d42\],
+.light-mode .border-\[\#282d44\],
+.light-mode .border-\[\#292d3f\],
+.light-mode .border-\[\#292d40\],
+.light-mode .border-\[\#292e42\],
+.light-mode .border-\[\#292e44\],
+.light-mode .border-\[\#292f44\],
+.light-mode .border-\[\#292f46\],
+.light-mode .border-\[\#2a2f42\],
+.light-mode .border-\[\#2a2f44\],
+.light-mode .border-\[\#2a2f45\],
+.light-mode .border-\[\#2a2f47\],
+.light-mode .border-\[\#2a3044\],
+.light-mode .border-\[\#2a3047\],
+.light-mode .border-\[\#2b3044\],
+.light-mode .border-\[\#2b3046\],
+.light-mode .border-\[\#2b3048\],
+.light-mode .border-\[\#2b3145\],
+.light-mode .border-\[\#2b3146\],
+.light-mode .border-\[\#2b3147\],
+.light-mode .border-\[\#2b314a\],
+.light-mode .border-\[\#2b334a\],
+.light-mode .border-\[\#2c3148\],
+.light-mode .border-\[\#2c3246\],
+.light-mode .border-\[\#2c3247\],
+.light-mode .border-\[\#2c3248\],
+.light-mode .border-\[\#2c324c\],
+.light-mode .border-\[\#2c334d\],
+.light-mode .border-\[\#2d3246\],
+.light-mode .border-\[\#2d3248\],
+.light-mode .border-\[\#2d334a\],
+.light-mode .border-\[\#2d334c\],
+.light-mode .border-\[\#2d334e\],
+.light-mode .border-\[\#2d344d\],
+.light-mode .border-\[\#2e334a\],
+.light-mode .border-\[\#2e3449\],
+.light-mode .border-\[\#2e344d\],
+.light-mode .border-\[\#2e344e\],
+.light-mode .border-\[\#2e354e\],
+.light-mode .border-\[\#2e354f\],
+.light-mode .border-\[\#2f3650\],
+.light-mode .border-\[\#313854\],
+.light-mode .border-\[\#323854\],
+.light-mode .border-\[\#323952\],
+.light-mode .border-\[\#333d59\],
+.light-mode .border-\[\#343a54\],
+.light-mode .border-\[\#343b54\],
+.light-mode .border-\[\#343c5a\],
+.light-mode .border-\[\#353b52\],
+.light-mode .border-\[\#373f5c\],
+.light-mode .border-\[\#383e58\],
+.light-mode .border-\[\#3a3f5a\],
+.light-mode .border-\[\#3b4260\] {
+  border-color: var(--border-color) !important;
+}
+
+/* Universal Slate & Charcoal Card Mappings in Light Mode */
+.light-mode .bg-slate-900,
+.light-mode .bg-slate-900\/60,
+.light-mode .bg-slate-900\/70,
+.light-mode .bg-slate-900\/80,
+.light-mode .bg-slate-900\/90,
+.light-mode .bg-slate-950,
+.light-mode .bg-slate-950\/60,
+.light-mode .bg-slate-950\/70,
+.light-mode .bg-slate-950\/80,
+.light-mode .bg-slate-800,
+.light-mode .bg-slate-800\/60 {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode .border-slate-800,
+.light-mode .border-slate-700,
+.light-mode .border-slate-600 {
+  border-color: var(--border-color) !important;
+}
+
+/* Universal High-Contrast Typography in Light Mode across all 19 Modules */
+.light-mode .text-slate-100,
+.light-mode .text-slate-200,
+.light-mode .text-slate-300 {
+  color: var(--text-main) !important;
+}
+
+.light-mode .text-slate-400,
+.light-mode .text-slate-500 {
+  color: var(--text-muted) !important;
+}
+
+/* Universal Gradient Cancellation for all Dark Gradients */
+.light-mode [class*="bg-gradient-to"][class*="from-\[\#"],
+.light-mode [class*="bg-gradient-to"][class*="from-slate-"],
+.light-mode [class*="bg-gradient-to"][class*="from-zinc-"],
+.light-mode [class*="bg-gradient-to"][class*="from-cyan-950"],
+.light-mode [class*="bg-gradient-to"][class*="from-amber-950"],
+.light-mode [class*="bg-gradient-to"][class*="from-purple-950"] {
+  background-image: none !important;
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+
+/* ==========================================================================
+   TASK-22 CONTINUATION: UNIVERSAL LIGHT-MODE TYPOGRAPHY & INNER CONTROLS
+   Restores 100% readability across Pure White Sand and all daylight themes.
+   ========================================================================== */
+
+.light-mode h1,
+.light-mode h2,
+.light-mode h3,
+.light-mode h4,
+.light-mode h5,
+.light-mode h6 {
+  color: var(--text-main) !important;
+}
+
+.light-mode .text-white:not(button[class*="bg-"]):not(button[class*="bg-"] *):not([class*="bg-indigo-600"] *):not([class*="bg-rose-600"] *):not([class*="bg-emerald-600"] *):not([class*="bg-amber-600"] *):not([class*="bg-purple-600"] *):not([class*="bg-cyan-600"] *) {
+  color: var(--text-main) !important;
+}
+
+.light-mode .text-gray-100,
+.light-mode .text-gray-200,
+.light-mode .text-gray-300,
+.light-mode .text-zinc-100,
+.light-mode .text-zinc-200,
+.light-mode .text-zinc-300,
+.light-mode .text-neutral-100,
+.light-mode .text-neutral-200,
+.light-mode .text-neutral-300 {
+  color: var(--text-main) !important;
+}
+
+.light-mode .text-gray-400,
+.light-mode .text-gray-500,
+.light-mode .text-zinc-400,
+.light-mode .text-zinc-500,
+.light-mode .text-neutral-400,
+.light-mode .text-neutral-500 {
+  color: var(--text-muted) !important;
+}
+
+/* Secondary inner card & input background mapping */
+.light-mode .bg-\[\#141622\],
+.light-mode .bg-\[\#11131c\],
+.light-mode .bg-\[\#12141c\],
+.light-mode .bg-\[\#12141d\],
+.light-mode .bg-\[\#141624\],
+.light-mode .bg-\[\#151722\],
+.light-mode .bg-\[\#151824\],
+.light-mode .bg-\[\#171a26\],
+.light-mode .bg-\[\#191b29\],
+.light-mode .bg-\[\#1a1c29\],
+.light-mode .bg-\[\#1b1e2c\],
+.light-mode .bg-\[\#1e2230\],
+.light-mode .bg-\[\#1e2235\],
+.light-mode .bg-\[\#1f2333\],
+.light-mode .bg-\[\#202436\],
+.light-mode .bg-\[\#202538\],
+.light-mode .bg-\[\#24293d\],
+.light-mode .bg-\[\#252b40\],
+.light-mode .bg-\[\#282d44\],
+.light-mode [class*="bg-black\/"] {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode input:not([type="checkbox"]):not([type="radio"]),
+.light-mode textarea,
+.light-mode select {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode input::placeholder,
+.light-mode textarea::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.7;
+}
+
+/* Notes Studio & Zinc / Black Light-Mode Immunity */
+.light-mode .bg-black,
+.light-mode .bg-zinc-950,
+.light-mode .bg-zinc-900,
+.light-mode .bg-zinc-800,
+.light-mode [class*="bg-zinc-950"],
+.light-mode [class*="bg-zinc-900"],
+.light-mode [class*="bg-zinc-800"] {
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+.light-mode .border-zinc-900,
+.light-mode .border-zinc-800,
+.light-mode .border-zinc-700,
+.light-mode [class*="border-zinc-"] {
+  border-color: var(--border-color) !important;
+}
+
+/* Canonical UI Naming High-Visibility Enforcement */
+.dev-canonical-mode [data-ag-id] {
+  position: relative !important;
+  outline: 2px dashed rgba(234, 179, 8, 0.85) !important;
+  outline-offset: -1px !important;
+}
+
+.dev-canonical-mode [data-ag-id]::after {
+  content: "[" attr(data-ag-id) "]" !important;
+  position: absolute !important;
+  top: 2px !important;
+  right: 4px !important;
+  z-index: 999999 !important;
+  pointer-events: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.025em !important;
+  padding: 1.5px 6px !important;
+  border-radius: 4px !important;
+  background-color: #facc15 !important;
+  color: #000000 !important;
+  border: 1px solid #78350f !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+  white-space: nowrap !important;
+  max-width: 85% !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }

@@ -9,9 +9,12 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:e2e": "node scripts/e2e_audit.mjs",
+    "test:notes-sync": "node scripts/test_notes_studio_pro_sync.mjs",
     "audit": "npm run build && node scripts/e2e_audit.mjs",
     "serve": "node scripts/serve_production.mjs",
-    "deploy:s25": "powershell scripts/samsung_s25_wireless_deploy.ps1",
+    "serve:notes-sync": "node scripts/serve_production.mjs --enable-notes-pro-sync",
+    "deploy:s25": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/samsung_s25_wireless_deploy.ps1",
+    "install:s25": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/samsung_s25_wireless_deploy.ps1 -InstallApk",
     "cap:sync": "npm run build && npx cap sync android",
     "cap:open": "npx cap open android"
   },

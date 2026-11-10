@@ -175,7 +175,7 @@ export const JyotishView: React.FC = () => {
   }, [chartLagnaRashi, ephemeris.grahas, chartMode]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div data-ag-id="Jyotish_Root_Workspace" className="space-y-6 animate-in fade-in duration-200">
       {/* View Header */}
       <div className="bg-[#181a24] border border-[#272b3b] rounded-2xl p-6 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

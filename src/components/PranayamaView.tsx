@@ -332,9 +332,9 @@ export const PranayamaView: React.FC = () => {
   const currentCfg = phaseConfig[currentPhase];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div data-ag-id="Pranayama_Root_Workspace" className="space-y-6 animate-in fade-in duration-200">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-[#161822] border border-[#272b3b]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl border transition-colors shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
             <Wind size={24} />
@@ -439,7 +439,7 @@ export const PranayamaView: React.FC = () => {
       {activeTab === 'metronome' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Panel: Animated Torus Mandala Pacer */}
-          <div className="lg:col-span-7 bg-[#161822] border border-[#272b3b] rounded-2xl p-6 flex flex-col items-center justify-between min-h-[500px] relative overflow-hidden">
+          <div className="lg:col-span-7 border rounded-2xl p-6 flex flex-col items-center justify-between min-h-[500px] relative overflow-hidden transition-colors shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
             {/* Background Ambient Glow */}
             <div className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${isRunning ? 'opacity-100' : 'opacity-20'} ${currentCfg.bgPulse}`} />
 
@@ -476,15 +476,15 @@ export const PranayamaView: React.FC = () => {
                     isRunning ? 'shadow-cyan-500/40' : ''
                   }`}
                 >
-                  {/* Inner Dark Cavity */}
-                  <div className="w-full h-full bg-[#11131c] rounded-full flex flex-col items-center justify-center text-center p-4">
-                    <span className="text-3xl md:text-5xl font-black text-white font-mono tracking-tighter">
+                  {/* Inner Breathing Cavity */}
+                  <div className="w-full h-full rounded-full flex flex-col items-center justify-center text-center p-4 border transition-colors shadow-inner" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                    <span className="text-3xl md:text-5xl font-black font-mono tracking-tighter" style={{ color: 'var(--text-main)' }}>
                       {phaseSecondsLeft}s
                     </span>
                     <span className={`text-xs md:text-sm font-bold uppercase tracking-widest mt-1 ${currentCfg.textColor}`}>
                       {currentCfg.label}
                     </span>
-                    <span className="text-[11px] text-gray-400 font-sans mt-0.5">
+                    <span className="text-[11px] font-sans mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       {currentCfg.sanskrit}
                     </span>
                   </div>
@@ -558,7 +558,7 @@ export const PranayamaView: React.FC = () => {
           {/* Right Panel: Pattern Selection & Custom Ratio Builder */}
           <div className="lg:col-span-5 space-y-6">
             {/* Pattern Presets Card */}
-            <div className="bg-[#161822] border border-[#272b3b] rounded-2xl p-5 space-y-4">
+            <div className="border rounded-2xl p-5 space-y-4 transition-colors shadow-sm" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <Sliders size={16} className="text-cyan-400" />
@@ -587,25 +587,29 @@ export const PranayamaView: React.FC = () => {
                         onClick={() => handleSelectPattern(p)}
                         className={`p-3 rounded-xl border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-cyan-950/20 border-cyan-500/50 shadow-sm'
-                            : 'bg-[#1a1d2c] border-[#252a3d] hover:bg-[#202538]'
+                            ? 'bg-cyan-500/15 border-cyan-500 shadow-sm ring-1 ring-cyan-500/30'
+                            : 'hover:opacity-95'
                         }`}
+                        style={!isSelected ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' } : undefined}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className={`text-xs font-bold ${isSelected ? 'text-cyan-300' : 'text-white'}`}>
+                          <h4 className="text-xs font-bold" style={{ color: isSelected ? 'var(--accent)' : 'var(--text-main)' }}>
                             {p.name}
                           </h4>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#12141f] text-gray-300 border border-[#292e42]">
+                          <span 
+                            className="text-[10px] font-mono px-2 py-0.5 rounded border"
+                            style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
+                          >
                             {p.ratio.join(' : ')}s
                           </span>
                         </div>
-                        <p className="text-[11px] text-gray-400 line-clamp-1">{p.sanskritName}</p>
-                        <p className="text-[10px] text-gray-500 mt-1">{p.description}</p>
+                        <p className="text-[11px] line-clamp-1" style={{ color: 'var(--text-muted)' }}>{p.sanskritName}</p>
+                        <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)', opacity: 0.85 }}>{p.description}</p>
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-300 border border-cyan-800/40">
+                          <span className="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30">
                             {p.category}
                           </span>
-                          <span className="text-[9px] text-gray-400 truncate">
+                          <span className="text-[9px] truncate" style={{ color: 'var(--text-muted)' }}>
                             🎯 {p.primaryBenefit}
                           </span>
                         </div>
@@ -615,8 +619,11 @@ export const PranayamaView: React.FC = () => {
                 </div>
               ) : (
                 /* Custom 4-Stage Sliders */
-                <div className="space-y-4 bg-[#1a1d2c] p-4 rounded-xl border border-[#272b3d]">
-                  <p className="text-xs text-gray-300 font-medium">
+                <div 
+                  className="space-y-4 p-4 rounded-xl border transition-colors"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+                >
+                  <p className="text-xs font-medium" style={{ color: 'var(--text-main)' }}>
                     Configure custom seconds for each stage (*Pūraka : Antara : Recaka : Bāhya*):
                   </p>
 

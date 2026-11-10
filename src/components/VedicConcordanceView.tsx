@@ -133,7 +133,7 @@ export const VedicConcordanceView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-gray-100 font-sans">
+    <div data-ag-id="VedicConcordance_Root_Workspace" className="space-y-6 text-gray-100 font-sans">
       {/* Top Header Card */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-[#171a29] via-[#1a1c2d] to-[#141622] border border-[#292d40] shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">

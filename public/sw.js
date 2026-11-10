@@ -1,8 +1,9 @@
-const CACHE_NAME = 'om-knowledge-os-v2.2';
+const CACHE_NAME = 'om-knowledge-os-v2.4'; // om-knowledge-os-v2.2 upgrade
+const BASE = (self.registration && self.registration.scope) ? self.registration.scope : './';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  BASE,
+  `${BASE}index.html`,
+  `${BASE}manifest.json`
 ];
 
 self.addEventListener('install', (event) => {
@@ -30,6 +31,15 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
+
+  // Private Notes Studio Pro snapshots & Health checks must always bypass cache
+  if (url.pathname === '/api/notes-studio-pro/sync' || url.pathname === '/api/health') return;
+
+  // During local Vite HMR dev, bypass service worker for raw source files
+  if (url.port === '5173' && (url.pathname.startsWith('/src/') || url.pathname.startsWith('/@') || url.pathname.startsWith('/node_modules/'))) {
+    return;
+  }
+
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
@@ -61,7 +71,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Fallback to cached index.html for navigation requests
         if (event.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match(`${BASE}index.html`) || caches.match('/index.html') || caches.match(BASE);
         }
       });
     })

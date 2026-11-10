@@ -1,0 +1,2403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Notes Studio Pro · Sovereign Engine</title>
+<style>
+:root{
+  --bg:#0f1117;--surface:#181a24;--surface2:#161822;--card:#181a24;--hover:#212533;--line:#272b3b;--ink:#f3f4f6;--muted:#9ca3af;--accent:#6366f1;--accentHover:#4f46e5;--accentMuted:rgba(99,102,241,.15);--accent2:rgba(99,102,241,.15);--shadow:0 8px 28px rgba(0,0,0,.35);
+  --bottom-dock-height:36%;
+  font:13px/1.4 Inter,system-ui,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;height:100dvh;min-height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);overflow:hidden;background:var(--bg);color:var(--ink);user-select:auto}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* Tactile Click & Active Feedback Animation */
+button, .ribbon-tab, .nav-item, .vault-item, .layout-button, .pane-tool {
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+button:active, .ribbon-tab:active, .nav-item:active, .vault-item:active, .layout-button:active, .pane-tool:active {
+  transform: scale(0.96);
+}
+
+.app{height:100%;display:flex;flex-direction:column}
+.global{height:44px;flex:none;display:flex;align-items:center;gap:6px;padding:4px 9px;border-bottom:1px solid var(--line);background:var(--surface2);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.global::-webkit-scrollbar{display:none}
+.tab-ribbon-bar{height:38px;min-height:38px;flex:none;display:flex;align-items:center;gap:7px;padding:4px 9px;border-bottom:1px solid var(--line);background:var(--surface2);overflow:hidden}
+.tab-ribbon-label{flex:none;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.menu-toggle,.global-action,.layout-button,.search-button,.toolbar-button{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 8px;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.menu-toggle{font-size:11px;font-weight:700}
+.menu-toggle.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Ribbon Horizontal Scroll Controls */
+.ribbon-scroll-controls{display:flex;align-items:center;gap:2px;flex:none}
+.ribbon-nav-btn{width:22px;height:26px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:5px;color:var(--muted);font-size:10px;cursor:pointer;user-select:none}
+.ribbon-nav-btn:hover{background:var(--hover);color:var(--accent);border-color:var(--accent)}
+
+.ribbon{display:flex;align-items:center;gap:3px;min-width:0;flex:1;overflow-x:auto;scrollbar-width:none;scroll-behavior:smooth}
+.ribbon::-webkit-scrollbar{display:none}
+.ribbon-tab{display:flex;align-items:center;gap:6px;flex:none;width:var(--tab-width,165px);min-width:110px;max-width:440px;padding:6px 8px;position:relative;border:1px solid var(--line);border-bottom:2px solid transparent;border-radius:7px 7px 2px 2px;background:transparent;color:var(--muted);font-size:11px;justify-content:space-between;user-select:none}
+.ribbon-tab.active{background:var(--card);border-color:var(--line);border-bottom-color:var(--accent);color:var(--ink);font-weight:650;animation:tabFocusPulse 0.3s cubic-bezier(0.16, 1, 0.3, 1)}
+
+@keyframes tabFocusPulse {
+  0% { transform: translateY(-2px); box-shadow: 0 0 0 3px var(--accentMuted); }
+  50% { transform: translateY(0); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.ribbon-tab>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;text-align:left}
+.ribbon-tab .tab-actions{display:flex;align-items:center;gap:2px;flex:none}
+.ribbon-tab .close{color:var(--muted);padding:0 3px;border-radius:3px;cursor:pointer}
+.ribbon-tab .close:hover{color:#f87171;background:rgba(239,68,68,.15)}
+.ribbon-tab .resize-grip{display:grid;place-items:center;width:16px;height:22px;margin-right:-4px;border-left:1px solid var(--line);color:var(--muted);cursor:col-resize;touch-action:none;user-select:none;font-weight:bold;opacity:0.65}
+.ribbon-tab .resize-grip:hover{color:var(--accent);background:var(--accentMuted);opacity:1}
+
+.global-actions{display:flex;align-items:center;gap:4px;flex:none}
+.sync-presence{display:flex;align-items:center;gap:5px;flex:none;padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--muted);font-size:9px;white-space:nowrap}
+.sync-presence::before{content:"";width:7px;height:7px;border-radius:50%;background:#94a3b8;flex:none}
+.sync-presence[data-state="reachable"]{color:#34d399;border-color:rgba(52,211,153,.3)}
+.sync-presence[data-state="reachable"]::before{background:#34d399;box-shadow:0 0 0 3px rgba(52,211,153,.12)}
+.sync-presence[data-state="offline"]{color:#f87171;border-color:rgba(248,113,113,.35)}
+.sync-presence[data-state="offline"]::before{background:#f87171}
+.layout-switch{display:flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.layout-button{display:flex;align-items:center;gap:4px;padding:5px 7px;border:0;box-shadow:none;color:var(--muted);white-space:nowrap;font-size:10px;font-weight:650}
+.layout-button small{font-size:8px;font-weight:600;opacity:.82}
+.layout-button.active{background:var(--accent);color:white}
+.global-action.primary-action{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.global-action.quick-action{background:var(--accentMuted);color:var(--accent);font-weight:650}
+
+@media (max-width: 680px) {
+  .global{padding:4px 6px;gap:4px}
+  .tab-ribbon-bar{height:48px;min-height:48px;padding:3px 6px;gap:4px}
+  .tab-ribbon-label{font-size:8px}
+  .ribbon-nav-btn{width:36px;height:40px}
+  .menu-toggle{padding:5px 6px;font-size:10px}
+  .global-action{padding:5px 6px;font-size:10px}
+  .layout-button{padding:5px 4px;font-size:9px}
+  .layout-switch{gap:1px;padding:1px}
+  .sync-presence{padding:5px;font-size:0}
+  .sync-presence::before{width:8px;height:8px}
+}
+
+.body{flex:1;min-height:0;display:flex;overflow:hidden}
+.sidebar{width:290px;min-width:220px;max-width:420px;flex:none;height:100%;max-height:100%;min-height:0;display:none;flex-direction:column;overflow-y:scroll !important;overflow-x:hidden;padding:9px 8px 80px 8px;background:var(--surface2);border-right:1px solid var(--line);scrollbar-width:thin;scrollbar-color:var(--accent) rgba(0,0,0,0.1);-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.side-search{display:flex;gap:5px;padding:2px 1px 8px;border-bottom:1px solid var(--line);flex-shrink:0}
+.side-search input{width:100%;min-width:0;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink);font-size:11px}
+.side-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:5px 1px 8px;flex-shrink:0}
+.side-actions button{padding:7px 4px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink);font-size:10px;font-weight:650}
+.side-actions .primary{background:var(--accent);border-color:var(--accent);color:white}
+.nav-list{display:grid;gap:2px;flex-shrink:0}
+.nav-item,.domain-item,.vault-item{display:flex;align-items:center;gap:7px;width:100%;min-height:29px;padding:5px 7px;border:1px solid transparent;border-radius:7px;background:transparent;text-align:left;color:var(--muted);font-size:11px}
+.nav-item:hover,.domain-item:hover,.vault-item:hover{background:var(--hover);color:var(--ink)}
+.nav-item.active,.vault-item.active{background:var(--card);border-color:var(--accent);color:var(--accent);font-weight:700}
+.nav-item .num,.domain-item .num{margin-left:auto;color:var(--muted);font-size:10px}
+
+/* Collapsible Group Sections - Guaranteed Visibility & Robust Non-Collapsing Headers */
+.group-section{margin:6px 0;border:1px solid var(--line);border-radius:9px;background:var(--card);flex-shrink:0 !important;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.group-header{display:flex !important;align-items:center;gap:7px;width:100%;min-height:34px !important;height:34px;padding:6px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;user-select:none;box-sizing:border-box;text-align:left;transition:background .15s ease, color .15s ease}
+.group-header:hover{background:var(--hover)}
+.group-header .glyph{font-size:12px;line-height:1}
+.group-header .group-title-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group-header .count{margin-left:auto;font-size:9.5px;font-weight:700;color:var(--muted);padding:1px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.group-header .toggle-arrow{margin-left:6px;font-size:8.5px;color:var(--muted);transition:transform .2s cubic-bezier(0.4, 0, 0.2, 1)}
+.group-section.collapsed .toggle-arrow{transform:rotate(-90deg)}
+.group-section.collapsed .group-body{display:none !important}
+
+/* Dedicated High-Performance Section Scrollers */
+.quick-list,.vault-list,.domain-list{display:flex !important;flex-direction:column;gap:3px;padding:4px 6px 8px;max-height:190px;overflow-y:auto !important;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:var(--accent) rgba(0,0,0,0.1);-webkit-overflow-scrolling:touch;touch-action:pan-y;border-top:1px solid var(--line)}
+.vault-list{max-height:260px}
+.quick-list .nav-item{padding-left:14px;font-size:10px}
+.domain-item{font-size:10px}
+.domain-item.active{background:var(--card);border-color:var(--accent);color:var(--accent);font-weight:700}
+.vault-item{display:block;padding:6px 7px}
+.vault-item strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.vault-item small{display:block;margin-top:2px;color:var(--muted);font-size:9px}
+.directory{margin-top:6px;padding:8px 7px;border-top:1px solid var(--line);color:var(--muted);font-size:10px;flex-shrink:0}
+.directory strong{display:block;color:var(--muted);font-size:9px;letter-spacing:.07em}
+
+/* Visible Custom Scrollbars (High-Contrast Theme Accent) */
+.sidebar::-webkit-scrollbar,.quick-list::-webkit-scrollbar,.vault-list::-webkit-scrollbar,.domain-list::-webkit-scrollbar{width:6px}
+.sidebar::-webkit-scrollbar-track,.quick-list::-webkit-scrollbar-track,.vault-list::-webkit-scrollbar-track,.domain-list::-webkit-scrollbar-track{background:rgba(0,0,0,0.06);border-radius:999px}
+.sidebar::-webkit-scrollbar-thumb,.quick-list::-webkit-scrollbar-thumb,.vault-list::-webkit-scrollbar-thumb,.domain-list::-webkit-scrollbar-thumb{background:var(--accent);border-radius:999px;opacity:0.85}
+.sidebar::-webkit-scrollbar-thumb:hover,.quick-list::-webkit-scrollbar-thumb:hover,.vault-list::-webkit-scrollbar-thumb:hover,.domain-list::-webkit-scrollbar-thumb:hover{background:var(--accentHover);opacity:1}
+
+.workspace{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+.canvas-head{height:36px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--bg)}
+.canvas-head strong{font-size:11px}
+.canvas-head small{color:var(--muted);font-size:10px}
+.canvas-head .spacer{flex:1}
+.canvas{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);position:relative}
+
+/* Panel Grid Layouts */
+.panel-grid{display:grid;position:relative;gap:7px;padding:8px;flex:1;min-height:0;overflow:auto;align-content:stretch;grid-template-columns:var(--layout-columns, minmax(0,1fr));grid-template-rows:var(--layout-rows, minmax(0,1fr))}
+.panel-grid.mode-single{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.panel-grid.mode-twoBottom{--layout-columns:minmax(0,1fr) minmax(0,1fr);--layout-rows:minmax(0,2fr) minmax(140px,1fr)}
+.panel-grid.mode-threeBottom{--layout-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);--layout-rows:minmax(0,2fr) minmax(140px,1fr)}
+.panel-grid.mode-vertical{--layout-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);--layout-rows:minmax(0,1fr)}
+.panel-grid.mode-grid3x2{--layout-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);--layout-rows:minmax(0,1fr) minmax(0,1fr)}
+.note-pane.orientation-horizontal{grid-column:1/-1}
+.pane-splitter{position:absolute;z-index:30;display:block;padding:0;border:0;border-radius:999px;background:transparent;touch-action:none;user-select:none}
+.pane-splitter::after{content:"";position:absolute;inset:3px;border-radius:999px;background:var(--accent);opacity:.35;transition:opacity .12s,background .12s;pointer-events:none}
+.pane-splitter:hover::after,.pane-splitter:focus-visible::after,.pane-splitter.dragging::after{opacity:1;background:var(--accent)}
+.pane-splitter[data-axis="x"]{top:8px;bottom:8px;width:12px;cursor:col-resize;transform:translateX(-50%)}
+.pane-splitter[data-axis="y"]{left:8px;right:8px;height:12px;cursor:row-resize;transform:translateY(-50%)}
+.splitter-toggle-group{position:absolute;z-index:2;left:50%;top:50%;display:flex;gap:1px;padding:2px;transform:translate(-50%,-50%);border:1px solid var(--line);border-radius:999px;background:var(--surface2);box-shadow:0 2px 8px rgba(0,0,0,.32)}
+.splitter-toggle{display:grid;place-items:center;width:19px;height:21px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--muted);font-size:12px;line-height:1;cursor:pointer}
+.splitter-toggle:hover,.splitter-toggle[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+/* Note Pane */
+.note-pane{display:flex;flex-direction:column;min-width:0;min-height:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);box-shadow:0 2px 6px rgba(0,0,0,.2);transition:border-color .2s ease,box-shadow .2s ease}
+.note-pane:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent), 0 4px 16px rgba(0,0,0,0.3)}
+.note-pane.maximized{grid-column:1/-1!important;grid-row:1/-1!important;z-index:10;border-color:var(--accent);animation:panePopIn .22s cubic-bezier(0.16, 1, 0.3, 1)}
+
+@keyframes panePopIn {
+  0% { opacity: 0.85; transform: scale(0.99); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.panel-top{display:flex;align-items:center;gap:5px;min-height:36px;padding:4px 6px;border-bottom:1px solid var(--line);background:var(--surface2)}
+.pane-label{flex:none;padding:3px 5px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--accent);font:800 9px ui-monospace,monospace}
+.note-select{flex:1;min-width:60px;max-width:185px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-size:10px;font-weight:700}
+.pane-tools{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pane-layout-actions{display:flex;align-items:center;gap:2px;flex:none}
+.pane-layout-action{display:flex;align-items:center;justify-content:center;gap:3px;min-height:26px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--muted);font-size:9px;white-space:nowrap}
+.pane-layout-action:hover,.pane-layout-action[aria-pressed="true"]{border-color:var(--accent);background:var(--accentMuted);color:var(--accent)}
+.pane-tool{display:flex;align-items:center;gap:3px;flex:none;padding:4px 6px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--muted);font-size:9px;white-space:nowrap}
+.pane-tool:hover{background:var(--hover);border-color:var(--line);color:var(--accent)}
+.pane-tool.active{background:var(--accent);color:white}
+.pane-tool.danger:hover{color:#f87171;background:rgba(239,68,68,.15)}
+
+@media (max-width: 1080px) and (min-width: 681px) {
+  .note-pane{min-height:240px}
+}
+@media (max-width: 680px) {
+  body{overflow:hidden}
+  .sidebar{position:fixed;top:50px;left:0;bottom:0;width:min(86vw,320px);z-index:90;box-shadow:0 0 24px rgba(0,0,0,0.6);border-right:1px solid var(--accent);padding-bottom:100px}
+  .global{height:50px;min-height:50px;padding-top:max(4px,env(safe-area-inset-top));}
+  .menu-toggle,.global-action{min-height:48px;touch-action:manipulation}
+  .layout-button{justify-content:center;min-width:48px;min-height:48px;padding:5px}
+  .ribbon-tab{min-height:48px}
+  .ribbon-tab .resize-grip{width:48px;height:48px;margin-right:0;touch-action:none}
+  .layout-button{flex-direction:column;gap:0}
+  .panel-grid.mode-twoBottom,.panel-grid.mode-threeBottom,.panel-grid.mode-vertical,.panel-grid.mode-grid3x2{grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-auto-rows:minmax(58dvh,max-content)}
+  .panel-grid.mode-single{grid-template-rows:minmax(0,1fr)}
+  .note-pane{min-height:58dvh}
+  .pane-tools{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+  .pane-layout-action{min-width:42px;min-height:42px;padding:3px 5px}
+  .pane-tool{min-height:48px;min-width:48px;justify-content:center}
+  .pane-splitter{display:none}
+  .status{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right));min-height:32px;height:auto}
+}
+
+.pane-second{display:flex;align-items:center;gap:5px;padding:4px 9px;border-bottom:1px solid var(--line);color:var(--muted);font-size:9px;background:rgba(0,0,0,.1)}
+.pane-second .kind{margin-left:auto;padding:2px 6px;border-radius:99px;background:var(--accentMuted);color:var(--accent);font-weight:700}
+.pane-second button{padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--ink);font-size:9px}
+
+.note-title{padding:7px 10px;border-bottom:1px solid var(--line);font-size:12px;font-weight:750;color:var(--ink)}
+.format-bar{display:flex;align-items:center;gap:3px;padding:4px 7px;border-bottom:1px solid var(--line);background:var(--surface2);flex-wrap:wrap}
+.format-bar button{min-width:24px;height:22px;padding:2px 4px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--muted);font-size:10px}
+.format-bar button:hover{background:var(--hover);color:var(--ink);border-color:var(--line)}
+
+.editor{flex:1;min-height:90px;overflow-y:auto;padding:10px 12px;font-size:11px;line-height:1.65;outline:none;user-select:text}
+.editor table{width:100%;border-collapse:collapse;margin:8px 0;font-size:10px}
+.editor th,.editor td{padding:5px 7px;border:1px solid var(--line);text-align:left}
+.editor th{background:var(--surface2);color:var(--accent);font-weight:700}
+.editor .toggle{margin:6px 0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.editor .toggle summary{padding:5px 8px;background:var(--surface2);cursor:pointer;font-weight:600}
+.editor .toggle div{padding:6px 8px}
+.editor .prompt-card{margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--surface2)}
+.editor .prompt-card strong{color:var(--accent)}
+.editor .prompt-card pre{margin:4px 0 0;padding:6px;border-radius:5px;background:var(--bg);font-family:ui-monospace,monospace;font-size:10px;white-space:pre-wrap}
+
+.editor-raw{width:100%;flex:1;min-height:90px;padding:10px 12px;font-family:ui-monospace,monospace;font-size:11px;line-height:1.6;background:var(--bg);color:var(--ink);border:0;outline:none;resize:none;box-sizing:border-box;display:none}
+
+.pane-footer{display:flex;flex-wrap:wrap;gap:4px;padding:5px 8px;border-top:1px solid var(--line);background:rgba(0,0,0,.15)}
+.prop{padding:2px 5px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:9px}
+.prop b{color:var(--ink)}
+
+.status{height:25px;flex:none;display:flex;align-items:center;gap:7px;padding:0 10px;border-top:1px solid var(--line);background:var(--surface2);color:#34d399;font-size:9px}
+.status span:last-child{margin-left:auto;color:var(--muted)}
+
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);padding:8px 12px;border:1px solid var(--accent);border-radius:8px;background:var(--surface);box-shadow:var(--shadow);color:var(--accent);font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:99}
+.toast.show{opacity:1;animation:toastBounce .25s cubic-bezier(0.16, 1, 0.3, 1)}
+.sync-overlay[hidden]{display:none!important}
+.sync-overlay{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.62)}
+.sync-card{width:min(520px,100%);max-height:min(92dvh,720px);overflow:auto;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);box-shadow:var(--shadow)}
+.sync-card h2{margin:0 0 4px;font-size:16px}.sync-card p{margin:5px 0 12px;color:var(--muted);font-size:11px}
+.sync-card label{display:grid;gap:4px;margin:9px 0;color:var(--muted);font-size:10px;font-weight:700}
+.sync-card input{width:100%;min-width:0;padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--card);font-size:11px}
+.sync-warning{margin:12px 0;padding:8px;border:1px solid rgba(245,158,11,.35);border-radius:8px;color:#fbbf24;font-size:10px;line-height:1.5}
+.sync-dialog-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:12px}.sync-dialog-actions button{padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:var(--card)}
+.sync-dialog-actions .sync-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.sync-status{min-height:18px;margin-top:8px;color:#34d399;font-size:10px}.sync-status.error{color:#f87171}
+.vault-gate[hidden],.restore-dialog[hidden]{display:none!important}
+.vault-gate,.restore-dialog{position:fixed;inset:0;z-index:220;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.82)}
+.vault-card{width:min(440px,100%);max-height:92dvh;overflow:auto;padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--surface2);box-shadow:var(--shadow)}
+.vault-card h1,.vault-card h2{margin:0 0 8px;font-size:18px}.vault-card p{color:var(--muted);font-size:12px;line-height:1.55}
+.vault-card label{display:grid;gap:5px;margin:12px 0;color:var(--muted);font-size:11px;font-weight:700}
+.vault-card input[type=password],.vault-card input[type=file]{width:100%;min-width:0;padding:9px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink)}
+.vault-card button{padding:8px 11px;border:1px solid var(--line);border-radius:7px;background:var(--card)}
+.vault-card .vault-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:750}
+.vault-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}.vault-status{min-height:18px;margin-top:10px;color:#34d399;font-size:11px}.vault-status.error{color:#f87171}
+.app.vault-locked{visibility:hidden}
+
+@keyframes toastBounce {
+  0% { transform: translate(-50%, 8px) scale(0.95); opacity: 0; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+</style>
+</head>
+<body>
+<div class="vault-gate" id="vaultGate" role="dialog" aria-modal="true" aria-labelledby="vaultGateTitle">
+  <section class="vault-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h1 id="vaultGateTitle" style="margin:0">Private local notes vault</h1>
+      <span style="font-size:10px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,0.12);padding:2px 8px;border-radius:999px;border:1px solid rgba(56,189,248,0.3)">Dev Ready</span>
+    </div>
+    <p id="vaultGateDescription">Set a vault passphrase. Notes and sync credentials will be encrypted on this device before they are saved. The passphrase is never stored.</p>
+    <label>Vault passphrase<input id="vaultPassphrase" type="password" autocomplete="current-password" minlength="12" placeholder="At least 12 characters (or bypass in Dev Mode)"></label>
+    <label id="vaultConfirmLabel">Confirm vault passphrase<input id="vaultPassphraseConfirm" type="password" autocomplete="new-password" minlength="12" placeholder="Enter it again"></label>
+    <div class="sync-warning">Keep this passphrase in a password manager. If it is lost, this device cannot decrypt its local notes. An encrypted backup can be restored only with its passphrase.</div>
+    <div class="vault-actions" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="vault-primary" id="vaultDevBypassButton" type="button" style="background:#2563eb;color:#fff;font-weight:700">⚡ Open (Dev Mode · No Passphrase)</button>
+      <button id="vaultRestoreButton" type="button">Restore backup</button>
+      <button id="vaultUnlockButton" type="button">Create vault</button>
+    </div>
+    <div class="vault-status" id="vaultStatus" aria-live="polite"></div>
+  </section>
+</div>
+
+<div class="restore-dialog" id="restoreDialog" hidden role="dialog" aria-modal="true" aria-labelledby="restoreTitle">
+  <section class="vault-card">
+    <h2 id="restoreTitle">Restore or Merge Notes Backup</h2>
+    <p>Choose an encrypted JSON backup, a readable notes ZIP, or a legacy JSON file to import into your private local vault.</p>
+    <label>Backup or readable export<input id="restoreFile" type="file" accept="application/json,.json,application/zip,.zip"></label>
+    <label id="restorePassphraseLabel">Backup passphrase<input id="restorePassphrase" type="password" autocomplete="current-password" placeholder="Passphrase used when the backup was exported"></label>
+    <label id="restoreModeLabel">Import Mode
+      <select id="restoreMode" style="width:100%;min-width:0;padding:9px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink);font-size:11px;font-weight:600">
+        <option value="merge" selected>Merge into current vault (Recommended · keeps existing notes)</option>
+        <option value="replace">Replace entire library (Clean overwrite)</option>
+      </select>
+    </label>
+    <div class="vault-actions"><button id="restoreCancel" type="button">Cancel</button><button class="vault-primary" id="restoreApply" type="button">Import notes</button></div>
+    <div class="vault-status" id="restoreStatus" aria-live="polite"></div>
+  </section>
+</div>
+
+<div class="app vault-locked">
+  <header class="global" data-ag-id="NotesStudioPro_Header_Navbar">
+    <button class="menu-toggle" id="menuToggle" title="Toggle Sidebar (Closed by default)" data-ag-id="NotesStudioPro_Header_ToggleMenu">☰ <span>Menu</span></button>
+    <div class="global-actions" data-ag-id="NotesStudioPro_Header_ActionControls">
+      <button class="global-action primary-action" id="createNewNote" title="Create New Note">＋ New note</button>
+      <button class="global-action" id="backupBtn" title="Export encrypted local vault backup"><span>⇩ Backup</span></button>
+      <button class="global-action" id="readableExportBtn" data-ag-id="NotesStudioPro_Header_ReadableExport" title="Download readable HTML and Markdown notes in a ZIP"><span>⇩ Export files</span></button>
+      <button class="global-action" id="restoreBtn" title="Restore or merge a JSON backup into your local vault"><span>⇧ Restore</span></button>
+      <button class="global-action" id="syncBtn" title="Sync encrypted notes with your paired laptop or phone"><span>⇄ Sync</span></button>
+      <span class="sync-presence" id="syncPresence" data-state="unknown" title="Phone reachability is based on a signed heartbeat in the last 90 seconds, not an always-on connection.">Phone: not checked</span>
+      <button class="global-action quick-action" id="createQuickNote" title="Create Quick Note">▤ Quick</button>
+      <div class="layout-switch" aria-label="Pane views">
+        <button class="layout-button" data-layout="single" aria-label="Single pane" aria-pressed="false" title="Single pane: focus one note"><span>⛶</span><small>1</small></button>
+        <button class="layout-button" data-layout="twoBottom" aria-label="Two columns and bottom pane" aria-pressed="false" title="Two columns with a full-width bottom pane"><span>◫</span><small>2 + dock</small></button>
+        <button class="layout-button active" data-layout="threeBottom" aria-label="Three columns and bottom pane" aria-pressed="true" title="Three columns with a full-width bottom pane"><span>▥▥</span><small>3 + dock</small></button>
+        <button class="layout-button" data-layout="vertical" aria-label="Three vertical columns" aria-pressed="false" title="Three side-by-side columns"><span>|||</span><small>Columns</small></button>
+        <button class="layout-button" data-layout="grid3x2" aria-label="Six note grid" aria-pressed="false" title="Six notes in a three-by-two grid"><span>▦</span><small>6 grid</small></button>
+      </div>
+    </div>
+  </header>
+  <div class="tab-ribbon-bar" data-ag-id="NotesStudioPro_Header_OpenNotesStrip">
+    <span class="tab-ribbon-label">Open notes</span>
+    <div class="ribbon-scroll-controls" data-ag-id="NotesStudioPro_Header_RibbonControls">
+      <button class="ribbon-nav-btn" id="scrollTabsLeft" title="Scroll open notes left" aria-label="Scroll open notes left">◀</button>
+      <button class="ribbon-nav-btn" id="scrollTabsRight" title="Scroll open notes right" aria-label="Scroll open notes right">▶</button>
+    </div>
+    <div class="ribbon" id="tabRibbon" role="tablist" aria-label="Open note tabs" data-ag-id="NotesStudioPro_Header_TabRibbon"></div>
+  </div>
+
+  <div class="sync-overlay" id="syncDialog" hidden role="dialog" aria-modal="true" aria-labelledby="syncTitle">
+    <section class="sync-card">
+      <h2 id="syncTitle">Private device sync</h2>
+      <p>Sync encrypted snapshots directly with your laptop server. Both devices must be online together; no AI service is used.</p>
+      <label>Sync server URL<input id="syncUrl" type="url" autocomplete="url" spellcheck="false" placeholder="http://192.168.x.x:8080/api/notes-studio-pro/sync"></label>
+      <label>Laptop pairing token<input id="syncToken" type="password" autocomplete="off" spellcheck="false" placeholder="Copy from the laptop sync server console"></label>
+      <label>Shared encryption passphrase<input id="syncPassphrase" type="password" autocomplete="new-password" placeholder="Use the same long passphrase on both devices"></label>
+      <div class="sync-warning">The server stores encrypted note snapshots and cannot read their contents. This device stores notes, sync credentials, and merge baselines in a local AES-GCM encrypted vault; the vault passphrase is not saved. Encrypted JSON backups use the vault envelope. Do not use a plain-LAN browser page for sync unless secure browser cryptography is available.</div>
+      <div class="sync-status" id="syncStatus" aria-live="polite">Not synced yet.</div>
+      <div class="sync-dialog-actions"><button id="syncForget">Forget pairing</button><button id="syncClose">Close</button><button class="sync-primary" id="syncNow">Sync now</button></div>
+    </section>
+  </div>
+
+  <div class="body">
+    <aside class="sidebar" id="sidebar" style="display:none" data-ag-id="NotesStudioPro_Sidebar_Drawer">
+      <div class="side-search" data-ag-id="NotesStudioPro_Sidebar_Search">
+        <input id="sideFilter" placeholder="Filter notes…" aria-label="Filter notes">
+      </div>
+      <div class="side-actions" data-ag-id="NotesStudioPro_Sidebar_Actions">
+        <button class="primary" id="sideNewNote">＋ Note</button>
+        <button id="sideQuickNote">▤ Quick</button>
+        <button id="sidePromptNote">⚡ Prompt</button>
+      </div>
+      <div class="nav-list" data-ag-id="NotesStudioPro_Nav_Filters">
+        <button class="nav-item active" data-filter="ALL" data-ag-id="NotesStudioPro_Nav_AllNotes"><span class="glyph">▦</span><span class="label">All notes</span><span class="num" id="totalCount">9</span></button>
+        <button class="nav-item" data-filter="PINNED" data-ag-id="NotesStudioPro_Nav_PinnedNotes"><span class="glyph">♧</span><span class="label">Pinned</span><span class="num" id="pinnedCount">0</span></button>
+      </div>
+
+      <!-- 1. Collapsible OPENED NOTES (Tabs) -->
+      <div class="group-section" id="groupOpened" data-ag-id="NotesStudioPro_Group_Opened">
+        <button type="button" class="group-header" data-toggle="groupOpened" aria-expanded="true">
+          <span class="glyph">📂</span>
+          <span class="group-title-text">OPENED NOTES (TABS)</span>
+          <span class="count" id="openedCount">0</span>
+          <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="group-body quick-list" id="openedList"></div>
+      </div>
+
+      <!-- 2. Collapsible QUICK NOTES -->
+      <div class="group-section" id="groupQuick" data-ag-id="NotesStudioPro_Group_Quick">
+        <button type="button" class="group-header" data-toggle="groupQuick" aria-expanded="true">
+          <span class="glyph">▤</span>
+          <span class="group-title-text">QUICK NOTES</span>
+          <span class="count" id="quickCount">0</span>
+          <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="group-body quick-list" id="quickList"></div>
+      </div>
+
+      <!-- 3. Collapsible CANONICAL DOMAINS -->
+      <div class="group-section" id="groupDomains" data-ag-id="NotesStudioPro_Group_Domains">
+        <button type="button" class="group-header" data-toggle="groupDomains" aria-expanded="true">
+          <span class="glyph">⌄</span>
+          <span class="group-title-text">STUDIO CANONICAL DOMAINS</span>
+          <span class="count">BLUEPRINT</span>
+          <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="group-body domain-list">
+          <button class="domain-item" data-domain="AI & Tools"><span>🤖</span><span class="label">AI Prompts &amp; Protocols</span><span class="num">3</span></button>
+          <button class="domain-item" data-domain="Raw Scratchpad"><span>📋</span><span class="label">Raw Snippets &amp; Table</span><span class="num">2</span></button>
+          <button class="domain-item" data-domain="Path Directory"><span>🗂️</span><span class="label">Folder Directory Map</span><span class="num">1</span></button>
+          <button class="domain-item" data-domain="Daily"><span>⚡</span><span class="label">Daily Checklists &amp; Pulse</span><span class="num">2</span></button>
+          <button class="domain-item" data-domain="Learning"><span>📚</span><span class="label">Learning &amp; Knowledge Hub</span><span class="num">2</span></button>
+        </div>
+      </div>
+
+      <!-- 4. Collapsible MERGED NOTE VAULT -->
+      <div class="group-section" id="groupVault" data-ag-id="NotesStudioPro_Group_Vault">
+        <button type="button" class="group-header" data-toggle="groupVault" aria-expanded="true">
+          <span class="glyph">🏛️</span>
+          <span class="group-title-text">MERGED NOTE VAULT</span>
+          <span class="count" id="vaultCount">0</span>
+          <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="group-body vault-list" id="vaultList"></div>
+      </div>
+
+      <!-- 5. Collapsible VAULT DATA & SYNC -->
+      <div class="group-section" id="groupVaultSync" data-ag-id="NotesStudioPro_Group_VaultSync">
+        <button type="button" class="group-header" data-toggle="groupVaultSync" aria-expanded="true">
+          <span class="glyph">⚙️</span>
+          <span class="group-title-text">VAULT DATA &amp; SYNC</span>
+          <span class="count">ACTIONS</span>
+          <span class="toggle-arrow">▼</span>
+        </button>
+        <div class="group-body quick-list" id="vaultSyncList">
+          <button class="nav-item" id="sideBackup" type="button" title="Export encrypted local vault backup"><span class="glyph">⇩</span><span class="label">Backup vault</span></button>
+          <button class="nav-item" id="sideRestore" type="button" title="Restore an encrypted or legacy JSON backup"><span class="glyph">↥</span><span class="label">Restore backup</span></button>
+          <button class="nav-item" id="sideSync" type="button" title="Open private device sync"><span class="glyph">⇄</span><span class="label">Private device sync</span></button>
+        </div>
+      </div>
+
+      <div class="directory">
+        <strong>DIRECTORY · LOCATION MAP</strong>
+        C:\Users\adity\Ag Folder\om_os_app
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <div class="canvas-head">
+        <strong>Notes Studio Pro · Sovereign Engine</strong>
+        <small id="layoutLabel">3 vertical panes + 1 horizontal bottom pane</small>
+        <span class="spacer"></span>
+        <button class="toolbar-button" id="flipLayoutOrientationBtn" title="Switch orientation between Vertical columns and Bottom Dock">⇄ Switch Orientation (Columns ↔ Bottom Dock)</button>
+        <button class="toolbar-button" id="toggleAiPromptBtn" title="1-Click Copy Tabular AI Prompt">⚡ Copy AI Prompt</button>
+      </div>
+      <section class="canvas" id="canvas">
+        <div class="panel-grid mode-threeBottom" id="panelGrid"></div>
+      </section>
+      <footer class="status">
+        <span id="previewStatus">● Waiting for local vault unlock</span>
+        <span>Drag (⋮) on tabs to resize · Horizontal scroll buttons (◀ ▶) active</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const themePalettes={
+  'midnight-obsidian':['#0f1117','#161822','#181a24','#212533','#272b3b','#f3f4f6','#9ca3af','#6366f1','#4f46e5','rgba(99,102,241,.15)',false],
+  'slate-monolith':['#0f172a','#1e293b','#1e293b','#334155','#334155','#f8fafc','#94a3b8','#0284c7','#0369a1','rgba(2,132,199,.15)',false],
+  'deep-charcoal':['#121212','#181818','#1e1e1e','#282828','#2e2e2e','#f4f4f5','#a1a1aa','#e11d48','#be123c','rgba(225,29,72,.15)',false],
+  'cosmic-navy':['#080c18','#0d1324','#11182c','#1b2544','#1f2c4e','#f1f5f9','#94a3b8','#3b82f6','#2563eb','rgba(59,130,246,.15)',false],
+  'emerald-forest':['#091510','#0e1e17','#12251c','#1a3528','#1f3f30','#f0fdf4','#86efac','#10b981','#059669','rgba(16,185,129,.15)',false],
+  'oled-pitch-black':['#000000','#050505','#0a0a0a','#141414','#2a2a2a','#ffffff','#a3a3a3','#06b6d4','#0891b2','rgba(6,182,212,.2)',false],
+  'cyberpunk-amber':['#0a0701','#120d04','#181105','#291d09','#452b0a','#fef3c7','#d97706','#f59e0b','#d97706','rgba(245,158,11,.2)',false],
+  'monochrome-ink':['#040404','#0c0c0c','#121212','#1e1e1e','#3f3f46','#ffffff','#d4d4d8','#ffffff','#e4e4e7','rgba(255,255,255,.2)',false],
+  'solarized-dark':['#002b36','#073642','#073642','#0d4a59','#586e75','#fdf6e3','#93a1a1','#2aa198','#268bd2','rgba(42,161,152,.2)',false],
+  'high-contrast-cobalt':['#030712','#0b1120','#0f172a','#1e293b','#374151','#f9fafb','#c084fc','#a855f7','#9333ea','rgba(168,85,247,.2)',false],
+  'white-sand':['#ffffff','#f8fafc','#ffffff','#f1f5f9','#e2e8f0','#0f172a','#64748b','#b45309','#92400e','rgba(180,83,9,.12)',true],
+  'nordic-snow':['#f1f5f9','#e2e8f0','#ffffff','#f8fafc','#cbd5e1','#1e293b','#64748b','#0f766e','#115e59','rgba(15,118,110,.12)',true],
+  'vedic-parchment':['#fdfbf7','#f3ede0','#f7f2e7','#ebe4d3','#e2d8c3','#292524','#78716c','#d97706','#b45309','rgba(217,119,6,.12)',true],
+  'lotus-rosewater':['#fff1f2','#ffe4e6','#ffffff','#fff5f6','#fecdd3','#4c0519','#9f1239','#e11d48','#be123c','rgba(225,29,72,.1)',true],
+  'mint-dawn':['#f0fdf4','#dcfce7','#ffffff','#f7fee7','#bbf7d0','#14532d','#15803d','#16a34a','#15803d','rgba(22,163,74,.1)',true]
+};
+
+function applyTheme(chosenTheme){
+  try{
+    const themeName=chosenTheme||localStorage.getItem('om_knowledge_os_theme')||'midnight-obsidian';
+    const p=themePalettes[themeName]||themePalettes['midnight-obsidian'];
+    const root=document.documentElement;
+    ['--bg','--surface2','--card','--hover','--line','--ink','--muted','--accent','--accentHover','--accentMuted'].forEach((key,i)=>root.style.setProperty(key,p[i]));
+    root.style.setProperty('--surface',p[2]);
+    root.style.setProperty('--accent2',p[9]);
+    root.style.colorScheme=p[10]?'light':'dark';
+  }catch{}
+}
+applyTheme();
+window.addEventListener('storage',e=>{if(e.key==='om_knowledge_os_theme')applyTheme(e.newValue);});
+window.addEventListener('message',e=>{if(e.data?.type==='OM_THEME_CHANGED')applyTheme(e.data.themeId);});
+
+const toast=document.getElementById('toast');
+let toastTimer;
+function say(text){
+  toast.textContent=text;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),2200);
+}
+
+const STORAGE_KEY='om_notes_studio_pro_store_v2';
+const LAYOUT_STORAGE_KEY='om_notes_studio_pro_layout_v2';
+const TAB_WIDTHS_KEY='om_notes_studio_pro_tabwidths_v2';
+const LOCAL_VAULT_KEY='om_notes_studio_pro_local_vault_v1';
+const LOCAL_VAULT_FORMAT='om-notes-studio-pro-local-vault-v1';
+const ENCRYPTED_BACKUP_FORMAT='om-notes-studio-pro-encrypted-backup-v1';
+const LOCAL_VAULT_ITERATIONS=310000;
+
+const INITIAL_PRO_NOTES={
+  'Audit a long AI answer':{
+    path:'AI & Tools / Prompts',
+    kind:'Prompt',
+    body:`<p><b>Review checklist</b></p><p>Compare the answer with the request and source material. Keep direct evidence separate from inference.</p><ul><li>Find missing assumptions</li><li>Check dates and calculations</li><li>List unresolved questions</li></ul><table><thead><tr><th>Evidence</th><th>Interpretation</th><th>Follow-up</th></tr></thead><tbody><tr><td>Source quote</td><td>What it supports</td><td>Verify date</td></tr><tr><td>Observed detail</td><td>What remains uncertain</td><td>Ask or research</td></tr></tbody></table><details class="toggle" open><summary>Optional context · toggle list</summary><div>Supporting detail stays inside this collapsible block.</div></details>`,
+    props:'<span class="prop">Type <b>Prompt</b></span><span class="prop">Domain <b>AI &amp; Tools</b></span><span class="prop">Category <b>Prompts</b></span><span class="prop">Tags <b>audit, reusable</b></span><span class="prop">Source <b>ChatGPT</b></span>'
+  },
+
+  'Today · capture and review':{
+    path:'Daily / Daily notes',
+    kind:'Daily checklist',
+    body:`<p><b>Today</b></p><p>Capture first; sort during review.</p><ul><li>Check current project priorities</li><li>Sort useful AI captures</li><li>Save one learning for later</li></ul><details class="toggle"><summary>End-of-day reflection</summary><div>What moved forward? What can wait until tomorrow?</div></details>`,
+    props:'<span class="prop">Type <b>Daily</b></span><span class="prop">Category <b>Daily notes</b></span><span class="prop">Tags <b>work, today</b></span>'
+  },
+
+  'Quick capture · idea':{
+    path:'Quick Notes / Quick notes',
+    kind:'Quick note',
+    body:`<p>Save a passing thought now; sort it into a project or category during review.</p><p>Quick captures remain easy to find in the shared Notes Studio library.</p>`,
+    props:'<span class="prop">Type <b>Quick note</b></span><span class="prop">Domain <b>Quick Notes</b></span><span class="prop">Status <b>Unsorted</b></span>'
+  },
+
+  'Raw chat & Codex snippets':{
+    path:'Raw Scratchpad / Snippets',
+    kind:'Scratchpad',
+    body:`<p>Collect text from chats, websites, PDFs, and tools in rows; select a few records and copy them back to an AI prompt.</p><table><thead><tr><th>Captured text</th><th>Source</th><th>Intent</th></tr></thead><tbody><tr><td>Original excerpt to clarify later</td><td>Antigravity</td><td>Audit</td></tr><tr><td>Learning to connect to a project</td><td>Website</td><td>Understand</td></tr></tbody></table>`,
+    props:'<span class="prop">Type <b>Scratchpad</b></span><span class="prop">Domain <b>Raw snippets</b></span><span class="prop">Source <b>Mixed</b></span>'
+  },
+
+  'Learning note · knowledge graphs':{
+    path:'Learning / Knowledge Hub',
+    kind:'Learning note',
+    body:`<p><b>Learning note</b></p><p>A concept becomes easier to reuse when its source, short explanation, and project connection are saved together.</p><details class="toggle"><summary>Question to revisit</summary><div>Which relationships should become canonical links?</div></details>`,
+    props:'<span class="prop">Type <b>Learning</b></span><span class="prop">Domain <b>Knowledge Hub</b></span><span class="prop">Tags <b>concept, research</b></span>'
+  },
+
+  '01 · AI Prompts & Sovereign Protocols':{
+    pinned:true,
+    path:'AI & Tools / Prompts',
+    kind:'Prompt',
+    body:`<p><b>Sovereign AI Engineering & Architecture Protocols</b></p>
+<p>Active engineering prompts, system rules, and copyable prompt cards for LLM pair programming.</p>
+<table>
+<thead><tr><th>Standard</th><th>Target</th><th>Verification Method</th></tr></thead>
+<tbody>
+<tr><td>Database Engine</td><td>Dexie.js v4 (IndexedDB)</td><td>100% Offline Autonomy</td></tr>
+<tr><td>UI Framework</td><td>React 19 + TypeScript</td><td>npm run build (tsc -b)</td></tr>
+<tr><td>CSS Architecture</td><td>TailwindCSS v4 (@theme)</td><td>Zero tailwind.config.js</td></tr>
+<tr><td>Mobile Screen</td><td>120Hz Dynamic AMOLED</td><td>Safe-Area & dvh support</td></tr>
+</tbody>
+</table>
+<details class="toggle" open>
+<summary>⚡ 1-CLICK COPYABLE PROMPT BLOCKS</summary>
+<div class="prompt-card">
+  <strong>Spec-on-Disk Execution Prompt</strong>
+  <pre>Act as a Principal Software Architect. Review the active task specification in docs/tasks/TASK-XX.md.
+Follow Mode 1 execution:
+1. Deliver a lean cockpit update (~200-450 tokens).
+2. Report Causal Summary, Files Touched, Verification Status, and Next Step.
+3. Keep all edits strictly locked to om_os_app/src/.</pre>
+</div>
+<div class="prompt-card">
+  <strong>Pre-Edit Snapshot PowerShell Invariant</strong>
+  <pre>powershell scripts/backup.ps1 -Reason "pre_feature_checkpoint"</pre>
+</div>
+</details>`,
+    props:'<span class="prop">Type <b>Prompt</b></span><span class="prop">Domain <b>AI &amp; Tools</b></span><span class="prop">Status <b>Active</b></span><span class="prop">Author <b>Aditya</b></span>'
+  },
+
+  '02 · Raw Chat & Codex Snippets (Notepad Table)':{
+    path:'Raw Scratchpad / Notepad Table',
+    kind:'Scratchpad',
+    body:`<p><b>Quick-capture table for copying raw text while reading AI chats, IDE logs, or YouTube transcripts.</b></p>
+<table>
+<thead><tr><th>SEL</th><th>CAPTURED TEXT / SNIPPET</th><th>SOURCE</th><th>ACTION INTENT</th><th>USER QUESTION / NOTES</th></tr></thead>
+<tbody>
+<tr><td>☑</td><td>React 19 Action hooks and useOptimistic allow instant local UI mutations before Dexie sync finishes.</td><td>Antigravity IDE</td><td>Clarify</td><td>How does useOptimistic degrade gracefully if Dexie transaction rolls back?</td></tr>
+<tr><td>☑</td><td>Tailwind v4 replaces postcss.config.js and tailwind.config.js with pure CSS @theme definitions inside src/index.css.</td><td>Vite 8 Doc</td><td>Understand</td><td>Verify how CSS custom variables (var(--bg-primary)) interact with @theme rules.</td></tr>
+<tr><td>☐</td><td>YouTube verbatim extract on Epistemic Systems: Knowledge graphs without local backlinks decay within 30 days.</td><td>YouTube</td><td>Synthesize</td><td>Synthesize with KnowledgeVault two-way living markdown exporter.</td></tr>
+</tbody>
+</table>
+<p><i>Select any rows and click "⚡ Copy AI Prompt" above to compile a structured request for ChatGPT/Claude.</i></p>`,
+    props:'<span class="prop">Type <b>Scratchpad</b></span><span class="prop">Domain <b>Raw Scratchpad</b></span><span class="prop">Format <b>Windows Notepad Table</b></span>'
+  },
+
+  '03 · Target Folders & Files Directory Map':{
+    path:'Path Directory / System Architecture',
+    kind:'Directory',
+    body:`<p><b>Canonical directory map of selected target folders across PC, Laptop, and Om OS App.</b></p>
+<table>
+<thead><tr><th>Device</th><th>Path</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td>Windows PC</td><td>C:\\Users\\adity\\Ag Folder\\om_os_app</td><td>Active Om OS Application Workspace</td></tr>
+<tr><td>Windows PC</td><td>C:\\Users\\adity\\AG misc</td><td>Cross-Project Architectural Blueprints & Specs</td></tr>
+<tr><td>Local SSD</td><td>C:\\Users\\adity\\Ag Folder\\my_notes</td><td>15 Sovereign Study Archives</td></tr>
+<tr><td>Local SSD</td><td>C:\\Users\\adity\\Ag Folder\\notion_os</td><td>27 Modular OS Knowledge Specs</td></tr>
+</tbody>
+</table>`,
+    props:'<span class="prop">Type <b>Directory</b></span><span class="prop">Domain <b>Path Directory</b></span><span class="prop">Status <b>Maintain</b></span>'
+  },
+
+  '04 · Daily Pulse Checklists':{
+    path:'Daily Pulse / Checklists',
+    kind:'Checklist',
+    body:`<p><b>Daily focus tasks and verification steps.</b></p>
+<ul>
+<li>[x] Pre-edit physical snapshot before multi-file edits</li>
+<li>[x] Verify bundle chunks under 800 kB via npm run build</li>
+<li>[ ] Review 3-way Google Sheets conflict queue</li>
+<li>[x] Capture passing thoughts into Quick Notes board</li>
+</ul>`,
+    props:'<span class="prop">Type <b>Checklist</b></span><span class="prop">Domain <b>Daily Pulse</b></span><span class="prop">Cadence <b>Daily</b></span>'
+  }
+};
+
+let sampleNotes={...INITIAL_PRO_NOTES};
+let localVaultKey=null;
+let localVaultSalt=null;
+let localVaultAux={syncConfig:{},syncBaseHashes:{}};
+
+function stableLegacyNoteId(title){return `legacy:${encodeURIComponent(title)}`;}
+function newProNoteId(){
+  if(globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const bytes=new Uint8Array(16);
+  globalThis.crypto?.getRandomValues?.(bytes);
+  return `note:${Date.now().toString(36)}:${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}:${Math.random().toString(36).slice(2)}`;
+}
+function normalizeProNotes(){
+  for(const [title,note] of Object.entries(sampleNotes)){
+    if(!note.id) note.id=stableLegacyNoteId(title);
+    note.title=title;
+    if(!note.updatedAt) note.updatedAt=new Date().toISOString();
+  }
+}
+normalizeProNotes();
+
+let tabWidths={};
+const DEFAULT_LAYOUT_TRACKS={
+  twoBottom:{columns:[1,1],rows:[2,1]},
+  threeBottom:{columns:[1,1,1],rows:[2,1]},
+  vertical:{columns:[1,1,1],rows:[1]},
+  grid3x2:{columns:[1,1,1],rows:[1,1]}
+};
+let layoutTracks=JSON.parse(JSON.stringify(DEFAULT_LAYOUT_TRACKS));
+let paneOrientations={};
+function normalizeLayoutTracks(value){
+  const result=JSON.parse(JSON.stringify(DEFAULT_LAYOUT_TRACKS));
+  if(!value||typeof value!=='object')return result;
+  for(const [mode,shape] of Object.entries(DEFAULT_LAYOUT_TRACKS)){
+    const candidate=value[mode];
+    for(const axis of ['columns','rows']){
+      if(!Array.isArray(candidate?.[axis])||candidate[axis].length!==shape[axis].length)continue;
+      const numbers=candidate[axis].map(Number);
+      const magnitudes=numbers.map(Math.abs);
+      if(numbers.every(n=>Number.isFinite(n)&&Math.abs(n)<=8&&(n===0||Math.abs(n)>=0.02))){const sum=magnitudes.reduce((total,n)=>total+n,0);if(sum>0)result[mode][axis]=numbers.map(n=>n===0?0:Math.sign(n)*Math.abs(n)/sum);}
+    }
+  }
+  return result;
+}
+function normalizePaneOrientations(value){
+  if(!value||typeof value!=='object'||Array.isArray(value))return {};
+  return Object.fromEntries(Object.entries(value).filter(([title,orientation])=>typeof title==='string'&&title.length<500&&(orientation==='horizontal'||orientation==='vertical')));
+}
+
+let saveTimer;
+function queueSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    persistLocalVault().then(()=>{
+      const st=document.getElementById('previewStatus');
+      if(st) st.textContent='● Autosaved · encrypted on this device';
+    }).catch(()=>{
+      const st=document.getElementById('previewStatus');
+      if(st){st.textContent='⚠ Encrypted autosave failed. Export a backup and check device storage.';st.style.color='#f87171';}
+      say('Encrypted autosave failed. Your latest edit may not be saved.');
+    });
+  },400);
+}
+
+const SYNC_CONFIG_KEY='om_notes_studio_pro_sync_config_v1';
+const SYNC_BASE_HASHES_KEY='om_notes_studio_pro_sync_base_hashes_v1';
+const SYNC_FORMAT='om-notes-pro-e2e-v1';
+const SYNC_ITERATIONS=310000;
+let syncBaseHashes={};
+let localNotesGeneration=0;
+function markProNoteChanged(note){
+  if(note){note.updatedAt=new Date().toISOString();localNotesGeneration++;}
+}
+function toBase64Url(bytes){
+  let binary='';
+  for(let i=0;i<bytes.length;i+=0x8000) binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+0x8000,bytes.length)));
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function fromBase64Url(value){
+  const padded=value.replace(/-/g,'+').replace(/_/g,'/')+'='.repeat((4-value.length%4)%4);
+  const binary=atob(padded);return Uint8Array.from(binary,char=>char.charCodeAt(0));
+}
+async function deriveLocalVaultKey(passphrase,salt,iterations=LOCAL_VAULT_ITERATIONS){
+  const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passphrase),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function encryptLocalVaultPayload(payload,key,salt){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(payload))));
+  return {format:LOCAL_VAULT_FORMAT,kdf:'PBKDF2-SHA-256',iterations:LOCAL_VAULT_ITERATIONS,salt:toBase64Url(salt),iv:toBase64Url(iv),ciphertext:toBase64Url(ciphertext)};
+}
+async function decryptLocalVaultEnvelope(envelope,passphrase){
+  if(!envelope||envelope.format!==LOCAL_VAULT_FORMAT||envelope.kdf!=='PBKDF2-SHA-256')throw new Error('This is not a supported encrypted Notes Studio Pro vault.');
+  const iterations=Number(envelope.iterations);
+  if(!Number.isInteger(iterations)||iterations<100000||iterations>2000000)throw new Error('The vault uses an unsupported key-strength setting.');
+  const salt=fromBase64Url(envelope.salt),iv=fromBase64Url(envelope.iv),ciphertext=fromBase64Url(envelope.ciphertext);
+  if(salt.length!==16||iv.length!==12||ciphertext.length<16)throw new Error('The encrypted vault file is incomplete or damaged.');
+  const key=await deriveLocalVaultKey(passphrase,salt,iterations);
+  try{
+    const plaintext=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ciphertext);
+    const payload=JSON.parse(new TextDecoder().decode(plaintext));
+    if(!payload||payload.format!=='om-notes-studio-pro-vault-payload-v1'||!payload.notes||typeof payload.notes!=='object'||Array.isArray(payload.notes))throw new Error('The decrypted backup does not contain a valid Notes Studio Pro library.');
+    return {payload,key,salt};
+  }catch(error){
+    if(error instanceof SyntaxError||String(error?.message||'').includes('valid Notes Studio Pro'))throw error;
+    throw new Error('That passphrase did not unlock this vault, or the encrypted data is damaged.');
+  }
+}
+function readLegacyVaultPayload(){
+  let notes={...INITIAL_PRO_NOTES};
+  const stored=localStorage.getItem(STORAGE_KEY)||localStorage.getItem('om_notes_studio_pro_store_v1');
+  if(stored){const parsed=JSON.parse(stored);if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))notes={...notes,...parsed};}
+  let legacyWidths={};
+  try{legacyWidths=JSON.parse(localStorage.getItem(TAB_WIDTHS_KEY)||'{}')||{};}catch{}
+  let legacyConfig={};
+  try{legacyConfig=JSON.parse(localStorage.getItem(SYNC_CONFIG_KEY)||'{}')||{};}catch{}
+  let legacyHashes={};
+  try{legacyHashes=JSON.parse(localStorage.getItem(SYNC_BASE_HASHES_KEY)||'{}')||{};}catch{}
+  return {format:'om-notes-studio-pro-vault-payload-v1',notes,layout:localStorage.getItem(LAYOUT_STORAGE_KEY)||'threeBottom',tabWidths:legacyWidths,layoutTracks:DEFAULT_LAYOUT_TRACKS,paneOrientations:{},syncConfig:legacyConfig,syncBaseHashes:legacyHashes};
+}
+function currentLocalVaultPayload(){
+  return {format:'om-notes-studio-pro-vault-payload-v1',notes:sampleNotes,layout:currentLayout,tabWidths,layoutTracks,paneOrientations,syncConfig:localVaultAux.syncConfig||{},syncBaseHashes};
+}
+async function persistLocalVault(){
+  if(!localVaultKey||!localVaultSalt)throw new Error('Encrypted saving is unavailable in this preview context. Open Notes Studio Pro on localhost, HTTPS, or the installed app before editing notes.');
+  const envelope=await encryptLocalVaultPayload(currentLocalVaultPayload(),localVaultKey,localVaultSalt);
+  const serialized=JSON.stringify(envelope);
+  localStorage.setItem(LOCAL_VAULT_KEY,serialized);
+  if(localStorage.getItem(LOCAL_VAULT_KEY)!==serialized)throw new Error('The encrypted vault could not be verified after saving.');
+}
+function removeLegacyPlaintextStores(){
+  for(const key of [STORAGE_KEY,'om_notes_studio_pro_store_v1',LAYOUT_STORAGE_KEY,TAB_WIDTHS_KEY,SYNC_CONFIG_KEY,SYNC_BASE_HASHES_KEY])localStorage.removeItem(key);
+}
+function applyLocalVaultPayload(payload,key,salt){
+  sampleNotes={...payload.notes};
+  normalizeProNotes();
+  localVaultAux={syncConfig:payload.syncConfig&&typeof payload.syncConfig==='object'?payload.syncConfig:{},syncBaseHashes:payload.syncBaseHashes&&typeof payload.syncBaseHashes==='object'?payload.syncBaseHashes:{}};
+  syncBaseHashes={...localVaultAux.syncBaseHashes};
+  tabWidths=payload.tabWidths&&typeof payload.tabWidths==='object'?payload.tabWidths:{};
+  layoutTracks=normalizeLayoutTracks(payload.layoutTracks);
+  paneOrientations=normalizePaneOrientations(payload.paneOrientations);
+  currentLayout=['single','twoBottom','threeBottom','vertical','grid3x2'].includes(payload.layout)?payload.layout:'threeBottom';
+  localVaultKey=key;localVaultSalt=salt;localNotesGeneration=0;
+  if(key&&salt) removeLegacyPlaintextStores();
+  document.querySelector('.app')?.classList.remove('vault-locked');
+  document.getElementById('vaultGate').hidden=true;
+  document.getElementById('vaultPassphrase').value='';
+  document.getElementById('vaultPassphraseConfirm').value='';
+  renderSidebar();renderRibbon();renderLayout(currentLayout);
+  refreshPhoneSyncPresence();
+}
+async function createOrUnlockLocalVault(){
+  const passField=document.getElementById('vaultPassphrase'),confirmField=document.getElementById('vaultPassphraseConfirm');
+  const passphrase=passField.value;
+  const status=document.getElementById('vaultStatus');
+  if(!window.isSecureContext||!globalThis.crypto?.subtle){status.textContent='Encrypted local storage requires a secure app context. Use localhost on the laptop or the installed Android app.';status.classList.add('error');return;}
+  if(passphrase.length<12){status.textContent='Use a vault passphrase of at least 12 characters.';status.classList.add('error');return;}
+  try{
+    status.classList.remove('error');status.textContent='Unlocking and verifying encrypted local storage…';
+    const stored=localStorage.getItem(LOCAL_VAULT_KEY);
+    if(stored){
+      const result=await decryptLocalVaultEnvelope(JSON.parse(stored),passphrase);
+      applyLocalVaultPayload(result.payload,result.key,result.salt);
+      status.textContent='';
+      say('Encrypted local vault unlocked');
+      return;
+    }
+    if(confirmField.value!==passphrase){status.textContent='The passphrases do not match.';status.classList.add('error');return;}
+    const payload=readLegacyVaultPayload();
+    for(const [title,note] of Object.entries(payload.notes)){
+      if(!note.id)note.id=stableLegacyNoteId(title);
+      note.title=title;
+      if(!note.updatedAt)note.updatedAt=new Date().toISOString();
+    }
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    const key=await deriveLocalVaultKey(passphrase,salt);
+    const envelope=await encryptLocalVaultPayload(payload,key,salt);
+    const serialized=JSON.stringify(envelope);
+    localStorage.setItem(LOCAL_VAULT_KEY,serialized);
+    const verified=await decryptLocalVaultEnvelope(JSON.parse(localStorage.getItem(LOCAL_VAULT_KEY)||'null'),passphrase);
+    if(JSON.stringify(verified.payload)!==JSON.stringify(payload))throw new Error('Migration verification failed. Existing plaintext data was left intact.');
+    applyLocalVaultPayload(verified.payload,verified.key,verified.salt);
+    status.textContent='';
+    say('Local notes encrypted and verified on this device');
+  }catch(error){
+    status.textContent=error.message||'Could not unlock the local vault. Existing data has not been removed.';
+    status.classList.add('error');
+  }
+}
+const DEV_DEFAULT_PASSPHRASE='OmSovereignVault2026!';
+async function unlockDevMode(){
+  if(typeof document==='undefined') return;
+  const status=document.getElementById('vaultStatus');
+  if(!window.isSecureContext||!globalThis.crypto?.subtle){
+    const payload=readLegacyVaultPayload();
+    for(const [title,note] of Object.entries(payload.notes)){
+      if(!note.id)note.id=stableLegacyNoteId(title);
+      note.title=title;
+      if(!note.updatedAt)note.updatedAt=new Date().toISOString();
+    }
+    applyLocalVaultPayload(payload,null,null);
+    if(status)status.textContent='';
+    say('Notes Studio Pro opened in Direct Mode (LAN)');
+    return;
+  }
+  try{
+    if(status){status.classList.remove('error');status.textContent='Opening Notes Studio Pro (Dev Mode)…';}
+    const stored=localStorage.getItem(LOCAL_VAULT_KEY);
+    if(stored){
+      try{
+        const result=await decryptLocalVaultEnvelope(JSON.parse(stored),DEV_DEFAULT_PASSPHRASE);
+        applyLocalVaultPayload(result.payload,result.key,result.salt);
+        if(status)status.textContent='';
+        say('Notes Studio Pro opened in Dev Mode');
+        return;
+      }catch(err){
+        if(status){status.textContent='An encrypted vault exists with a custom passphrase. Enter your passphrase or restore a backup.';status.classList.remove('error');}
+        setVaultGateMode();
+        return;
+      }
+    }
+    const payload=readLegacyVaultPayload();
+    for(const [title,note] of Object.entries(payload.notes)){
+      if(!note.id)note.id=stableLegacyNoteId(title);
+      note.title=title;
+      if(!note.updatedAt)note.updatedAt=new Date().toISOString();
+    }
+    const salt=crypto.getRandomValues(new Uint8Array(16));
+    const key=await deriveLocalVaultKey(DEV_DEFAULT_PASSPHRASE,salt);
+    const envelope=await encryptLocalVaultPayload(payload,key,salt);
+    const serialized=JSON.stringify(envelope);
+    localStorage.setItem(LOCAL_VAULT_KEY,serialized);
+    const verified=await decryptLocalVaultEnvelope(JSON.parse(localStorage.getItem(LOCAL_VAULT_KEY)||'null'),DEV_DEFAULT_PASSPHRASE);
+    applyLocalVaultPayload(verified.payload,verified.key,verified.salt);
+    if(status)status.textContent='';
+    say('Notes Studio Pro dev vault initialized and opened');
+  }catch(error){
+    console.error('Dev mode unlock failed:',error);
+    if(status){status.textContent=error.message||'Could not open in dev mode.';status.classList.add('error');}
+    setVaultGateMode();
+  }
+}
+function setVaultGateMode(){
+  if(typeof document==='undefined') return;
+  const hasVault=!!localStorage.getItem(LOCAL_VAULT_KEY);
+  const hasLegacy=!!(localStorage.getItem(STORAGE_KEY)||localStorage.getItem('om_notes_studio_pro_store_v1'));
+  document.getElementById('vaultGateTitle').textContent=hasVault?'Unlock private notes vault':'Create private notes vault';
+  document.getElementById('vaultGateDescription').textContent=hasVault?'Enter your vault passphrase or click Dev Mode to open immediately.':'Set a vault passphrase, or click Dev Mode to bypass during prototyping.';
+  document.getElementById('vaultConfirmLabel').hidden=hasVault;
+  document.getElementById('vaultUnlockButton').textContent=hasVault?'Unlock vault':'Encrypt notes and create vault';
+  document.getElementById('vaultStatus').textContent=hasLegacy?'Existing notes were found and will be preserved during the encryption migration.':'';
+}
+async function signedSyncHeaders(method,token,bodyText='',ifMatch=''){
+  const tokenBytes=fromBase64Url(token);
+  if(tokenBytes.length!==32)throw new Error('The pairing token is invalid. Copy the full token from the laptop sync server.');
+  const timestamp=String(Date.now()),nonce=toBase64Url(crypto.getRandomValues(new Uint8Array(18)));
+  const bodyHash=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(bodyText)));
+  const bodyHashText=toBase64Url(bodyHash);
+  const client=getSyncClientIdentity();
+  const canonical=`${method}\n/api/notes-studio-pro/sync\n${timestamp}\n${nonce}\n${ifMatch}\n${bodyHashText}\n${client.id}\n${client.platform}`;
+  const key=await crypto.subtle.importKey('raw',tokenBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const signature=toBase64Url(new Uint8Array(await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(canonical))));
+  return {'X-Notes-Timestamp':timestamp,'X-Notes-Nonce':nonce,'X-Notes-Signature':signature,'X-Notes-Client-ID':client.id,'X-Notes-Client-Platform':client.platform};
+}
+function getSyncClientIdentity(){
+  const config=localVaultAux.syncConfig&&typeof localVaultAux.syncConfig==='object'?localVaultAux.syncConfig:{};
+  if(!config.clientId)config.clientId=globalThis.crypto?.randomUUID?.()||`client-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  localVaultAux.syncConfig=config;
+  let platform='desktop';
+  try{if(window.Capacitor?.getPlatform?.()==='android')platform='android';}catch{}
+  return {id:String(config.clientId),platform};
+}
+function setPhoneSyncPresence(label,state='unknown',detail=''){
+  const element=document.getElementById('syncPresence');
+  if(!element)return;
+  element.textContent=label;
+  element.dataset.state=state;
+  element.title=detail||'Phone reachability is based on a signed heartbeat in the last 90 seconds, not an always-on connection.';
+}
+function formatSyncAge(iso){
+  const seconds=Math.max(0,Math.floor((Date.now()-Date.parse(iso))/1000));
+  if(seconds<60)return 'just now';
+  if(seconds<3600)return `${Math.floor(seconds/60)}m ago`;
+  if(seconds<86400)return `${Math.floor(seconds/3600)}h ago`;
+  return `${Math.floor(seconds/86400)}d ago`;
+}
+async function refreshPhoneSyncPresence(){
+  const config=loadSyncConfig();
+  if(!localVaultKey||!config.url||!config.token){setPhoneSyncPresence('Phone: not paired','unknown','Pair a device in Sync to check phone reachability.');return;}
+  try{
+    const hadClientId=!!config.clientId;
+    const headers=await signedSyncHeaders('GET',config.token,'','');
+    if(!hadClientId)await persistLocalVault();
+    const response=await fetch(config.url,{method:'GET',cache:'no-store',headers});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const store=await response.json();
+    const phoneEntries=Object.values(store.clients||{}).filter(item=>item?.platform==='android'&&item?.lastSeenAt).sort((a,b)=>Date.parse(b.lastSeenAt)-Date.parse(a.lastSeenAt));
+    const latest=phoneEntries[0];
+    if(!latest){setPhoneSyncPresence('Phone: not seen yet','unknown','The sync server is reachable, but no Android phone has checked in with this pairing yet.');return;}
+    const age=Date.now()-Date.parse(latest.lastSeenAt),isRecent=age<=90000;
+    setPhoneSyncPresence(`Phone: ${isRecent?'reachable':'last seen'} ${formatSyncAge(latest.lastSeenAt)}`,isRecent?'reachable':'unknown',`Last signed Android check-in: ${new Date(latest.lastSeenAt).toLocaleString()}. This reports recent app reachability, not permanent connectivity.`);
+  }catch(error){
+    setPhoneSyncPresence('Phone: status unknown','offline',`Could not reach the paired sync server (${error.message||'network error'}). The phone may still be online; this status cannot be verified.`);
+  }
+}
+function isPrivateSyncHost(hostname){
+  const host=hostname.replace(/^\[|\]$/g,'').toLowerCase();
+  if(host==='localhost'||host==='::1')return true;
+  const octets=host.split('.').map(Number);
+  if(octets.length!==4||octets.some(part=>!Number.isInteger(part)||part<0||part>255))return false;
+  return octets[0]===10||octets[0]===127||(octets[0]===192&&octets[1]===168)||(octets[0]===172&&octets[1]>=16&&octets[1]<=31)||(octets[0]===169&&octets[1]===254);
+}
+async function deriveSyncKeys(passphrase,salt){
+  const material=await crypto.subtle.importKey('raw',new TextEncoder().encode(passphrase),'PBKDF2',false,['deriveBits']);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:SYNC_ITERATIONS,hash:'SHA-256'},material,512));
+  const encryptionKey=await crypto.subtle.importKey('raw',bits.slice(0,32),{name:'AES-GCM'},false,['encrypt','decrypt']);
+  const hashKey=await crypto.subtle.importKey('raw',bits.slice(32),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  bits.fill(0);
+  return {encryptionKey,hashKey};
+}
+function proNotesForSync(source=sampleNotes){
+  return Object.entries(source).map(([title,note])=>({
+    id:String(note.id||stableLegacyNoteId(title)),title:String(title),path:String(note.path||''),kind:String(note.kind||'Note'),
+    body:String(note.body||''),props:String(note.props||''),updatedAt:String(note.updatedAt||'')
+  }));
+}
+async function encryptProSnapshot(notes,passphrase,salt){
+  const keys=await deriveSyncKeys(passphrase,salt);
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const plain=new TextEncoder().encode(JSON.stringify({format:SYNC_FORMAT,notes}));
+  const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},keys.encryptionKey,plain));
+  return {envelope:{format:SYNC_FORMAT,salt:toBase64Url(salt),iv:toBase64Url(iv),ciphertext:toBase64Url(cipher)},hashKey:keys.hashKey};
+}
+async function decryptProSnapshot(envelope,passphrase){
+  if(!envelope||envelope.format!==SYNC_FORMAT) throw new Error('The laptop snapshot format is not recognized.');
+  const salt=fromBase64Url(envelope.salt),iv=fromBase64Url(envelope.iv),cipher=fromBase64Url(envelope.ciphertext);
+  if(salt.length!==16||iv.length!==12||cipher.length<16) throw new Error('The encrypted snapshot is incomplete.');
+  const keys=await deriveSyncKeys(passphrase,salt);
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},keys.encryptionKey,cipher);
+  const parsed=JSON.parse(new TextDecoder().decode(plain));
+  if(parsed?.format!==SYNC_FORMAT||!Array.isArray(parsed.notes)||parsed.notes.length>5000) throw new Error('The decrypted snapshot has an invalid structure.');
+  return {notes:parsed.notes,hashKey:keys.hashKey,salt};
+}
+async function hashSyncedNote(note,hashKey){
+  const canonical=JSON.stringify([note.id,note.title,note.path,note.kind,note.body,note.props]);
+  return toBase64Url(new Uint8Array(await crypto.subtle.sign('HMAC',hashKey,new TextEncoder().encode(canonical))));
+}
+function validSyncNote(note){
+  return note&&typeof note==='object'&&typeof note.id==='string'&&note.id.length<500&&typeof note.title==='string'&&note.title.length<500&&
+    typeof note.path==='string'&&typeof note.kind==='string'&&typeof note.body==='string'&&note.body.length<4_000_000&&typeof note.props==='string'&&note.props.length<200_000;
+}
+function uniqueSyncTitle(title,used){
+  if(!used.has(title)){used.add(title);return title;}
+  let index=2,candidate=`${title} · ${index}`;
+  while(used.has(candidate)) candidate=`${title} · ${++index}`;
+  used.add(candidate);return candidate;
+}
+async function mergeProNotes(localNotes,remoteNotes,hashKey,baseHashes){
+  const localMap=new Map(localNotes.map(note=>[note.id,note]));
+  const remoteMap=new Map(remoteNotes.filter(validSyncNote).map(note=>[note.id,note]));
+  const merged=[],conflicts=[];
+  for(const id of new Set([...localMap.keys(),...remoteMap.keys()])){
+    const local=localMap.get(id),remote=remoteMap.get(id);
+    if(!local){merged.push(remote);continue;}
+    if(!remote){merged.push(local);continue;}
+    const [localHash,remoteHash]=await Promise.all([hashSyncedNote(local,hashKey),hashSyncedNote(remote,hashKey)]);
+    if(localHash===remoteHash){merged.push(local);continue;}
+    const base=baseHashes[id];
+    const localChanged=!base||localHash!==base,remoteChanged=!base||remoteHash!==base;
+    if(localChanged&&remoteChanged){
+      merged.push(local);
+      const copy={...remote,id:newProNoteId(),title:`${remote.title} (sync conflict copy)`,updatedAt:new Date().toISOString()};
+      merged.push(copy);conflicts.push(copy.title);
+    }else merged.push(localChanged?local:remote);
+  }
+  return {merged,conflicts};
+}
+function noteMapFromSync(notes){
+  const result={},used=new Set();
+  for(const note of notes){
+    if(!validSyncNote(note)) continue;
+    const title=uniqueSyncTitle(note.title||'Untitled note',used);
+    result[title]={id:note.id,title,path:note.path,kind:note.kind,body:note.body,props:note.props,updatedAt:note.updatedAt||new Date().toISOString()};
+  }
+  return result;
+}
+
+let openTabs=[
+  'Audit a long AI answer',
+  'Today · capture and review',
+  'Quick capture · idea',
+  'Raw chat & Codex snippets',
+  '01 · AI Prompts & Sovereign Protocols',
+  '02 · Raw Chat & Codex Snippets (Notepad Table)',
+  '03 · Target Folders & Files Directory Map',
+  '04 · Daily Pulse Checklists'
+];
+let activeTabTitle='Audit a long AI answer';
+let currentLayout='threeBottom';
+let currentSidebarFilter='ALL';
+let currentDomainFilter='';
+
+function setGroupOpen(groupId, isOpen){
+  const el=document.getElementById(groupId);
+  if(!el) return;
+  el.classList.toggle('collapsed', !isOpen);
+  const btn=el.querySelector('.group-header');
+  if(btn) btn.setAttribute('aria-expanded', String(isOpen));
+  try{ localStorage.setItem('om_notes_pro_' + groupId, String(isOpen)); }catch{}
+}
+
+function toggleGroup(groupId){
+  const el=document.getElementById(groupId);
+  if(!el) return;
+  const isCurrentlyCollapsed=el.classList.contains('collapsed');
+  setGroupOpen(groupId, isCurrentlyCollapsed);
+}
+
+// Render Sidebar Lists with Collapsible State
+function renderSidebar(){
+  const allTitles=Object.keys(sampleNotes);
+  const totalEl=document.getElementById('totalCount');
+  if(totalEl) totalEl.textContent=allTitles.length;
+  
+  const pinnedCount=allTitles.filter(t=>sampleNotes[t]?.pinned).length;
+  const pinnedCountEl=document.getElementById('pinnedCount');
+  if(pinnedCountEl) pinnedCountEl.textContent=pinnedCount;
+
+  // Compute live counts for canonical domains
+  document.querySelectorAll('.domain-item[data-domain]').forEach(btn=>{
+    const dom=(btn.dataset.domain||'').toLowerCase();
+    const count=allTitles.filter(t=>{
+      const n=sampleNotes[t];
+      return (n.path&&n.path.toLowerCase().includes(dom)) || (n.kind&&n.kind.toLowerCase().includes(dom)) || (n.props&&n.props.toLowerCase().includes(dom));
+    }).length;
+    const numEl=btn.querySelector('.num');
+    if(numEl) numEl.textContent=count;
+    btn.classList.toggle('active', currentSidebarFilter==='DOMAIN' && currentDomainFilter===btn.dataset.domain);
+  });
+
+  // Highlight active filter button
+  document.querySelectorAll('.nav-list .nav-item[data-filter]').forEach(btn=>{
+    btn.classList.toggle('active', currentSidebarFilter===btn.dataset.filter);
+  });
+
+  const quickCountEl=document.getElementById('quickCount');
+  if(quickCountEl) quickCountEl.textContent=allTitles.filter(t=>sampleNotes[t]?.kind==='Quick note').length;
+
+  // 1. OPENED NOTES (TABS)
+  const openedEl=document.getElementById('openedList');
+  const openedCountEl=document.getElementById('openedCount');
+  if(openedCountEl) openedCountEl.textContent=openTabs.length;
+  if(openedEl){
+    openedEl.innerHTML='';
+    openTabs.forEach(t=>{
+      const isActive=t===activeTabTitle;
+      const item=document.createElement('div');
+      item.className='nav-item'+(isActive?' active':'');
+      item.dataset.note=t;
+      item.style.display='flex';
+      item.style.alignItems='center';
+      item.style.justifyContent='space-between';
+      item.style.cursor='pointer';
+      item.innerHTML=`
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;pointer-events:none">
+          <span style="color:${isActive?'var(--accent)':'var(--muted)'};font-size:10px">${isActive?'●':'○'}</span>
+          <span class="label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:${isActive?'700':'500'}">${t}</span>
+        </div>
+        <span class="close-opened-tab" data-close-tab="${t}" title="Close tab" style="padding:0 4px;color:var(--muted);cursor:pointer;border-radius:3px">×</span>
+      `;
+      openedEl.appendChild(item);
+    });
+  }
+
+  // 2. QUICK NOTES
+  const quickEl=document.getElementById('quickList');
+  if(quickEl){
+    quickEl.innerHTML='';
+    const quickNotes=allTitles.filter(t=>sampleNotes[t]?.kind==='Quick note');
+    if(quickNotes.length===0){
+      quickEl.innerHTML='<div style="padding:4px 8px;color:var(--muted);font-size:10px">No quick notes yet.</div>';
+    } else {
+      quickNotes.forEach(t=>{
+        const btn=document.createElement('button');
+        btn.className='nav-item'+(t===activeTabTitle?' active':'');
+        btn.dataset.note=t;
+        btn.innerHTML=`<span>⚡</span><span class="label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t}</span>`;
+        quickEl.appendChild(btn);
+      });
+    }
+  }
+
+  // 3. MERGED NOTE VAULT (Filtered by currentSidebarFilter & currentDomainFilter)
+  const vaultEl=document.getElementById('vaultList');
+  let visibleTitles=allTitles;
+  if(currentSidebarFilter==='PINNED'){
+    visibleTitles=allTitles.filter(t=>sampleNotes[t]?.pinned);
+  } else if(currentSidebarFilter==='DOMAIN' && currentDomainFilter){
+    const dom=currentDomainFilter.toLowerCase();
+    visibleTitles=allTitles.filter(t=>{
+      const n=sampleNotes[t];
+      return (n.path&&n.path.toLowerCase().includes(dom)) || (n.kind&&n.kind.toLowerCase().includes(dom)) || (n.props&&n.props.toLowerCase().includes(dom));
+    });
+  }
+
+  const vaultCountEl=document.getElementById('vaultCount');
+  if(vaultCountEl) vaultCountEl.textContent=visibleTitles.length;
+
+  if(vaultEl){
+    vaultEl.innerHTML='';
+    if(visibleTitles.length===0){
+      vaultEl.innerHTML=`<div style="padding:12px 8px;text-align:center;color:var(--muted);font-size:11px">
+        ${currentSidebarFilter==='PINNED' ? 'No pinned notes.<br><span style="font-size:10px;opacity:0.7">Click 📌 Pin on any pane header to pin it here.</span>' : 'No matching notes found.'}
+      </div>`;
+    } else {
+      visibleTitles.forEach(t=>{
+        const n=sampleNotes[t];
+        const isOpened=openTabs.includes(t);
+        const isActive=t===activeTabTitle;
+        const btn=document.createElement('button');
+        btn.className='vault-item'+(isActive?' active':'');
+        btn.dataset.note=t;
+        btn.innerHTML=`
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${n.pinned ? '📌 ' : ''}${t}</strong>
+            ${isOpened ? '<span style="font-size:8px;padding:1px 4px;border-radius:4px;background:var(--accentMuted);color:var(--accent);font-weight:700">OPEN</span>' : ''}
+          </div>
+          <small>${n.path || n.kind || 'Note'}</small>
+        `;
+        vaultEl.appendChild(btn);
+      });
+    }
+  }
+}
+
+// Tab Ribbon with Persistent Custom Widths
+function renderRibbon(){
+  const ribbon=document.getElementById('tabRibbon');
+  const ribbonLabel=document.querySelector('.tab-ribbon-label');
+  if(ribbonLabel)ribbonLabel.textContent=`Open notes (${openTabs.length})`;
+  ribbon.innerHTML='';
+  openTabs.forEach(t=>{
+    const btn=document.createElement('div');
+    const isActive=t===activeTabTitle;
+    btn.className='ribbon-tab'+(isActive?' active':'');
+    btn.dataset.note=t;
+    btn.setAttribute('role','tab');
+    btn.setAttribute('aria-selected',String(isActive));
+    btn.setAttribute('data-ag-id',`NotesStudioPro_Header_OpenNoteTab_${sampleNotes[t]?.id||encodeURIComponent(t)}`);
+    const customWidth=tabWidths[t] || 165;
+    btn.style.width=customWidth+'px';
+    btn.style.setProperty('--tab-width',customWidth+'px');
+    btn.innerHTML=`<span>${t}</span>
+      <div class="tab-actions">
+        <span class="close" title="Close tab">×</span>
+        <span class="resize-grip" role="separator" aria-orientation="vertical" aria-valuemin="110" aria-valuemax="480" aria-valuenow="${Math.round(customWidth)}" aria-label="Resize ${t} tab; use arrow keys or drag, double-click to reset" tabindex="0" title="Drag or use arrow keys to resize; double-click to reset" data-ag-id="NotesStudioPro_Header_OpenNoteTabResize_${sampleNotes[t]?.id||encodeURIComponent(t)}">⋮</span>
+      </div>`;
+    ribbon.appendChild(btn);
+  });
+}
+
+// Window-Level Drag to Resize Tabs
+let isResizingTab=false;
+let activeGripTab=null;
+let activeGripPointerId=null;
+let startX=0;
+let startWidth=0;
+
+document.addEventListener('pointerdown',e=>{
+  const grip=e.target.closest('.resize-grip');
+  if(!grip) return;
+  e.preventDefault();
+  e.stopPropagation();
+  activeGripTab=grip.closest('.ribbon-tab');
+  if(!activeGripTab) return;
+  isResizingTab=true;
+  activeGripPointerId=e.pointerId;
+  startX=e.clientX;
+  startWidth=activeGripTab.getBoundingClientRect().width;
+  try{grip.setPointerCapture(e.pointerId);}catch{}
+  document.body.style.cursor='col-resize';
+  document.body.style.userSelect='none';
+});
+
+window.addEventListener('pointermove',e=>{
+  if(!isResizingTab || !activeGripTab || e.pointerId!==activeGripPointerId) return;
+  e.preventDefault();
+  const delta=e.clientX - startX;
+  const newWidth=Math.max(110,Math.min(480,startWidth + delta));
+  activeGripTab.style.setProperty('--tab-width',newWidth+'px');
+  activeGripTab.style.width=newWidth+'px';
+  const tabTitle=activeGripTab.dataset.note;
+  if(tabTitle){
+    tabWidths[tabTitle]=newWidth;
+    activeGripTab.querySelector('.resize-grip')?.setAttribute('aria-valuenow',String(Math.round(newWidth)));
+  }
+});
+
+window.addEventListener('pointerup',e=>{
+  if(isResizingTab && e.pointerId===activeGripPointerId){
+    isResizingTab=false;
+    activeGripTab=null;
+    activeGripPointerId=null;
+    document.body.style.cursor='';
+    document.body.style.userSelect='';
+    queueSave();
+    say('Tab resized successfully');
+  }
+});
+window.addEventListener('pointercancel',e=>{
+  if(!isResizingTab||e.pointerId!==activeGripPointerId)return;
+  isResizingTab=false;activeGripTab=null;activeGripPointerId=null;
+  document.body.style.cursor='';document.body.style.userSelect='';
+  queueSave();
+});
+
+document.addEventListener('keydown',e=>{
+  const grip=e.target.closest?.('.resize-grip');
+  if(!grip)return;
+  if(e.key==='Home'||e.key==='End'){
+    e.preventDefault();
+    const tab=grip.closest('.ribbon-tab'),title=tab?.dataset.note;
+    if(!tab||!title)return;
+    const width=e.key==='Home'?110:480;
+    tabWidths[title]=width;tab.style.width=width+'px';tab.style.setProperty('--tab-width',width+'px');grip.setAttribute('aria-valuenow',String(width));queueSave();return;
+  }
+  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+  e.preventDefault();
+  const tab=grip.closest('.ribbon-tab'),title=tab?.dataset.note;
+  if(!tab||!title)return;
+  const width=Math.max(110,Math.min(480,(tabWidths[title]||165)+(e.key==='ArrowRight'?12:-12)));
+  tabWidths[title]=width;tab.style.width=width+'px';tab.style.setProperty('--tab-width',width+'px');grip.setAttribute('aria-valuenow',String(width));queueSave();
+});
+
+// Double click to reset tab width
+document.addEventListener('dblclick',e=>{
+  const grip=e.target.closest('.resize-grip');
+  if(!grip) return;
+  const tab=grip.closest('.ribbon-tab');
+  if(tab){
+    const title=tab.dataset.note;
+    if(title) delete tabWidths[title];
+    tab.style.removeProperty('--tab-width');
+    tab.style.width='165px';
+    queueSave();
+    say('Tab width reset to default 165px');
+  }
+});
+
+// Horizontal Ribbon Scroll Buttons & Mousewheel
+document.getElementById('scrollTabsLeft').addEventListener('click',()=>{
+  document.getElementById('tabRibbon').scrollBy({left:-240,behavior:'smooth'});
+});
+document.getElementById('scrollTabsRight').addEventListener('click',()=>{
+  document.getElementById('tabRibbon').scrollBy({left:240,behavior:'smooth'});
+});
+document.getElementById('tabRibbon').addEventListener('wheel',e=>{
+  if(e.deltaY!==0){
+    e.preventDefault();
+    document.getElementById('tabRibbon').scrollLeft+=e.deltaY;
+  }
+},{passive:false});
+
+// Layout Titles Resolver
+function layoutTitlesFor(mode){
+  if(mode==='single') return [activeTabTitle || openTabs[0] || Object.keys(sampleNotes)[0]];
+  const count=mode==='twoBottom'?3:mode==='threeBottom'?4:mode==='vertical'?3:6;
+  const titles=[...openTabs];
+  const all=Object.keys(sampleNotes);
+  while(titles.length < count){
+    const next=all.find(x=>!titles.includes(x)) || all[0];
+    titles.push(next);
+  }
+  return titles.slice(0,count);
+}
+
+function layoutColumnCount(mode){return mode==='twoBottom'?2:(mode==='threeBottom'||mode==='vertical'||mode==='grid3x2')?3:1;}
+function applyLayoutTrackStyles(grid,mode){
+  const tracks=layoutTracks[mode];
+  if(!tracks||window.innerWidth<=680||mode==='single'){
+    grid.style.removeProperty('--layout-columns');
+    grid.style.removeProperty('--layout-rows');
+    return;
+  }
+  const trackCss=(weight,min)=>weight<0?'minmax(0px, 0fr)':`minmax(${min}px, ${weight}fr)`;
+  grid.style.setProperty('--layout-columns',tracks.columns.map(weight=>trackCss(weight,160)).join(' '));
+  grid.style.setProperty('--layout-rows',tracks.rows.map(weight=>trackCss(weight,120)).join(' '));
+}
+function renderPaneSplitters(grid,mode){
+  grid.querySelectorAll('.pane-splitter').forEach(handle=>handle.remove());
+  if(window.innerWidth<=680||mode==='single')return;
+  const tracks=layoutTracks[mode],columns=layoutColumnCount(mode);
+  if(columns>1){
+    const usableFraction=tracks.columns.reduce((sum,value)=>sum+Math.max(0,value),0);
+    let cumulative=0;
+    for(let index=0;index<columns-1;index++){
+      cumulative+=Math.max(0,tracks.columns[index])/usableFraction;
+      const handle=document.createElement('div');
+      handle.className='pane-splitter';handle.dataset.axis='x';handle.dataset.index=String(index);handle.dataset.mode=mode;
+      handle.setAttribute('data-ag-id',`NotesStudioPro_Layout_PaneSplitter_${mode}_x_${index}`);
+      handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','vertical');
+      handle.setAttribute('tabindex','0');
+      handle.setAttribute('aria-label',`Resize note columns ${index+1} and ${index+2}`);
+      handle.title=`Drag to resize columns ${index+1} and ${index+2}`;
+      handle.style.left=`calc(8px + (100% - 16px - ${(columns-1)*7}px) * ${cumulative} + ${index*7+3.5}px)`;
+      handle.innerHTML=splitterToggleMarkup(mode,'x',index,index,'‹','Collapse column '+(index+1))+splitterToggleMarkup(mode,'x',index,index+1,'›','Collapse column '+(index+2));
+      grid.appendChild(handle);
+    }
+  }
+  if(tracks.rows.length>1){
+    const total=tracks.rows.reduce((sum,value)=>sum+Math.max(0,value),0);
+    const ratio=Math.max(0,tracks.rows[0])/total;
+    const handle=document.createElement('div');
+    handle.className='pane-splitter';handle.dataset.axis='y';handle.dataset.index='0';handle.dataset.mode=mode;
+    handle.setAttribute('data-ag-id',`NotesStudioPro_Layout_PaneSplitter_${mode}_y_0`);
+    handle.setAttribute('role','separator');handle.setAttribute('aria-orientation','horizontal');
+    handle.setAttribute('tabindex','0');
+    handle.setAttribute('aria-label','Resize the upper panes and bottom dock');
+    handle.title='Drag to resize the upper panes and bottom dock';
+    handle.style.top=`calc(8px + (100% - 16px - 7px) * ${ratio} + 3.5px)`;
+    handle.innerHTML=splitterToggleMarkup(mode,'y',0,0,'⌃','Collapse upper row')+splitterToggleMarkup(mode,'y',0,1,'⌄','Collapse bottom row');
+    grid.appendChild(handle);
+  }
+  positionPaneSplitters(grid,mode);
+}
+function splitterToggleMarkup(mode,axis,index,trackIndex,glyph,label){
+  const weight=layoutTracks[mode]?.[axis==='x'?'columns':'rows']?.[trackIndex]||0;
+  const collapsed=weight<0;
+  const expandedGlyph=axis==='x'?(trackIndex===index?'‹':'›'):(trackIndex===index?'⌃':'⌄');
+  const collapsedGlyph=axis==='x'?(trackIndex===index?'›':'‹'):(trackIndex===index?'⌄':'⌃');
+  const text=collapsed?'Expand '+label.replace(/^Collapse /,''):label;
+  return `<button type="button" class="splitter-toggle" data-mode="${mode}" data-axis="${axis}" data-index="${index}" data-track-index="${trackIndex}" aria-label="${text}" aria-pressed="${collapsed}" title="${text}" data-ag-id="NotesStudioPro_Layout_SplitterCollapse_${mode}_${axis}_${index}_${trackIndex}">${collapsed?collapsedGlyph:expandedGlyph||glyph}</button>`;
+}
+function positionPaneSplitters(grid,mode){
+  const tracks=layoutTracks[mode];if(!tracks)return;
+  const columns=layoutColumnCount(mode),totalColumns=tracks.columns.reduce((sum,value)=>sum+Math.max(0,value),0);
+  const style=getComputedStyle(grid),horizontalPadding=(parseFloat(style.paddingLeft)||0)+(parseFloat(style.paddingRight)||0),verticalPadding=(parseFloat(style.paddingTop)||0)+(parseFloat(style.paddingBottom)||0),gap=parseFloat(style.columnGap)||7,rowGap=parseFloat(style.rowGap)||7;
+  const usableWidth=grid.clientWidth-horizontalPadding-gap*(columns-1),usableHeight=grid.clientHeight-verticalPadding-rowGap*(tracks.rows.length-1);
+  let cumulative=0;
+  grid.querySelectorAll('.pane-splitter[data-axis="x"]').forEach(handle=>{
+    const index=Number(handle.dataset.index);
+    cumulative+=Math.max(0,tracks.columns[index])/totalColumns;
+    let position=(parseFloat(style.paddingLeft)||0)+usableWidth*cumulative+gap*index+gap/2;
+    if(tracks.columns[index]<=0)position=Math.max(24,position+14);
+    if(tracks.columns[index+1]<=0)position=Math.min(grid.clientWidth-24,position-14);
+    handle.style.left=`${position}px`;
+  });
+  if(tracks.rows.length>1){
+    const ratio=Math.max(0,tracks.rows[0])/tracks.rows.reduce((sum,value)=>sum+Math.max(0,value),0);
+    const rowHandle=grid.querySelector('.pane-splitter[data-axis="y"]');
+    if(rowHandle){
+      let position=(parseFloat(style.paddingTop)||0)+usableHeight*ratio+rowGap/2;
+      if(tracks.rows[0]<=0)position=Math.max(24,position+14);
+      if(tracks.rows[1]<=0)position=Math.min(grid.clientHeight-24,position-14);
+      rowHandle.style.top=`${position}px`;
+    }
+  }
+}
+
+let activePaneSplitter=null;
+function adjustTrackPair(mode,axis,index,deltaPixels,availablePixels){
+  const weights=axis==='x'?layoutTracks[mode]?.columns:layoutTracks[mode]?.rows;
+  if(!weights||index<0||index>=weights.length-1||availablePixels<=0)return;
+  const totalPixels=(Math.abs(weights[index])+Math.abs(weights[index+1]))*availablePixels;
+  const minPixels=axis==='x'?160:120;
+  const nextFirst=Math.max(Math.min(minPixels,totalPixels/3),Math.min(totalPixels-Math.min(minPixels,totalPixels/3),Math.abs(weights[index])*availablePixels+deltaPixels));
+  weights[index]=nextFirst/availablePixels;
+  weights[index+1]=(totalPixels-nextFirst)/availablePixels;
+  const grid=document.getElementById('panelGrid');
+  applyLayoutTrackStyles(grid,mode);positionPaneSplitters(grid,mode);
+  return true;
+}
+function normalizeTrackWeights(weights){
+  const total=weights.reduce((sum,value)=>sum+Math.abs(value),0);
+  if(total>0)for(let index=0;index<weights.length;index++)weights[index]=weights[index]===0?0:Math.sign(weights[index])*Math.abs(weights[index])/total;
+}
+function toggleLayoutTrack(mode,axis,index,trackIndex){
+  const weights=layoutTracks[mode]?.[axis==='x'?'columns':'rows'];
+  if(!weights||trackIndex<0||trackIndex>=weights.length)return;
+  const current=weights[trackIndex];
+  if(current<0){
+    const preferredNeighbor=trackIndex===index?trackIndex+1:index;
+    let neighbor=preferredNeighbor;
+    if(weights[neighbor]<=0)neighbor=weights.findIndex((weight,i)=>i!==trackIndex&&weight>0);
+    if(neighbor<0)return;
+    const desired=Math.abs(current);
+    const restored=Math.min(desired,Math.max(0,weights[neighbor]-0.2));
+    if(restored<0.05)return;
+    weights[trackIndex]=restored;
+    weights[neighbor]-=restored;
+  } else {
+    if(weights.filter(weight=>weight>0).length<=1)return;
+    let neighbor=trackIndex===index?trackIndex+1:index;
+    if(weights[neighbor]<0)neighbor=weights.findIndex((weight,i)=>i!==trackIndex&&weight>0);
+    if(neighbor<0)return;
+    const hidden=Math.abs(current);
+    weights[trackIndex]=-hidden;
+    weights[neighbor]+=hidden;
+  }
+  normalizeTrackWeights(weights);
+  renderLayout(mode);
+  say(weights[trackIndex]<0?'Pane track collapsed; use its chevron to expand':'Pane track restored to its saved proportion');
+}
+document.addEventListener('pointerdown',event=>{
+  const handle=event.target.closest('.pane-splitter');
+  if(!handle||event.target.closest('.splitter-toggle')||window.innerWidth<=680)return;
+  const grid=document.getElementById('panelGrid'),mode=currentLayout,axis=handle.dataset.axis,index=Number(handle.dataset.index);
+  const weights=axis==='x'?layoutTracks[mode]?.columns:layoutTracks[mode]?.rows;
+  if(!weights||index>=weights.length-1)return;
+  event.preventDefault();event.stopPropagation();
+  const style=getComputedStyle(grid),rect=grid.getBoundingClientRect(),gap=parseFloat(style.gap)||7;
+  const padding=axis==='x'?parseFloat(style.paddingLeft)+parseFloat(style.paddingRight):parseFloat(style.paddingTop)+parseFloat(style.paddingBottom);
+  const available=(axis==='x'?rect.width:rect.height)-padding-gap*(weights.length-1);
+  if(available<=0)return;
+  activePaneSplitter={handle,mode,axis,index,startCoordinate:axis==='x'?event.clientX:event.clientY,available,startWeights:[Math.abs(weights[index]),Math.abs(weights[index+1])],pointerId:event.pointerId};
+  handle.classList.add('dragging');
+  try{handle.setPointerCapture(event.pointerId);}catch{}
+});
+window.addEventListener('pointermove',event=>{
+  const drag=activePaneSplitter;if(!drag||event.pointerId!==drag.pointerId)return;
+  event.preventDefault();
+  const coordinate=drag.axis==='x'?event.clientX:event.clientY;
+  const weights=drag.axis==='x'?layoutTracks[drag.mode].columns:layoutTracks[drag.mode].rows;
+  const pairTotal=drag.startWeights[0]+drag.startWeights[1];
+  const startFirst=drag.startWeights[0]*drag.available;
+  const change=coordinate-drag.startCoordinate;
+  const totalPixels=pairTotal*drag.available;
+  const minPixels=Math.min(drag.axis==='x'?160:120,totalPixels/3);
+  const nextFirst=Math.max(minPixels,Math.min(totalPixels-minPixels,startFirst+change));
+  weights[drag.index]=nextFirst/drag.available;
+  weights[drag.index+1]=(totalPixels-nextFirst)/drag.available;
+  const grid=document.getElementById('panelGrid');
+  applyLayoutTrackStyles(grid,drag.mode);positionPaneSplitters(grid,drag.mode);
+});
+function finishPaneSplitterDrag(event){
+  if(!activePaneSplitter||event.pointerId!==activePaneSplitter.pointerId)return;
+  activePaneSplitter.handle.classList.remove('dragging');
+  activePaneSplitter=null;document.body.style.cursor='';document.body.style.userSelect='';queueSave();say('Pane size saved');
+}
+window.addEventListener('pointerup',finishPaneSplitterDrag);
+window.addEventListener('pointercancel',finishPaneSplitterDrag);
+document.addEventListener('keydown',event=>{
+  const handle=event.target.closest?.('.pane-splitter');
+  if(!handle||event.target.closest?.('.splitter-toggle'))return;
+  const axis=handle.dataset.axis,key=event.key;
+  const positive=axis==='x'?key==='ArrowRight':key==='ArrowDown';
+  const negative=axis==='x'?key==='ArrowLeft':key==='ArrowUp';
+  if(!positive&&!negative)return;
+  event.preventDefault();
+  const grid=document.getElementById('panelGrid'),mode=currentLayout,index=Number(handle.dataset.index);
+  const style=getComputedStyle(grid),rect=grid.getBoundingClientRect(),gap=parseFloat(style.gap)||7;
+  const weights=axis==='x'?layoutTracks[mode].columns:layoutTracks[mode].rows;
+  const padding=axis==='x'?parseFloat(style.paddingLeft)+parseFloat(style.paddingRight):parseFloat(style.paddingTop)+parseFloat(style.paddingBottom);
+  const available=(axis==='x'?rect.width:rect.height)-padding-gap*(weights.length-1);
+  adjustTrackPair(mode,axis,index,(positive?1:-1)*Math.max(12,available*.025),available);
+  queueSave();say('Pane size saved');
+});
+document.addEventListener('dblclick',event=>{
+  const handle=event.target.closest('.pane-splitter');if(!handle||event.target.closest('.splitter-toggle'))return;
+  const mode=currentLayout,axis=handle.dataset.axis,index=Number(handle.dataset.index);
+  const defaults=DEFAULT_LAYOUT_TRACKS[mode],weights=axis==='x'?layoutTracks[mode].columns:layoutTracks[mode].rows,defaultWeights=axis==='x'?defaults.columns:defaults.rows;
+  const total=Math.abs(weights[index])+Math.abs(weights[index+1]);
+  weights[index]=defaultWeights[index];weights[index+1]=defaultWeights[index+1];
+  const defaultPair=defaultWeights[index]+defaultWeights[index+1];
+  weights[index]*=total/defaultPair;weights[index+1]*=total/defaultPair;
+  const grid=document.getElementById('panelGrid');applyLayoutTrackStyles(grid,mode);positionPaneSplitters(grid,mode);queueSave();say('Pane split reset to its default size');
+});
+
+// Layout Swapping Engine
+function renderLayout(mode,{persist=true}={}){
+  if(!['single','twoBottom','threeBottom','vertical','grid3x2'].includes(mode))mode='threeBottom';
+  if(persist){currentLayout=mode;queueSave();}
+  const grid=document.getElementById('panelGrid');
+  const viewportMode=window.innerWidth<=680?'mobile':'desktop';
+  if(!persist&&grid.dataset.displayMode===mode&&grid.dataset.viewportMode===viewportMode){applyLayoutTrackStyles(grid,mode);renderPaneSplitters(grid,mode);return;}
+  grid.dataset.displayMode=mode;
+  grid.dataset.viewportMode=viewportMode;
+  grid.className='panel-grid mode-'+mode;
+  const titles=layoutTitlesFor(mode);
+  const labels={
+    single:'Single focus pane · 1 note full canvas',
+    twoBottom:'2 columns + 1 bottom note',
+    threeBottom:'3 columns + 1 bottom note',
+    vertical:'3 vertical columns · full height',
+    grid3x2:'3 × 2 grid · up to 6 simultaneous panes'
+  };
+  const mobileStack=window.matchMedia('(max-width: 680px)').matches&&mode!=='single';
+  document.getElementById('layoutLabel').textContent=labels[mode]+(mobileStack?' · stacked for phone; scroll to move between notes':'');
+
+  grid.innerHTML='';
+  titles.forEach((t,idx)=>{
+    const n=sampleNotes[t] || sampleNotes['01 · AI Prompts & Sovereign Protocols'];
+    const isBottom=(mode==='twoBottom'&&idx===2)||(mode==='threeBottom'&&idx===3);
+    const orientation=paneOrientations[t]||(isBottom?'horizontal':'vertical');
+    const label=mode==='single'?'FOCUS':isBottom?'BOTTOM DOCK':`NOTE ${idx+1}`;
+
+    const pane=document.createElement('article');
+    pane.className='note-pane'+(orientation==='horizontal'?' orientation-horizontal':'');
+    pane.dataset.pane=idx;
+    pane.dataset.noteTitle=t;
+    pane.dataset.orientation=orientation;
+    pane.innerHTML=`
+      <div class="panel-top">
+        <span class="pane-label">${label}</span>
+        <select class="note-select" aria-label="Select note">
+          ${Object.keys(sampleNotes).map(name=>`<option value="${name}" ${name===t?'selected':''}>${name}</option>`).join('')}
+        </select>
+        <div class="pane-tools">
+          <button class="pane-tool active" data-action="rich" title="Rich Editor Mode">✎ <span>Rich</span></button>
+          <button class="pane-tool" data-action="markdown" title="Raw Markdown Editor">▤ <span>Markdown</span></button>
+          <button class="pane-tool" data-action="preview" title="Live Preview Mode">◉ <span>Preview</span></button>
+          <button class="pane-tool${n.pinned ? ' active' : ''}" data-action="pin" title="${n.pinned ? 'Unpin note' : 'Pin note'}">${n.pinned ? '📌' : '♧'} <span>${n.pinned ? 'Pinned' : 'Pin'}</span></button>
+          <button class="pane-tool" data-action="properties" title="Show/hide properties">◇ <span>Props</span></button>
+          <button class="pane-tool" data-action="maximize" title="Maximize Pane (⛶)">⛶ <span>Max</span></button>
+          <button class="pane-tool" data-action="collapse" title="Collapse/Expand Pane Body">⌄</button>
+          <button class="pane-tool danger" data-action="close" title="Close this pane">×</button>
+        </div>
+        <div class="pane-layout-actions">
+          <button class="pane-layout-action orientation-tool" data-action="orientation" data-ag-id="NotesStudioPro_Pane_OrientationToggle_${n.id}" aria-label="Switch this note to ${orientation==='horizontal'?'vertical column':'horizontal row'}" title="Switch this note to ${orientation==='horizontal'?'vertical column':'horizontal row'}" aria-pressed="${orientation==='horizontal'}">${orientation==='horizontal'?'↕':'↔'} <span>${orientation==='horizontal'?'Vertical':'Horizontal'}</span></button>
+        </div>
+      </div>
+      <div class="pane-second">
+        <span>${n.path}</span>
+        <span class="kind">${n.kind}</span>
+        <button data-action="copy" title="Copy note text">▣ Copy</button>
+      </div>
+      <div class="note-title">${t}</div>
+      <div class="format-bar">
+        <button title="Bold"><b>B</b></button>
+        <button title="Italic"><i>I</i></button>
+        <button title="Underline"><u>U</u></button>
+        <button title="Bullet list">☷</button>
+        <button title="Insert table">▦</button>
+        <button title="Insert divider">━</button>
+        <button title="Insert toggle">▸</button>
+      </div>
+      <div class="editor" contenteditable="true" spellcheck="false">${n.body}</div>
+      <textarea class="editor-raw" spellcheck="false"></textarea>
+      <div class="pane-footer">${n.props}</div>
+    `;
+    grid.appendChild(pane);
+  });
+  applyLayoutTrackStyles(grid,mode);
+  renderPaneSplitters(grid,mode);
+
+  document.querySelectorAll('.layout-button').forEach(b=>{
+    b.classList.toggle('active',b.dataset.layout===mode);
+    b.setAttribute('aria-pressed',String(b.dataset.layout===mode));
+  });
+}
+
+let layoutResizeFrame=0;
+window.addEventListener('resize',()=>{
+  cancelAnimationFrame(layoutResizeFrame);
+  layoutResizeFrame=requestAnimationFrame(()=>renderLayout(currentLayout,{persist:false}));
+});
+
+// Switch Orientation Global Button (Columns <-> Bottom Dock)
+document.getElementById('flipLayoutOrientationBtn').addEventListener('click',()=>{
+  if(currentLayout==='threeBottom'){
+    renderLayout('vertical');
+    say('Switched to Vertical Columns Mode (|||)');
+  } else {
+    renderLayout('threeBottom');
+    say('Switched to 3 Columns + Bottom Horizontal Dock (▥▥)');
+  }
+});
+
+// Global Event Delegation for Clicks & Actions
+document.addEventListener('click',e=>{
+  const splitterToggle=e.target.closest('.splitter-toggle');
+  if(splitterToggle){
+    e.preventDefault();e.stopPropagation();
+    toggleLayoutTrack(splitterToggle.dataset.mode,splitterToggle.dataset.axis,Number(splitterToggle.dataset.index),Number(splitterToggle.dataset.trackIndex));
+    return;
+  }
+  // 1. Layout Button Click
+  const lBtn=e.target.closest('[data-layout]');
+  if(lBtn){
+    renderLayout(lBtn.dataset.layout);
+    say('Switched layout: '+lBtn.dataset.layout);
+    return;
+  }
+
+  // 2. Tab Selection Click
+  const tab=e.target.closest('.ribbon-tab');
+  if(tab && !e.target.closest('.close') && !e.target.closest('.resize-grip')){
+    activeTabTitle=tab.dataset.note;
+    renderRibbon();
+    renderSidebar();
+    renderLayout(currentLayout);
+    say('Active tab: '+activeTabTitle);
+    return;
+  }
+
+  // 3. Tab Close Click (From Ribbon or Sidebar)
+  const closeBtn=e.target.closest('.ribbon-tab .close') || e.target.closest('[data-close-tab]');
+  if(closeBtn){
+    e.stopPropagation();
+    const closedTitle=closeBtn.dataset.closeTab || closeBtn.closest('.ribbon-tab')?.dataset.note;
+    if(closedTitle){
+      openTabs=openTabs.filter(x=>x!==closedTitle);
+      if(activeTabTitle===closedTitle){
+        activeTabTitle=openTabs[0] || '';
+      }
+      renderRibbon();
+      renderSidebar();
+      renderLayout(currentLayout);
+      say('Closed tab: '+closedTitle);
+    }
+    return;
+  }
+
+  // 4. Vault / Sidebar Note Selection
+  const noteBtn=e.target.closest('[data-note]');
+  if(noteBtn && !noteBtn.classList.contains('ribbon-tab')){
+    const chosen=noteBtn.dataset.note;
+    if(!openTabs.includes(chosen)) openTabs.push(chosen);
+    activeTabTitle=chosen;
+    renderRibbon();
+    renderSidebar();
+    renderLayout(currentLayout);
+    say('Opened note: '+chosen);
+    return;
+  }
+
+  // 5. Sidebar Filter Selection (All notes, Pinned)
+  const filterBtn=e.target.closest('[data-filter]');
+  if(filterBtn){
+    const filter=filterBtn.dataset.filter;
+    currentSidebarFilter=filter;
+    currentDomainFilter='';
+    setGroupOpen('groupVault', true);
+    renderSidebar();
+    say(filter==='PINNED'?'Showing pinned notes':'Showing all notes');
+    return;
+  }
+
+  // 6. Canonical Domain Filter Click
+  const domainBtn=e.target.closest('[data-domain]');
+  if(domainBtn){
+    const dom=domainBtn.dataset.domain;
+    if(currentDomainFilter===dom && currentSidebarFilter==='DOMAIN'){
+      currentDomainFilter='';
+      currentSidebarFilter='ALL';
+      say('Cleared domain filter; showing all notes');
+    } else {
+      currentDomainFilter=dom;
+      currentSidebarFilter='DOMAIN';
+      say('Filtered domain: '+dom);
+    }
+    setGroupOpen('groupVault', true);
+    renderSidebar();
+    return;
+  }
+
+  // 7. Group Header Collapsible Toggle
+  const groupHeaderBtn=e.target.closest('.group-header[data-toggle]');
+  if(groupHeaderBtn){
+    const gId=groupHeaderBtn.dataset.toggle;
+    toggleGroup(gId);
+    const titleText=groupHeaderBtn.querySelector('.group-title-text')?.textContent||'section';
+    say((groupHeaderBtn.getAttribute('aria-expanded')==='true'?'Expanded ':'Collapsed ')+titleText);
+    return;
+  }
+
+  // 6. Format Bar Actions
+  const formatBtn=e.target.closest('.format-bar button');
+  if(formatBtn){
+    e.preventDefault();
+    const pane=formatBtn.closest('.note-pane');
+    const editor=pane?.querySelector('.editor');
+    if(!editor) return;
+    editor.focus();
+    const title=formatBtn.getAttribute('title')||'';
+    if(title==='Bold') document.execCommand('bold',false,null);
+    else if(title==='Italic') document.execCommand('italic',false,null);
+    else if(title==='Underline') document.execCommand('underline',false,null);
+    else if(title==='Bullet list') document.execCommand('insertUnorderedList',false,null);
+    else if(title==='Insert divider') document.execCommand('insertHorizontalRule',false,null);
+    else if(title==='Insert table'){
+      document.execCommand('insertHTML',false,'<table><thead><tr><th>Header 1</th><th>Header 2</th></tr></thead><tbody><tr><td>Cell 1</td><td>Cell 2</td></tr></tbody></table><p><br></p>');
+    }else if(title==='Insert toggle'){
+      document.execCommand('insertHTML',false,'<details class="toggle" open><summary>Toggle Header</summary><div>Toggle content here...</div></details><p><br></p>');
+    }
+    const noteName=pane.querySelector('.note-select')?.value;
+    if(noteName && sampleNotes[noteName]){
+      sampleNotes[noteName].body=editor.innerHTML;
+      markProNoteChanged(sampleNotes[noteName]);
+      queueSave();
+    }
+    return;
+  }
+
+  // 7. Pane Action Tools (Rich, Markdown, Preview, Pin, Props, Flip, Maximize, Collapse, Close)
+  const paneBtn=e.target.closest('.pane-tool, .pane-layout-action, .pane-second button');
+  if(paneBtn){
+    const action=paneBtn.dataset.action;
+    const pane=paneBtn.closest('.note-pane');
+    if(!pane) return;
+    const noteName=pane.querySelector('.note-select')?.value;
+    const editor=pane.querySelector('.editor');
+    const rawEditor=pane.querySelector('.editor-raw');
+    const formatBar=pane.querySelector('.format-bar');
+    const footer=pane.querySelector('.pane-footer');
+
+    if(action==='rich'){
+      pane.querySelectorAll('.pane-tool').forEach(b=>b.classList.remove('active'));
+      paneBtn.classList.add('active');
+      if(rawEditor && rawEditor.style.display==='block'){
+        if(noteName && sampleNotes[noteName]){sampleNotes[noteName].body=rawEditor.value;markProNoteChanged(sampleNotes[noteName]);}
+        editor.innerHTML=sampleNotes[noteName].body;
+      }
+      editor.style.display='block';
+      editor.contentEditable='true';
+      if(rawEditor) rawEditor.style.display='none';
+      if(formatBar) formatBar.style.display='flex';
+      say('Rich Editor mode active');
+    }
+    else if(action==='markdown'){
+      pane.querySelectorAll('.pane-tool').forEach(b=>b.classList.remove('active'));
+      paneBtn.classList.add('active');
+      editor.style.display='none';
+      if(formatBar) formatBar.style.display='none';
+      if(rawEditor){
+        rawEditor.style.display='block';
+        rawEditor.value=sampleNotes[noteName]?.body || editor.innerHTML;
+        rawEditor.focus();
+      }
+      say('Markdown raw editor active');
+    }
+    else if(action==='preview'){
+      pane.querySelectorAll('.pane-tool').forEach(b=>b.classList.remove('active'));
+      paneBtn.classList.add('active');
+      if(rawEditor && rawEditor.style.display==='block'){
+        if(noteName && sampleNotes[noteName]){sampleNotes[noteName].body=rawEditor.value;markProNoteChanged(sampleNotes[noteName]);}
+        editor.innerHTML=sampleNotes[noteName].body;
+      }
+      editor.style.display='block';
+      editor.contentEditable='false';
+      if(rawEditor) rawEditor.style.display='none';
+      if(formatBar) formatBar.style.display='none';
+      say('Preview read-only mode active');
+    }
+    else if(action==='pin'){
+      if(noteName && sampleNotes[noteName]){
+        sampleNotes[noteName].pinned = !sampleNotes[noteName].pinned;
+        markProNoteChanged(sampleNotes[noteName]);
+        queueSave();
+        renderSidebar();
+        renderLayout(currentLayout);
+        say(sampleNotes[noteName].pinned ? 'Pinned note: ' + noteName : 'Unpinned note: ' + noteName);
+      }
+    }
+    else if(action==='properties'){
+      footer.style.display=footer.style.display==='none'?'flex':'none';
+      say('Note properties toggled');
+    }
+    else if(action==='maximize'){
+      const isMax=pane.classList.toggle('maximized');
+      paneBtn.querySelector('span').textContent=isMax?'Restore':'Max';
+      say(isMax?'Maximized pane':'Restored pane layout');
+    }
+    else if(action==='collapse'){
+      const isHidden=editor.style.display==='none';
+      editor.style.display=isHidden?'block':'none';
+      if(rawEditor && rawEditor.style.display==='block') rawEditor.style.display='none';
+      say(isHidden?'Expanded pane content':'Collapsed pane content');
+    }
+    else if(action==='close'){
+      pane.remove();
+      say('Closed pane');
+    }
+    else if(action==='orientation'){
+      const nextOrientation=pane.dataset.orientation==='horizontal'?'vertical':'horizontal';
+      paneOrientations[noteName]=nextOrientation;
+      activeTabTitle=noteName;
+      renderRibbon();renderSidebar();renderLayout(currentLayout);
+      say(`“${noteName}” is now a ${nextOrientation==='horizontal'?'horizontal full-row pane':'vertical column pane'}`);
+    }
+    else if(action==='copy'){
+      const text=editor.innerText||editor.textContent||'';
+      navigator.clipboard.writeText(text).then(()=>{
+        say('Copied "'+noteName+'" to clipboard!');
+      });
+    }
+  }
+});
+
+// Note Select Change Event Delegation
+document.addEventListener('change',e=>{
+  if(e.target.classList.contains('note-select')){
+    const newTitle=e.target.value;
+    const pane=e.target.closest('.note-pane');
+    const n=sampleNotes[newTitle];
+    if(pane && n){
+      pane.dataset.noteTitle=newTitle;
+      const orientation=paneOrientations[newTitle]||(pane.dataset.orientation==='horizontal'?'horizontal':'vertical');
+      pane.dataset.orientation=orientation;
+      pane.classList.toggle('orientation-horizontal',orientation==='horizontal');
+      pane.querySelector('.note-title').textContent=newTitle;
+      pane.querySelector('.pane-second>span:first-child').textContent=n.path;
+      pane.querySelector('.kind').textContent=n.kind;
+      pane.querySelector('.editor').innerHTML=n.body;
+      pane.querySelector('.pane-footer').innerHTML=n.props;
+      if(!openTabs.includes(newTitle)) openTabs.push(newTitle);
+      activeTabTitle=newTitle;
+      renderRibbon();
+      renderSidebar();
+      renderLayout(currentLayout);
+      say('Switched to: '+newTitle);
+    }
+  }
+});
+
+// Live Editing Input Event Delegation (Both Rich and Raw Markdown)
+document.addEventListener('input',e=>{
+  if(e.target.classList.contains('editor') || e.target.classList.contains('editor-raw')){
+    const pane=e.target.closest('.note-pane');
+    const noteName=pane?.querySelector('.note-select')?.value;
+    if(noteName && sampleNotes[noteName]){
+      if(e.target.classList.contains('editor')){
+        sampleNotes[noteName].body=e.target.innerHTML;
+      } else {
+        sampleNotes[noteName].body=e.target.value;
+      }
+      markProNoteChanged(sampleNotes[noteName]);
+      queueSave();
+    }
+  }
+});
+
+// Create New Note
+let newCount=0;
+function createNote(kind='Note'){
+  let title;
+  do{title=kind==='Quick note'?`Quick note ${++newCount}`:`New note ${++newCount}`;}while(sampleNotes[title]);
+  const path=kind==='Quick note'?'Quick Notes / Drafts':'Inbox / Unsorted';
+  sampleNotes[title]={
+    id:newProNoteId(),
+    title,
+    path,
+    kind,
+    body:'<p>Write your note here. Fully editable and autosaved locally.</p>',
+    props:`<span class="prop">Type <b>${kind}</b></span><span class="prop">Status <b>Draft</b></span>`,
+    updatedAt:new Date().toISOString()
+  };
+  localNotesGeneration++;
+  openTabs.unshift(title);
+  activeTabTitle=title;
+  queueSave();
+  renderRibbon();
+  renderSidebar();
+  renderLayout(currentLayout);
+  say(kind+' created and focused!');
+}
+
+document.getElementById('createNewNote').addEventListener('click',()=>createNote('Note'));
+document.getElementById('createQuickNote').addEventListener('click',()=>createNote('Quick note'));
+document.getElementById('sideNewNote').addEventListener('click',()=>createNote('Note'));
+document.getElementById('sideQuickNote').addEventListener('click',()=>createNote('Quick note'));
+document.getElementById('sidePromptNote').addEventListener('click',()=>createNote('Prompt'));
+
+// 1-Click Generate AI Prompt from Tabular Scratchpad
+document.getElementById('toggleAiPromptBtn').addEventListener('click',()=>{
+  const scratchpad=sampleNotes['02 · Raw Chat & Codex Snippets (Notepad Table)'] || sampleNotes['Raw chat & Codex snippets'];
+  if(scratchpad){
+    const prompt=`### [STRUCTURED AI AUDIT & CODE RE-FEED REQUEST]
+Please process the following captured snippets according to their specified Action Intent (Clarify / Understand / Ask / Audit / Synthesize):
+
+| # | Action Intent | Source | Captured Text / Snippet | User Question / Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | **CLARIFY** | Antigravity IDE | React 19 Action hooks and useOptimistic allow instant local UI mutations before Dexie sync finishes. | How does useOptimistic degrade gracefully if Dexie transaction rolls back? |
+| 2 | **UNDERSTAND** | Vite 8 Doc | Tailwind v4 replaces postcss.config.js and tailwind.config.js with pure CSS @theme definitions inside src/index.css. | Verify how CSS custom variables (var(--bg-primary)) interact with @theme rules. |
+
+Output Directives:
+1. Provide clear, direct answers for each numbered item.
+2. Highlight any architectural trade-offs or fixes.
+3. Output production-ready code or summaries.`;
+    navigator.clipboard.writeText(prompt).then(()=>{
+      say('Compiled & copied Tabular AI Prompt to clipboard!');
+    });
+  }
+});
+
+async function downloadEncryptedLocalBackup(suffix=''){
+  if(!localVaultKey){say('Unlock the local vault before exporting a backup.');return;}
+  try{await persistLocalVault();}
+  catch(error){say(error.message||'Could not save the latest edits before exporting. No backup was downloaded.');return;}
+  const envelopeText=localStorage.getItem(LOCAL_VAULT_KEY);
+  if(!envelopeText){say('No encrypted local vault exists yet.');return;}
+  const backup={backupFormat:ENCRYPTED_BACKUP_FORMAT,exportedAt:new Date().toISOString(),vault:JSON.parse(envelopeText)};
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:'application/json'});
+  const objectUrl=URL.createObjectURL(blob),anchor=document.createElement('a');
+  anchor.href=objectUrl;
+  anchor.download=`om-notes-studio-pro-encrypted-backup${suffix?`-${suffix}`:''}-${new Date().toISOString().slice(0,10)}.json`;
+  anchor.click();
+  setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+  say('Encrypted backup downloaded. Keep it with the vault passphrase.');
+}
+const HUMAN_READABLE_BACKUP_FORMAT='om-notes-studio-pro-readable-export-v1';
+function proEscapeHtml(value){return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));}
+function proSlug(value){return String(value||'note').normalize('NFKD').replace(/[\\/:*?"<>|\u0000-\u001f]/g,' ').replace(/\s+/g,'-').replace(/[^\p{L}\p{N}._-]/gu,'').replace(/^-+|-+$/g,'').slice(0,64)||'note';}
+function proHtmlToMarkdown(markup){
+  const parsed=new DOMParser().parseFromString(String(markup||''),'text/html');
+  const convert=(node,depth=0)=>{
+    if(node.nodeType===3)return node.nodeValue||'';
+    if(node.nodeType!==1)return '';
+    const tag=node.tagName.toLowerCase(),children=[...node.childNodes].map(child=>convert(child,depth)).join('');
+    if(tag==='br')return '\n';
+    if(tag==='strong'||tag==='b')return `**${children}**`;
+    if(tag==='em'||tag==='i')return `*${children}*`;
+    if(tag==='u')return `<u>${children}</u>`;
+    if(tag==='mark')return `==${children}==`;
+    if(tag==='code'&&node.parentElement?.tagName.toLowerCase()!=='pre')return `\`${children.replace(/`/g,'\\`')}\``;
+    if(tag==='pre')return `\n\n\`\`\`\n${node.textContent||''}\n\`\`\`\n\n`;
+    if(tag==='a'){const href=node.getAttribute('href')||'';return href?`[${children}](${href})`:children;}
+    if(/^h[1-6]$/.test(tag))return `\n\n${'#'.repeat(Number(tag[1]))} ${children.trim()}\n\n`;
+    if(tag==='blockquote')return `\n\n${children.trim().split('\n').map(line=>line?`> ${line}`:'>').join('\n')}\n\n`;
+    if(tag==='hr')return '\n\n---\n\n';
+    if(tag==='li')return `${'  '.repeat(depth)}- ${children.trim()}\n`;
+    if(tag==='ul'||tag==='ol')return `\n${[...node.children].map(child=>convert(child,depth+1)).join('')}\n`;
+    if(tag==='table'){
+      const rows=[...node.querySelectorAll('tr')].map(row=>[...row.children].map(cell=>convert(cell).replace(/\s+/g,' ').trim().replace(/\|/g,'\\|')));
+      if(!rows.length)return '';
+      const width=Math.max(...rows.map(row=>row.length));
+      const line=row=>`| ${Array.from({length:width},(_,index)=>row[index]||'').join(' | ')} |`;
+      const header=rows[0],dataRows=rows.slice(1);return `\n\n${line(header)}\n${line(Array(width).fill('---'))}${dataRows.length?`\n${dataRows.map(line).join('\n')}`:''}\n\n`;
+    }
+    if(tag==='details'){
+      const summary=node.querySelector('summary'),label=summary?.textContent?.trim()||'Toggle';
+      const body=[...node.childNodes].filter(child=>child!==summary).map(child=>convert(child,depth+1)).join('').trim();
+      return `\n\n> **Toggle: ${label}**${body?`\n>\n${body.split('\n').map(line=>line?`> ${line}`:'>').join('\n')}`:''}\n\n`;
+    }
+    if(['p','div','section','article'].includes(tag))return `\n\n${children.trim()}\n\n`;
+    if(tag==='img'){const alt=node.getAttribute('alt')||'Image',src=node.getAttribute('src')||'';return src?`![${alt}](${src})`:alt;}
+    return children;
+  };
+  return [...parsed.body.childNodes].map(node=>convert(node)).join('').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+function proReadableManifestNotes(notes){
+  const mapped={};
+  notes.forEach((note,index)=>{
+    const original=String(note.title||`Note ${index+1}`);let title=original,suffix=1;
+    while(Object.prototype.hasOwnProperty.call(mapped,title))title=`${original} (${++suffix})`;
+    mapped[title]={...note,title};
+  });
+  return mapped;
+}
+function proNoteHtmlDocument(note,index){
+  const body=String(note.body||''),rich=/<(?:p|div|h[1-6]|ul|ol|li|table|pre|blockquote|strong|b|em|i|u|a|details|hr|br)\b/i.test(body);
+  const safeBody=rich?sanitizeImportedMarkup(body):`<pre class="markdown-source">${proEscapeHtml(body)}</pre>`;
+  const safeProps=sanitizeImportedMarkup(note.props||'');
+  const metadata=[['Type',note.kind||note.type||'Note'],['Location',note.path||''],['Created',note.createdAt||''],['Modified',note.updatedAt||'']].filter(([,value])=>value);
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${proEscapeHtml(note.title||`Note ${index+1}`)}</title><style>body{max-width:900px;margin:40px auto;padding:0 20px;font:16px/1.65 system-ui,sans-serif;color:#172033}h1{line-height:1.2}table{border-collapse:collapse;width:100%;margin:1em 0}th,td{border:1px solid #9aa6b8;padding:8px;text-align:left;vertical-align:top}pre,code{font-family:ui-monospace,monospace;background:#f1f4f8}pre{padding:12px;overflow:auto}blockquote,details{border-left:3px solid #6976d8;padding:8px 14px;background:#f5f6fb}details{margin:1em 0;border:1px solid #d8deea;border-radius:8px}.metadata{color:#536179;font-size:13px}.properties{border-top:1px solid #d8deea;margin-top:2em;padding-top:1em}</style><body><h1>${proEscapeHtml(note.title||`Note ${index+1}`)}</h1><p class="metadata">${metadata.map(([name,value])=>`<strong>${proEscapeHtml(name)}:</strong> ${proEscapeHtml(value)}`).join(' · ')}<br><strong>Note ID:</strong> ${proEscapeHtml(note.id||'')}</p><main>${safeBody}</main>${safeProps?`<section class="properties"><h2>Properties</h2>${safeProps}</section>`:''}</body></html>`;
+}
+function proCrc32(bytes){let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let bit=0;bit<8;bit++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}return (crc^0xffffffff)>>>0;}
+function proConcatBytes(chunks){const size=chunks.reduce((sum,chunk)=>sum+chunk.length,0),out=new Uint8Array(size);let offset=0;for(const chunk of chunks){out.set(chunk,offset);offset+=chunk.length;}return out;}
+function proStoredZip(entries){
+  const encoder=new TextEncoder(),localParts=[],centralParts=[];let localOffset=0;
+  const now=new Date(),dosTime=(now.getHours()<<11)|(now.getMinutes()<<5)|(now.getSeconds()>>1),dosDate=((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();
+  for(const entry of entries){
+    const name=encoder.encode(entry.name),data=typeof entry.data==='string'?encoder.encode(entry.data):entry.data,crc=proCrc32(data);
+    if(data.length>0xffffffff||localOffset>0xffffffff)throw new Error('This recovery export is too large for a standard ZIP file.');
+    const local=new Uint8Array(30+name.length),lv=new DataView(local.buffer);lv.setUint32(0,0x04034b50,true);lv.setUint16(4,20,true);lv.setUint16(6,0x0800,true);lv.setUint16(8,0,true);lv.setUint16(10,dosTime,true);lv.setUint16(12,dosDate,true);lv.setUint32(14,crc,true);lv.setUint32(18,data.length,true);lv.setUint32(22,data.length,true);lv.setUint16(26,name.length,true);lv.setUint16(28,0,true);local.set(name,30);localParts.push(local,data);
+    const central=new Uint8Array(46+name.length),cv=new DataView(central.buffer);cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint16(12,dosTime,true);cv.setUint16(14,dosDate,true);cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);cv.setUint16(28,name.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);cv.setUint32(38,0,true);cv.setUint32(42,localOffset,true);central.set(name,46);centralParts.push(central);localOffset+=local.length+data.length;
+  }
+  const centralBytes=proConcatBytes(centralParts),locals=proConcatBytes(localParts),end=new Uint8Array(22),view=new DataView(end.buffer);view.setUint32(0,0x06054b50,true);view.setUint16(4,0,true);view.setUint16(6,0,true);view.setUint16(8,entries.length,true);view.setUint16(10,entries.length,true);view.setUint32(12,centralBytes.length,true);view.setUint32(16,locals.length,true);view.setUint16(20,0,true);return proConcatBytes([locals,centralBytes,end]);
+}
+async function downloadHumanReadableExport(){
+  if(!localVaultKey){say('Unlock the local vault before exporting your notes.');return;}
+  if(!window.confirm('This readable ZIP contains your note text in unencrypted HTML and Markdown files so ordinary apps can open it. Keep it in a safe place. Continue?'))return;
+  try{
+    await persistLocalVault();
+    const notes=Object.values(sampleNotes).map(note=>({...note}));
+    if(!notes.length){say('There are no notes to export yet.');return;}
+    const entries=[],indexRows=[];
+    const manifest={format:HUMAN_READABLE_BACKUP_FORMAT,exportedAt:new Date().toISOString(),notes:proReadableManifestNotes(notes)};
+    entries.push({name:'manifest.json',data:JSON.stringify(manifest,null,2)});
+    notes.forEach((note,index)=>{
+      const base=`notes/${String(index+1).padStart(4,'0')}-${proSlug(note.title)}-${proSlug(note.id||'note')}`;
+      entries.push({name:`${base}.html`,data:proNoteHtmlDocument(note,index)});
+      const body=String(note.body||''),rich=/<(?:p|div|h[1-6]|ul|ol|li|table|pre|blockquote|strong|b|em|i|u|a|details|hr|br)\b/i.test(body);
+      const markdown=rich?proHtmlToMarkdown(body):body;
+      const properties=note.props?`\n\n## Properties\n\n${proHtmlToMarkdown(note.props)}\n`:'';
+      const metadata=`---\ntitle: ${JSON.stringify(note.title||'Untitled')}\nid: ${JSON.stringify(note.id||'')}\ntype: ${JSON.stringify(note.kind||note.type||'Note')}\nlocation: ${JSON.stringify(note.path||'')}\ncreated: ${JSON.stringify(note.createdAt||'')}\nmodified: ${JSON.stringify(note.updatedAt||'')}\n---\n\n`;
+      entries.push({name:`${base}.md`,data:`${metadata}${markdown}${properties}`});
+      indexRows.push(`<li><a href="${proEscapeHtml(`${base}.html`)}">${proEscapeHtml(note.title||`Note ${index+1}`)}</a> · <a href="${proEscapeHtml(`${base}.md`)}">Markdown</a> <small>${proEscapeHtml(note.kind||'Note')} · ${proEscapeHtml(note.updatedAt||'')}</small></li>`);
+    });
+    entries.push({name:'index.html',data:`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Notes Studio Pro export</title><style>body{font:16px/1.5 system-ui,sans-serif;max-width:850px;margin:32px auto;padding:0 18px;color:#172033}li{padding:10px;border-bottom:1px solid #ddd}small{display:block;color:#65718a}a{color:#6b4eff}</style><h1>Notes Studio Pro · ${notes.length} exported notes</h1><p>Open the HTML copy for faithful formatting or the Markdown copy for portable text. manifest.json can be imported back into Notes Studio Pro.</p><ol>${indexRows.join('')}</ol></html>`});
+    const zip=proStoredZip(entries),blob=new Blob([zip],{type:'application/zip'}),url=URL.createObjectURL(blob),anchor=document.createElement('a');anchor.href=url;anchor.download=`om-notes-readable-export-${new Date().toISOString().slice(0,10)}.zip`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1500);say(`Readable export downloaded: ${notes.length} notes. It contains plaintext files; keep it private.`);
+  }catch(error){say(error.message||'Could not create the readable export. Your local notes were not changed.');}
+}
+async function parseProZipBackup(file){
+  const bytes=new Uint8Array(await file.arrayBuffer()),view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),min=Math.max(0,bytes.length-65557);let eocd=-1;
+  for(let at=bytes.length-22;at>=min;at--){if(view.getUint32(at,true)===0x06054b50){eocd=at;break;}}
+  if(eocd<0)throw new Error('This ZIP is damaged or does not contain a valid notes export.');
+  const count=view.getUint16(eocd+10,true),centralSize=view.getUint32(eocd+12,true),centralOffset=view.getUint32(eocd+16,true);
+  if(count>2000||centralOffset+centralSize>eocd)throw new Error('This ZIP has an unsupported or unsafe directory.');
+  const decoder=new TextDecoder(),manifestData=[];let cursor=centralOffset,totalBytes=0;
+  for(let index=0;index<count;index++){
+    if(cursor+46>bytes.length||view.getUint32(cursor,true)!==0x02014b50)throw new Error('This ZIP has an invalid file directory.');
+    const flags=view.getUint16(cursor+8,true),method=view.getUint16(cursor+10,true),crc=view.getUint32(cursor+16,true),compressed=view.getUint32(cursor+20,true),uncompressed=view.getUint32(cursor+24,true),nameLength=view.getUint16(cursor+28,true),extraLength=view.getUint16(cursor+30,true),commentLength=view.getUint16(cursor+32,true),localOffset=view.getUint32(cursor+42,true);
+    const name=decoder.decode(bytes.subarray(cursor+46,cursor+46+nameLength));cursor+=46+nameLength+extraLength+commentLength;
+    if(flags&1)throw new Error('Password-protected ZIP files are not supported. Use the ZIP generated by Export files.');
+    if(method!==0)throw new Error('This ZIP uses compression not supported by the Notes Studio reader. Export files creates a compatible archive.');
+    totalBytes+=uncompressed;if(totalBytes>100*1024*1024||uncompressed!==compressed)throw new Error('This ZIP exceeds the 100 MB import limit or has an invalid entry.');
+    if(name!=='manifest.json')continue;
+    if(localOffset+30>bytes.length||view.getUint32(localOffset,true)!==0x04034b50)throw new Error('The ZIP manifest entry is invalid.');
+    const localName=view.getUint16(localOffset+26,true),localExtra=view.getUint16(localOffset+28,true),start=localOffset+30+localName+localExtra,end=start+compressed;
+    if(end>bytes.length)throw new Error('The ZIP manifest is incomplete.');
+    const data=bytes.subarray(start,end);if(proCrc32(data)!==crc)throw new Error('The ZIP manifest failed its integrity check.');manifestData.push(decoder.decode(data));
+  }
+  if(manifestData.length!==1)throw new Error('This ZIP must contain exactly one Notes Studio Pro manifest.json.');
+  const manifest=JSON.parse(manifestData[0]);if(manifest?.format!==HUMAN_READABLE_BACKUP_FORMAT)throw new Error('This ZIP is not a Notes Studio Pro readable export.');return manifest;
+}
+async function parseProBackupFile(file){
+  if(/\.zip$/i.test(file.name||'')||file.type==='application/zip')return parseProZipBackup(file);
+  return JSON.parse(await file.text());
+}
+function sanitizeImportedMarkup(markup){
+  const parsed=new DOMParser().parseFromString(String(markup||''),'text/html');
+  parsed.querySelectorAll('script,iframe,object,embed,form,base,meta,link').forEach(node=>node.remove());
+  for(const element of parsed.body.querySelectorAll('*')){
+    for(const attribute of [...element.attributes]){
+      const name=attribute.name.toLowerCase(),value=attribute.value.trim().toLowerCase();
+      if(name.startsWith('on')||(name==='href'||name==='src'||name==='xlink:href')&&(value.startsWith('javascript:')||value.startsWith('data:text/html')))element.removeAttribute(attribute.name);
+    }
+  }
+  return parsed.body.innerHTML;
+}
+function sanitizeImportedNotes(notes){
+  if(!notes||typeof notes!=='object'||Array.isArray(notes))throw new Error('The backup does not contain a note library.');
+  const clean={};
+  for(const [rawTitle,rawNote] of Object.entries(notes)){
+    const title=String(rawTitle).trim();
+    if(!title||title.length>500||!rawNote||typeof rawNote!=='object'||Array.isArray(rawNote))continue;
+    clean[title]={
+      id:String(rawNote.id||newProNoteId()),title,
+      path:String(rawNote.path||''),kind:String(rawNote.kind||rawNote.type||'Note'),
+      body:sanitizeImportedMarkup(rawNote.body||''),props:sanitizeImportedMarkup(rawNote.props||''),
+      createdAt:String(rawNote.createdAt||''),
+      updatedAt:String(rawNote.updatedAt||new Date().toISOString())
+    };
+  }
+  if(!Object.keys(clean).length)throw new Error('No valid notes were found in this backup.');
+  return clean;
+}
+function mergeImportedProNotes(existingNotes,importedNotes){
+  const existingByTitle=new Map(Object.entries(existingNotes));
+  const existingById=new Map(Object.values(existingNotes).map(note=>[note.id,note]));
+  const merged={...existingNotes};
+  let addedCount=0,updatedCount=0;
+  for(const [title,imported] of Object.entries(importedNotes)){
+    let target=null;
+    if(imported.id){
+      target=existingById.get(imported.id);
+      if(!target&&existingByTitle.has(title)){
+        const byTitle=existingByTitle.get(title);
+        if(!byTitle.id||byTitle.id===imported.id) target=byTitle;
+      }
+    }else{
+      target=existingByTitle.get(title);
+    }
+    if(!target){
+      let safeTitle=title,idx=1;
+      while(merged[safeTitle]) safeTitle=`${title} (${++idx})`;
+      merged[safeTitle]={...imported,title:safeTitle};
+      addedCount++;
+      continue;
+    }
+    if(imported.body===target.body&&imported.props===target.props)continue;
+    const importedTime=Date.parse(imported.updatedAt||'')||0;
+    const currentTime=Date.parse(target.updatedAt||'')||0;
+    if(importedTime>=currentTime){
+      merged[target.title]={...target,...imported,id:target.id||imported.id,title:target.title};
+      updatedCount++;
+    }else{
+      let conflictTitle=`${title} (imported copy)`,idx=1;
+      while(merged[conflictTitle]) conflictTitle=`${title} (imported copy ${++idx})`;
+      merged[conflictTitle]={...imported,id:newProNoteId(),title:conflictTitle};
+      addedCount++;
+    }
+  }
+  return {notes:merged,addedCount,updatedCount};
+}
+async function prepareProBackupRestore(parsed,{passphrase,targetKey,targetSalt,hasExistingData,currentLayout,tabWidths,layoutTracks,paneOrientations,syncConfig}){
+  if(parsed?.backupFormat&&parsed.backupFormat!==ENCRYPTED_BACKUP_FORMAT)throw new Error('This backup format is not supported by Notes Studio Pro.');
+  const envelope=parsed?.backupFormat===ENCRYPTED_BACKUP_FORMAT?parsed.vault:parsed?.format===LOCAL_VAULT_FORMAT?parsed:null;
+  let payload= null,restoreKey=targetKey,restoreSalt=targetSalt;
+  if(envelope){
+    if(!passphrase)throw new Error('Enter the passphrase used to export this encrypted backup.');
+    payload=(await decryptLocalVaultEnvelope(envelope,passphrase)).payload;
+    if(!restoreKey){
+      if(hasExistingData)throw new Error('Unlock or encrypt this device’s existing library before restoring over it.');
+      restoreSalt=crypto.getRandomValues(new Uint8Array(16));
+      restoreKey=await deriveLocalVaultKey(passphrase,restoreSalt);
+    }
+  }else{
+    if(!restoreKey)throw new Error('Create your local vault first, then restore this older plaintext backup.');
+    const oldNotes=parsed?.notes&&typeof parsed.notes==='object'?parsed.notes:parsed;
+    payload={format:'om-notes-studio-pro-vault-payload-v1',notes:oldNotes,layout:currentLayout,tabWidths,layoutTracks,paneOrientations,syncConfig:syncConfig||{},syncBaseHashes:{}};
+  }
+  const notes=sanitizeImportedNotes(payload.notes);
+  if(!restoreKey||!restoreSalt)throw new Error('The local vault is locked. Unlock it first so the restored data can be encrypted with this device’s vault key.');
+  return {payload,notes,targetKey:restoreKey,targetSalt:restoreSalt,isLegacy:!envelope};
+}
+function buildProRestorePlan(existingNotes,prepared,importMode,{tabWidths,currentLayout,layoutTracks,paneOrientations}){
+  if(importMode==='replace')return {
+    notes:prepared.notes,addedCount:0,updatedCount:0,
+    tabWidths:prepared.payload.tabWidths&&typeof prepared.payload.tabWidths==='object'?prepared.payload.tabWidths:tabWidths,
+    layoutTracks:prepared.payload.layoutTracks&&typeof prepared.payload.layoutTracks==='object'?normalizeLayoutTracks(prepared.payload.layoutTracks):layoutTracks,
+    paneOrientations:prepared.payload.paneOrientations&&typeof prepared.payload.paneOrientations==='object'?normalizePaneOrientations(prepared.payload.paneOrientations):paneOrientations,
+    currentLayout:['single','twoBottom','threeBottom','vertical','grid3x2'].includes(prepared.payload.layout)?prepared.payload.layout:currentLayout
+  };
+  if(importMode!=='merge')throw new Error('Choose either merge or replace for this restore.');
+  const merged=mergeImportedProNotes(existingNotes,prepared.notes);
+  return {...merged,tabWidths,layoutTracks,paneOrientations,currentLayout};
+}
+function openRestoreDialog(){
+  document.getElementById('restoreFile').value='';
+  document.getElementById('restorePassphrase').value='';
+  document.getElementById('restorePassphraseLabel').hidden=false;
+  const modeSel=document.getElementById('restoreMode');
+  if(modeSel)modeSel.value='merge';
+  document.getElementById('restoreStatus').textContent='Encrypted backups require their export passphrase. Legacy plaintext JSON backups are accepted and encrypted into the local vault.';
+  document.getElementById('restoreStatus').classList.remove('error');
+  document.getElementById('restoreDialog').hidden=false;
+}
+document.getElementById('backupBtn').addEventListener('click',()=>downloadEncryptedLocalBackup());
+document.getElementById('readableExportBtn').addEventListener('click',downloadHumanReadableExport);
+document.getElementById('sideBackup')?.addEventListener('click',()=>downloadEncryptedLocalBackup());
+document.getElementById('restoreBtn').addEventListener('click',openRestoreDialog);
+document.getElementById('sideRestore').addEventListener('click',openRestoreDialog);
+document.getElementById('vaultRestoreButton').addEventListener('click',()=>{
+  if(localStorage.getItem(LOCAL_VAULT_KEY)||localStorage.getItem(STORAGE_KEY)||localStorage.getItem('om_notes_studio_pro_store_v1')){
+    const status=document.getElementById('vaultStatus');status.textContent='Unlock or encrypt this device’s existing vault first. Restore cannot bypass an existing library.';status.classList.add('error');return;
+  }
+  openRestoreDialog();
+});
+document.getElementById('restoreCancel').addEventListener('click',()=>{document.getElementById('restoreDialog').hidden=true;document.getElementById('restorePassphrase').value='';});
+document.getElementById('restoreFile').addEventListener('change',async event=>{
+  const file=event.target.files?.[0],status=document.getElementById('restoreStatus');
+  if(!file)return;
+  try{
+    const parsed=await parseProBackupFile(file);
+    const encrypted=parsed?.backupFormat===ENCRYPTED_BACKUP_FORMAT?parsed.vault:parsed?.format===LOCAL_VAULT_FORMAT?parsed:null;
+    document.getElementById('restorePassphraseLabel').hidden=!encrypted;
+    status.textContent=encrypted?'Encrypted backup selected. Enter its vault passphrase to verify it.':parsed?.format===HUMAN_READABLE_BACKUP_FORMAT?'Readable notes ZIP selected. Its contents are plaintext and will be encrypted into the local vault after import.':'Legacy JSON selected. This file is plaintext; its note content will be encrypted into the local vault after restore.';
+    status.classList.remove('error');
+  }catch(error){status.textContent=error.message||'Could not read that JSON backup.';status.classList.add('error');}
+});
+document.getElementById('restoreApply').addEventListener('click',async()=>{
+  const status=document.getElementById('restoreStatus'),file=document.getElementById('restoreFile').files?.[0];
+  if(!file){status.textContent='Choose a JSON backup file first.';status.classList.add('error');return;}
+  const importMode=document.getElementById('restoreMode')?.value||'merge';
+  const previous={sampleNotes,localVaultAux,syncBaseHashes,tabWidths,layoutTracks,paneOrientations,currentLayout,localVaultKey,localVaultSalt,vaultEnvelope:localStorage.getItem(LOCAL_VAULT_KEY)};
+  try{
+    status.classList.remove('error');status.textContent='Reading and verifying backup…';
+    const parsed=await parseProBackupFile(file);
+    const prepared=await prepareProBackupRestore(parsed,{
+      passphrase:document.getElementById('restorePassphrase').value,
+      targetKey:localVaultKey,targetSalt:localVaultSalt,
+      hasExistingData:Boolean(localStorage.getItem(LOCAL_VAULT_KEY)||localStorage.getItem(STORAGE_KEY)||localStorage.getItem('om_notes_studio_pro_store_v1')),
+      currentLayout,tabWidths,layoutTracks,paneOrientations,syncConfig:localVaultAux.syncConfig||{}
+    });
+    if(prepared.isLegacy&&!window.confirm('This older backup is not encrypted. Continue? Its content will be encrypted before it is saved on this device.'))return;
+    const restorePlan=buildProRestorePlan(sampleNotes,prepared,importMode,{tabWidths,currentLayout,layoutTracks,paneOrientations});
+    if(importMode==='replace'&&!window.confirm('Replace the current Notes Studio Pro library with the backup? This will overwrite existing local notes.'))return;
+    sampleNotes=restorePlan.notes;tabWidths=restorePlan.tabWidths;layoutTracks=normalizeLayoutTracks(restorePlan.layoutTracks);paneOrientations=normalizePaneOrientations(restorePlan.paneOrientations);currentLayout=restorePlan.currentLayout;
+
+    localVaultKey=prepared.targetKey;localVaultSalt=prepared.targetSalt;
+    localVaultAux={
+      syncConfig:prepared.payload.syncConfig&&typeof prepared.payload.syncConfig==='object'?prepared.payload.syncConfig:localVaultAux.syncConfig||{},
+      syncBaseHashes:prepared.payload.syncBaseHashes&&typeof prepared.payload.syncBaseHashes==='object'?prepared.payload.syncBaseHashes:localVaultAux.syncBaseHashes||{}
+    };
+    syncBaseHashes={...localVaultAux.syncBaseHashes};
+    normalizeProNotes();
+    await persistLocalVault();
+    removeLegacyPlaintextStores();
+    document.querySelector('.app')?.classList.remove('vault-locked');
+    document.getElementById('vaultGate').hidden=true;
+    renderSidebar();renderRibbon();renderLayout(currentLayout);
+    document.getElementById('restoreDialog').hidden=true;
+    document.getElementById('restorePassphrase').value='';
+    status.textContent='';
+    say(importMode==='replace'?'Backup restored into the local vault':`Backup merged: ${restorePlan.addedCount} added, ${restorePlan.updatedCount} updated`);
+  }catch(error){
+    try{
+      const currentEnvelope=localStorage.getItem(LOCAL_VAULT_KEY);
+      if(currentEnvelope!==previous.vaultEnvelope){
+        if(previous.vaultEnvelope===null)localStorage.removeItem(LOCAL_VAULT_KEY);
+        else localStorage.setItem(LOCAL_VAULT_KEY,previous.vaultEnvelope);
+      }
+    }catch{}
+    sampleNotes=previous.sampleNotes;localVaultAux=previous.localVaultAux;syncBaseHashes=previous.syncBaseHashes;tabWidths=previous.tabWidths;layoutTracks=previous.layoutTracks;paneOrientations=previous.paneOrientations;currentLayout=previous.currentLayout;localVaultKey=previous.localVaultKey;localVaultSalt=previous.localVaultSalt;
+    status.textContent=error.message||'Restore failed. The existing local vault was kept.';status.classList.add('error');
+  }
+});
+
+let syncRunning=false;
+function syncStatus(message,isError=false){
+  const status=document.getElementById('syncStatus');
+  if(status){status.textContent=message;status.classList.toggle('error',isError);}
+}
+function loadSyncConfig(){
+  return localVaultAux.syncConfig&&typeof localVaultAux.syncConfig==='object'?localVaultAux.syncConfig:{};
+}
+function openSyncDialog(){
+  const config=loadSyncConfig();
+  const defaultUrl=location.protocol.startsWith('http')&&location.port==='8080'?`${location.origin}/api/notes-studio-pro/sync`:'';
+  document.getElementById('syncUrl').value=config.url||defaultUrl;
+  document.getElementById('syncToken').value=config.token||'';
+  document.getElementById('syncPassphrase').value='';
+  document.getElementById('syncDialog').hidden=false;
+  syncStatus(window.isSecureContext&&crypto?.subtle?'Ready. Your passphrase is used for this sync only.':'Secure browser cryptography is unavailable here. Use the installed Android app or a secure HTTPS/localhost page.',!(window.isSecureContext&&crypto?.subtle));
+  refreshPhoneSyncPresence();
+  document.getElementById('syncUrl').focus();
+}
+document.getElementById('syncBtn').addEventListener('click',openSyncDialog);
+document.getElementById('sideSync').addEventListener('click',openSyncDialog);
+document.getElementById('syncClose').addEventListener('click',()=>{document.getElementById('syncDialog').hidden=true;document.getElementById('syncPassphrase').value='';});
+document.getElementById('syncDialog').addEventListener('click',event=>{if(event.target.id==='syncDialog'){event.currentTarget.hidden=true;document.getElementById('syncPassphrase').value='';}});
+document.getElementById('syncForget').addEventListener('click',()=>{
+  localVaultAux.syncConfig={};
+  queueSave();
+  document.getElementById('syncUrl').value='';
+  document.getElementById('syncToken').value='';
+  document.getElementById('syncPassphrase').value='';
+  syncStatus('Saved server address and pairing token removed from this browser. Notes were not deleted.');
+});
+
+async function runProDeviceSync(){
+  if(syncRunning)return;
+  if(!window.isSecureContext||!globalThis.crypto?.subtle){syncStatus('Blocked: secure browser cryptography is unavailable. Open the installed Capacitor app, localhost, or HTTPS.',true);return;}
+  const urlField=document.getElementById('syncUrl'),tokenField=document.getElementById('syncToken'),passField=document.getElementById('syncPassphrase');
+  const url=urlField.value.trim(),token=tokenField.value.trim(),passphrase=passField.value;
+  if(!url||!token||passphrase.length<12){syncStatus('Enter the laptop sync URL, pairing token, and a shared passphrase of at least 12 characters.',true);return;}
+  let parsedUrl;
+  try{parsedUrl=new URL(url);}catch{syncStatus('The sync URL is not valid.',true);return;}
+  if(parsedUrl.protocol!=='http:'||parsedUrl.username||parsedUrl.password||!isPrivateSyncHost(parsedUrl.hostname)){syncStatus('Use the laptop’s HTTP address on a private Wi-Fi/hotspot network, or localhost on the laptop.',true);return;}
+  if(parsedUrl.pathname!=='/api/notes-studio-pro/sync'){syncStatus('The URL must end with /api/notes-studio-pro/sync.',true);return;}
+  syncRunning=true;
+  document.getElementById('syncNow').disabled=true;
+  syncStatus('Connecting and encrypting the current notes…');
+  const generationAtStart=localNotesGeneration;
+  const localSnapshot=proNotesForSync();
+  let baseHashes={...syncBaseHashes};
+  const request=async(url,options={})=>{
+    const method=options.method||'GET',bodyText=options.body||'';
+    const ifMatch=options.headers?.['If-Match']||options.headers?.['if-match']||'';
+    const signatureHeaders=await signedSyncHeaders(method,token,bodyText,ifMatch);
+    const response=await fetch(url,{cache:'no-store',...options,headers:{...signatureHeaders,...(options.headers||{})}});
+    const contentType=response.headers.get('content-type')||'';
+    const body=contentType.includes('application/json')?await response.json():{};
+    return {response,body};
+  };
+  try{
+    const clientId=localVaultAux.syncConfig?.clientId;
+    localVaultAux.syncConfig={url,token,...(clientId?{clientId}:{})};
+    await persistLocalVault();
+    let result=null;
+    for(let attempt=0;attempt<4;attempt++){
+      const {response:readResponse,body:remote}=await request(url);
+      if(!readResponse.ok)throw new Error(remote.error||`Laptop sync server returned ${readResponse.status}.`);
+      const snapshots=Array.isArray(remote.snapshots)?remote.snapshots:[];
+      const latest=snapshots.length?snapshots[snapshots.length-1]:null;
+      let remoteNotes=[],hashKey,salt;
+      if(latest?.envelope){
+        const decrypted=await decryptProSnapshot(latest.envelope,passphrase);
+        remoteNotes=decrypted.notes;
+        hashKey=decrypted.hashKey;
+        salt=decrypted.salt;
+      }else{
+        salt=crypto.getRandomValues(new Uint8Array(16));
+        hashKey=(await deriveSyncKeys(passphrase,salt)).hashKey;
+      }
+      if(localNotesGeneration!==generationAtStart)throw new Error('A note changed while sync was preparing. Your edits remain local; run Sync again.');
+      const {merged,conflicts}=await mergeProNotes(localSnapshot,remoteNotes,hashKey,baseHashes);
+      if(localNotesGeneration!==generationAtStart)throw new Error('A note changed during merge. Your edits remain local; run Sync again.');
+      const encrypted=await encryptProSnapshot(merged,passphrase,salt);
+      const nextBase={};
+      for(const note of merged)nextBase[note.id]=await hashSyncedNote(note,encrypted.hashKey);
+      const expected=Number(remote.version)||0;
+      syncStatus(`Sending encrypted snapshot${conflicts.length?` · preserving ${conflicts.length} conflict copy`:''}…`);
+      const writeBodyText=JSON.stringify({envelope:encrypted.envelope});
+      const {response:writeResponse,body:writeBody}=await request(url,{
+        method:'PUT',headers:{'Content-Type':'application/json','If-Match':`"${expected}"`},body:writeBodyText
+      });
+      if(writeResponse.status===409){baseHashes={...syncBaseHashes};continue;}
+      if(!writeResponse.ok)throw new Error(writeBody.error||`Laptop sync server returned ${writeResponse.status}.`);
+      result={merged,conflicts,nextBase,version:writeBody.version};
+      break;
+    }
+    if(!result)throw new Error('The laptop copy kept changing. No local notes were replaced; try Sync again.');
+    syncBaseHashes=result.nextBase;
+    localVaultAux.syncBaseHashes={...syncBaseHashes};
+    if(localNotesGeneration===generationAtStart){
+      sampleNotes=noteMapFromSync(result.merged);
+      await persistLocalVault();
+      renderSidebar();renderRibbon();renderLayout(currentLayout);
+    }else queueSave();
+    const time=new Date().toLocaleTimeString();
+    const changedDuringSync=localNotesGeneration!==generationAtStart;
+    syncStatus(`Encrypted sync complete · server version ${result.version} · ${time}${changedDuringSync?' · newer local edits still need syncing':''}${result.conflicts.length?` · ${result.conflicts.length} conflict copy saved`:''}`);
+    refreshPhoneSyncPresence();
+    const previewStatus=document.getElementById('previewStatus');
+    if(previewStatus)previewStatus.textContent='● Encrypted device sync complete · local notes remain on this device';
+    say('Notes Studio Pro encrypted sync complete');
+  }catch(error){
+    syncStatus(error.message||'Sync failed. Local notes were kept.',true);
+  }finally{
+    passField.value='';
+    syncRunning=false;
+    document.getElementById('syncNow').disabled=false;
+  }
+}
+document.getElementById('syncNow').addEventListener('click',runProDeviceSync);
+document.getElementById('syncPassphrase').addEventListener('keydown',event=>{if(event.key==='Enter')runProDeviceSync();});
+setInterval(refreshPhoneSyncPresence,30000);
+
+// Menu Toggle (Persisted state)
+const s=document.getElementById('sidebar');
+const menuBtn=document.getElementById('menuToggle');
+const savedSidebarState=localStorage.getItem('om_notes_pro_sidebar_open');
+const isWideScreen=window.innerWidth>680;
+const shouldOpenSidebar=savedSidebarState!==null ? (savedSidebarState==='true') : isWideScreen;
+s.style.display=shouldOpenSidebar?'flex':'none';
+menuBtn.classList.toggle('active', shouldOpenSidebar);
+
+menuBtn.addEventListener('click',()=>{
+  const isCurrentlyClosed=s.style.display==='none' || getComputedStyle(s).display==='none';
+  s.style.display=isCurrentlyClosed?'flex':'none';
+  menuBtn.classList.toggle('active', isCurrentlyClosed);
+  localStorage.setItem('om_notes_pro_sidebar_open', isCurrentlyClosed);
+  say(isCurrentlyClosed?'Sidebar opened':'Sidebar closed');
+});
+
+// Filter Search Input
+document.getElementById('sideFilter').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase();
+  if(q){
+    setGroupOpen('groupVault', true);
+  }
+  document.querySelectorAll('.vault-item, #openedList .nav-item').forEach(it=>{
+    const text=it.textContent.toLowerCase();
+    it.style.display=text.includes(q)?'':'none';
+  });
+});
+
+// Initialize Collapsible Section States from LocalStorage
+['groupOpened', 'groupQuick', 'groupDomains', 'groupVault', 'groupVaultSync'].forEach(id=>{
+  const saved=localStorage.getItem('om_notes_pro_'+id);
+  const shouldBeOpen=saved!==null ? (saved==='true') : true;
+  setGroupOpen(id, shouldBeOpen);
+});
+
+// Initialize
+document.getElementById('vaultUnlockButton').addEventListener('click',createOrUnlockLocalVault);
+document.getElementById('vaultDevBypassButton')?.addEventListener('click',unlockDevMode);
+document.getElementById('vaultPassphrase').addEventListener('keydown',event=>{if(event.key==='Enter')createOrUnlockLocalVault();});
+document.getElementById('vaultPassphraseConfirm').addEventListener('keydown',event=>{if(event.key==='Enter')createOrUnlockLocalVault();});
+document.getElementById('restoreDialog').addEventListener('click',event=>{if(event.target.id==='restoreDialog'){document.getElementById('restoreDialog').hidden=true;document.getElementById('restorePassphrase').value='';}});
+
+const urlParams=new URLSearchParams(window.location.search);
+const isForceLocked=urlParams.get('locked')==='true'||localStorage.getItem('om_notes_pro_force_lock')==='true';
+if(!isForceLocked){
+  unlockDevMode();
+}else{
+  setVaultGateMode();
+}
+
+// Sleep & Wake Auto-Reconnect Engine for Notes Studio Pro Standalone
+let lastWakeTick = Date.now();
+setInterval(() => {
+  const now = Date.now();
+  const elapsed = now - lastWakeTick;
+  if (elapsed > 4500) {
+    console.log('[NotesStudioPro] Sleep detected (' + elapsed + 'ms). Reconnecting to server...');
+    fetch('/api/health?_t=' + Date.now(), { cache: 'no-store' }).then(r => {
+      if (r.ok) {
+        say('Reconnected after sleep. Refreshing workspace...');
+        setTimeout(() => location.reload(), 600);
+      }
+    }).catch(() => {});
+  }
+  lastWakeTick = now;
+}, 1000);
+
+window.addEventListener('online', () => {
+  fetch('/api/health?_t=' + Date.now(), { cache: 'no-store' }).then(r => {
+    if (r.ok) setTimeout(() => location.reload(), 600);
+  }).catch(() => {});
+});
+</script>
+</body>
+</html>

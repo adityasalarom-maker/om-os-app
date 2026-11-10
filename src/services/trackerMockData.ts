@@ -153,6 +153,8 @@ export async function seedTracker3DayMockData(force: boolean = false): Promise<{
       }
     };
 
+    // Seed Today (Day 0) so the 24h timeline lights up immediately without date switching
+    createDaySchedule(0);
     // Seed Day -1 (Yesterday), Day -2 (2 days ago), Day -3 (3 days ago)
     createDaySchedule(1);
     createDaySchedule(2);

@@ -153,7 +153,7 @@ export const AnalyticsView: React.FC = () => {
   }, [equilibriumReport]);
 
   return (
-    <div className="space-y-8 pb-24 md:pb-8 animate-in fade-in duration-200">
+    <div data-ag-id="Analytics_Root_Workspace" className="space-y-8 pb-24 md:pb-8 animate-in fade-in duration-200">
       
       {/* Toast Notification */}
       {notification && (

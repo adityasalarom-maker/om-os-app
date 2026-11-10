@@ -1,3 +1,5 @@
+import { db } from '../db';
+
 export type ThemeCategory = 'Basic Dark' | 'High Contrast' | 'Bright Solar';
 
 export interface ThemeDefinition {
@@ -242,29 +244,29 @@ export const THEMES: ThemeDefinition[] = [
     id: 'white-sand',
     name: 'Pure White Sand',
     category: 'Bright Solar',
-    description: 'Crisp clean daylight white with soft borders and royal indigo typography',
+    description: 'Crisp clean daylight white with warm dune sandstone ochre and graphite text',
     isLight: true,
-    previewColors: { bg: '#ffffff', card: '#f8fafc', accent: '#4f46e5', text: '#0f172a' },
+    previewColors: { bg: '#ffffff', card: '#f8fafc', accent: '#b45309', text: '#0f172a' },
     variables: {
       '--bg-primary': '#ffffff',
-      '--bg-secondary': '#f1f5f9',
-      '--bg-card': '#f8fafc',
-      '--bg-card-hover': '#edf2f7',
+      '--bg-secondary': '#f8fafc',
+      '--bg-card': '#ffffff',
+      '--bg-card-hover': '#f1f5f9',
       '--border-color': '#e2e8f0',
       '--text-main': '#0f172a',
       '--text-muted': '#64748b',
-      '--accent': '#4f46e5',
-      '--accent-hover': '#4338ca',
-      '--accent-muted': 'rgba(79, 70, 229, 0.1)'
+      '--accent': '#b45309',
+      '--accent-hover': '#92400e',
+      '--accent-muted': 'rgba(180, 83, 9, 0.12)'
     }
   },
   {
     id: 'nordic-snow',
     name: 'Nordic Snow Daylight',
     category: 'Bright Solar',
-    description: 'Bright Scandinavian winter daylight with sky-blue accents and granite text',
+    description: 'Bright Scandinavian winter daylight with pine spruce accents and granite text',
     isLight: true,
-    previewColors: { bg: '#f1f5f9', card: '#ffffff', accent: '#0284c7', text: '#1e293b' },
+    previewColors: { bg: '#f1f5f9', card: '#ffffff', accent: '#0f766e', text: '#1e293b' },
     variables: {
       '--bg-primary': '#f1f5f9',
       '--bg-secondary': '#e2e8f0',
@@ -273,9 +275,9 @@ export const THEMES: ThemeDefinition[] = [
       '--border-color': '#cbd5e1',
       '--text-main': '#1e293b',
       '--text-muted': '#64748b',
-      '--accent': '#0284c7',
-      '--accent-hover': '#0369a1',
-      '--accent-muted': 'rgba(2, 132, 199, 0.1)'
+      '--accent': '#0f766e',
+      '--accent-hover': '#115e59',
+      '--accent-muted': 'rgba(15, 118, 110, 0.12)'
     }
   },
   {
@@ -379,10 +381,27 @@ export const applyTheme = (themeId: string): ThemeDefinition => {
     localStorage.setItem(STORAGE_KEY, theme.id);
   } catch {}
 
+  try {
+    db.syncSettings.put({ id: 'app_theme', value: theme.id, updatedAt: Date.now() }).catch(() => {});
+  } catch {}
+
   // Dispatch custom event for reactive listeners
   window.dispatchEvent(new CustomEvent('om-theme-changed', { detail: theme }));
 
   return theme;
+};
+
+export const restoreThemeFromDbIfAvailable = async (): Promise<ThemeDefinition | null> => {
+  try {
+    const record = await db.syncSettings.get('app_theme');
+    if (record && record.value && typeof record.value === 'string') {
+      const current = getStoredThemeId();
+      if (record.value !== current) {
+        return applyTheme(record.value);
+      }
+    }
+  } catch {}
+  return null;
 };
 
 export const initializeThemeOnStartup = (): ThemeDefinition => {

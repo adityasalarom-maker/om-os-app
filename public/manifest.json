@@ -1,10 +1,10 @@
 {
-  "id": "/?source=pwa",
+  "id": "./?source=pwa",
   "name": "Om Knowledge OS",
   "short_name": "Om OS",
   "description": "Unified personal knowledge management system, task intelligence matrix, and local-first personal operating system for Windows 11 and Samsung Galaxy S25 Ultra.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0f1117",

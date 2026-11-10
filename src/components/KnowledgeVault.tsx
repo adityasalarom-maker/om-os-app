@@ -527,7 +527,7 @@ export const KnowledgeVault: React.FC = () => {
   const unlinkedMentions = activeNote ? getUnlinkedMentionsForNote(activeNote, notes) : [];
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
+    <div data-ag-id="KnowledgeVault_Root_Workspace" className="space-y-6 pb-20 md:pb-6">
       {/* Hidden File Input for Markdown Import */}
       <input 
         type="file" 

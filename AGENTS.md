@@ -15,7 +15,7 @@ This document establishes persistent repository rules, architecture standards, a
    - Before modifying any source files in `src/`, an automated physical snapshot must be generated via:
      `powershell scripts/backup.ps1 -Reason "<task_intent>"`
 4. **Approval-First Milestones**:
-   - Stop at the completion of each milestone or phase. Never begin new milestone implementation without explicit user authorization.
+   - Stop at the completion of each milestone or phase. Never begin new milestone implementation without explicit user authorization , suggest next action if needed ..
 
 ---
 
@@ -53,8 +53,20 @@ This document establishes persistent repository rules, architecture standards, a
 ---
 
 ## 5. Mode-Aware Communication Protocol
-- **Default Mode (Execution & Coding):** Deliver lean cockpit updates (~200-450 tokens). Always include a compact, understandable narrative explaining what actually changed and why, followed by files touched, build verification status, and the next command. Saving tokens must never compromise delivering information in at least a minimum, precise, compact, understandable way of what is really happening.
+- **Default Mode (Execution & Coding):** Deliver lean cockpit updates (~300-750 tokens). Always include:
+  1. Mechanical Summary: 5-6 concise sentences in bullet format explaining the engineering rationale and what was changed.
+  2. Files Touched: Exact file paths created or modified.
+  3. Verification: Build/test status (Pass/Fail) and output metrics.
+  4. Command to Run: Single copy-pasteable terminal execution line (if user action required).
+  5. Next Step: 1-line actionable prompt with objective why it needed , suggestion as your audits, reports and investigations .
 - **Deep Dive Mode (Trigger: "use lens 2"):** Deliver full Lens 1 (Educational Systems Masterclass with inline parentheses definitions) + Lens 2 (Executable Technical Blueprint on disk in docs/tasks/).
 
 
 
+
+## 6. Context and UI Navigation
+- Start with `../docs/PROJECT_PASSPORT.md`; use `../docs/tasks/INDEX.md` for task status.
+- For every Codex conversation working in this project, read and follow `../docs/CODEX_FOUNDATION_GUIDE.md` in addition to these repository rules. Keep its guidance project-scoped; do not treat it as a global Codex instruction.
+- Use `scripts/audit_ui_ids.mjs` to check React `data-ag-id` assignments. In UI-change responses, map only affected visible labels to canonical IDs, behavior, visual description, and component file using `../docs/UI_COMPONENT_NAMING.md`.
+- Keep detailed procedures inside relevant `.agents/skills/<name>/SKILL.md`; keep frontmatter descriptions short.
+- Use `docs/CODEX_SESSION_PROGRESS.md` as the evolving Codex/Antigravity handoff. The similarly named handoff files are pointers, not separate progress histories.

@@ -265,7 +265,7 @@ export const HimalayanSpatialGis: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-20 md:pb-8">
+    <div data-ag-id="HimalayanSpatialGis_Root_Workspace" className="space-y-6 pb-20 md:pb-8">
       {/* Top Banner & Control Deck */}
       <div className="bg-[#161822] border border-[#272b3b] rounded-2xl p-5 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>

@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Notes Studio · Integration Preview</title>
+<style>
+:root{--bg:#f6f7fb;--surface:#fff;--surface2:#eef1f7;--ink:#172033;--muted:#68758c;--line:#d8deea;--accent:#635bdb;--accent2:#eeeaff;--gold:#c58b1b;--shadow:0 8px 28px #22314a12;font:13px/1.4 Inter,system-ui,"Segoe UI",sans-serif}*{box-sizing:border-box}body{margin:0;height:100dvh;overflow:hidden;background:var(--bg);color:var(--ink)}button,input,select{font:inherit;color:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #648bff;outline-offset:1px}.app{height:100%;display:flex;flex-direction:column}.global{height:44px;flex:none;display:flex;align-items:center;gap:7px;padding:4px 9px;border-bottom:1px solid var(--line);background:var(--surface2)}.menu-toggle,.global-action,.layout-button,.search-button,.toolbar-button{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:5px 8px;box-shadow:0 1px 2px #16213a0d}.menu-toggle{font-size:11px;font-weight:700}.brand{display:flex;align-items:center;gap:8px;white-space:nowrap;font-weight:750}.brand-mark{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;color:white;background:linear-gradient(145deg,#4f46c8,#8877ff);font-size:14px}.brand small{font-size:9px;color:var(--muted);font-weight:500}.ribbon{display:flex;align-items:center;gap:3px;min-width:0;flex:1;overflow:auto;scrollbar-width:none}.ribbon-tab{display:flex;align-items:center;gap:6px;flex:none;width:var(--tab-width,auto);min-width:120px;max-width:420px;padding:6px 8px;position:relative;border:1px solid transparent;border-bottom:2px solid transparent;border-radius:7px 7px 2px 2px;background:transparent;color:var(--muted);font-size:11px}.ribbon-tab.active{background:var(--surface);border-color:var(--line);border-bottom-color:var(--accent);color:var(--ink);font-weight:650}.ribbon-tab span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ribbon-tab .close{color:#8390a5;flex:none}.ribbon-tab .resize-grip{display:grid;place-items:center;flex:none;width:13px;height:22px;margin-right:-4px;border-left:1px solid var(--line);color:#8590a4;cursor:col-resize;touch-action:none;user-select:none}.ribbon-tab .resize-grip:hover{color:var(--accent);background:var(--accent2)}.global-actions{display:flex;align-items:center;gap:4px;flex:none}.global-actions .layout-switch{flex:none}.layout-switch{display:flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}.layout-button{display:flex;align-items:center;gap:4px;padding:5px 7px;border:0;box-shadow:none;color:var(--muted);white-space:nowrap;font-size:10px;font-weight:650}.layout-switch-label{padding:0 4px;color:var(--muted);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}.layout-button.active{background:var(--accent);color:white}.layout-button span{font-size:10px}.preview-tag{padding:3px 7px;border-radius:99px;background:#e9e6ff;color:#5548c4;font-size:9px;font-weight:800;white-space:nowrap}.body{flex:1;min-height:0;display:flex;overflow:hidden}.sidebar{width:285px;min-width:215px;max-width:400px;flex:none;display:none;flex-direction:column;overflow:auto;padding:9px 8px;background:var(--surface2);border-right:1px solid var(--line);scrollbar-width:thin}.side-search{display:flex;gap:5px;padding:2px 1px 8px;border-bottom:1px solid var(--line)}.side-search input{width:100%;min-width:0;padding:7px 8px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:11px}.side-heading{display:flex;align-items:center;gap:7px;padding:9px 6px 5px;font-size:11px;font-weight:800}.side-heading small{margin-left:auto;font-weight:500;color:var(--muted)}.side-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:5px 1px 8px}.side-actions button{padding:7px 4px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:10px;font-weight:650}.side-actions .primary{background:var(--accent);border-color:var(--accent);color:white}.nav-list{display:grid;gap:2px}.nav-item,.domain-item,.vault-item{display:flex;align-items:center;gap:7px;width:100%;min-height:29px;padding:5px 7px;border:1px solid transparent;border-radius:7px;background:transparent;text-align:left;color:#526078;font-size:11px}.nav-item:hover,.domain-item:hover,.vault-item:hover{background:#e5e9f1}.nav-item.active,.vault-item.active{background:var(--surface);border-color:#c9c0ff;color:#4f46b8;font-weight:700}.nav-item .num,.domain-item .num{margin-left:auto;color:var(--muted);font-size:10px}.group{margin:5px 0;padding:4px;border:1px solid var(--line);border-radius:9px;background:#ffffffa8}.group-title{display:flex;align-items:center;gap:6px;padding:4px 4px 5px;font-size:9px;font-weight:850;letter-spacing:.07em;color:#63718b}.group-title .count{margin-left:auto;font-weight:500;letter-spacing:0}.quick-list,.vault-list{display:grid;gap:2px}.quick-list .nav-item{padding-left:19px;font-size:10px}.domain-item{font-size:10px}.vault-item{display:block;padding:6px 7px}.vault-item strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.vault-item small{display:block;margin-top:2px;color:var(--muted);font-size:9px}.directory{margin-top:6px;padding:8px 7px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}.directory strong{display:block;color:#66738b;font-size:9px;letter-spacing:.07em}.divider{width:5px;flex:none;cursor:col-resize;background:transparent}.divider:hover{background:#736af34d}.workspace{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}.canvas-head{height:36px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--bg)}.canvas-head strong{font-size:11px}.canvas-head small{color:var(--muted);font-size:10px}.canvas-head .spacer{flex:1}.focus-note{font-size:10px;color:var(--accent);font-weight:700}.canvas{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}.panel-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) 36%;gap:7px;padding:8px;flex:1;min-height:0;overflow:auto}.panel-grid.vertical{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,1fr)}.panel-grid.horizontal{grid-template-columns:minmax(0,1fr);grid-auto-rows:minmax(250px,1fr)}.panel-grid.single{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}.note-pane{display:flex;flex-direction:column;min-width:0;min-height:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);box-shadow:0 2px 6px #15233d0a}.note-pane:nth-child(3){grid-column:1/-1}.panel-grid.vertical .note-pane:nth-child(3){grid-column:auto}.panel-grid.horizontal .note-pane{min-height:240px}.panel-grid.single .note-pane{grid-column:auto}.panel-top{display:flex;align-items:center;gap:5px;min-height:38px;padding:4px 6px;border-bottom:1px solid var(--line);background:var(--surface2)}.pane-label{flex:none;padding:3px 5px;border:1px solid var(--line);border-radius:5px;background:var(--surface);color:var(--accent);font:800 9px ui-monospace,monospace}.note-select{flex:1;min-width:60px;max-width:195px;padding:5px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:10px;font-weight:700}.pane-tools{display:flex;align-items:center;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:thin}.pane-tool{display:flex;align-items:center;gap:4px;flex:none;padding:5px 6px;border:1px solid transparent;border-radius:6px;background:transparent;color:#56637a;font-size:9px;white-space:nowrap}.pane-tool:hover{background:var(--surface);border-color:var(--line);color:var(--accent)}.pane-tool.active{background:var(--accent);color:white}.pane-tool.danger:hover{color:#c33}.pane-second{display:flex;align-items:center;gap:5px;padding:5px 9px;border-bottom:1px solid var(--line);color:var(--muted);font-size:9px}.pane-second .kind{margin-left:auto;padding:2px 6px;border-radius:99px;background:#eeeaff;color:#564dc4}.pane-second button{padding:3px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-size:9px}.note-title{padding:8px 11px;border-bottom:1px solid var(--line);font-size:13px;font-weight:750}.format-bar{display:flex;align-items:center;gap:3px;padding:4px 7px;border-bottom:1px solid var(--line);background:var(--surface2)}.format-bar button{min-width:25px;padding:4px;border:0;border-radius:5px;background:transparent;font-size:10px}.format-bar button:hover{background:var(--surface)}.format-bar .format-name{margin-left:auto;color:var(--muted);font-size:9px}.editor{flex:1;min-height:0;overflow:auto;padding:10px 12px;font-size:11px;line-height:1.65}.editor p{margin:0 0 8px}.editor ul{margin:3px 0;padding-left:18px}.editor table{width:100%;border-collapse:collapse;margin:8px 0;font-size:9px}.editor th,.editor td{padding:5px;border:1px solid var(--line);text-align:left}.editor th{background:var(--surface2)}.toggle{margin-top:8px;border:1px solid var(--line);border-radius:6px;overflow:hidden}.toggle summary{padding:6px 8px;background:var(--surface2);font-weight:650;cursor:pointer}.toggle div{padding:7px 9px}.pane-footer{display:flex;flex-wrap:wrap;gap:5px;padding:6px 8px;border-top:1px solid var(--line);background:#fafbfe}.prop{padding:3px 6px;border:1px solid var(--line);border-radius:5px;color:var(--muted);font-size:9px}.prop b{color:var(--ink)}.created{display:flex;justify-content:space-between;padding:4px 8px;border-top:1px solid var(--line);color:var(--muted);font-size:9px}.horizontal-dock{grid-column:1/-1;display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px dashed #aaa5ec;border-radius:8px;background:#f2f0ff;color:#5148b9;font-size:10px}.horizontal-dock.hidden{display:none}.status{height:25px;flex:none;display:flex;align-items:center;gap:7px;padding:0 10px;border-top:1px solid var(--line);background:var(--surface2);color:#098765;font-size:9px}.status span:last-child{margin-left:auto;color:var(--muted)}.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface);box-shadow:var(--shadow);font-size:11px;opacity:0;pointer-events:none;transition:opacity .15s}.toast.show{opacity:1}.maximize-tip{display:none;position:absolute;z-index:4;top:84px;left:calc(285px + 22px);right:20px;bottom:35px;padding:7px 9px;border:1px solid #8c84ec;border-radius:10px;background:#f7f6ff;color:#5148b9;font-size:10px;pointer-events:none}.canvas.maximized .note-pane{display:none}.canvas.maximized .note-pane.maximized{display:flex;grid-column:1/-1;grid-row:1/-1;border:2px solid var(--accent);box-shadow:0 0 0 2px #736af322;position:relative;z-index:2}.canvas.maximized .maximize-tip{display:block;bottom:auto}.panel-grid.maximized-grid{display:grid;grid-template-columns:1fr;grid-template-rows:minmax(0,1fr)}
+@media(max-width:900px){.sidebar{width:235px}.global-action span{display:none}.pane-tool{padding:5px}.panel-grid{grid-template-columns:1fr;grid-template-rows:minmax(320px,1fr) minmax(240px, .65fr)}.note-pane:nth-child(3){grid-column:auto}.panel-grid.vertical{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(300px,1fr) minmax(230px,.7fr)}.panel-grid.vertical .note-pane:nth-child(3){grid-column:1/-1}}
+@media(max-width:620px){.global{gap:4px;padding:3px}.brand small,.preview-tag{display:none}.global-actions .layout-switch{display:flex}.global-actions .layout-button{padding:4px 5px}.global-actions .global-action{padding:5px 6px;font-size:10px}.ribbon-tab{max-width:115px;padding:5px;font-size:9px}.sidebar{width:52px;min-width:52px;padding:7px 4px}.side-search input,.side-actions,.side-heading span:not(.glyph),.side-heading small,.nav-item .label,.nav-item .num,.group-title span:not(.glyph),.group-title .count,.quick-list,.domain-item .label,.domain-item .num,.vault-list,.directory{display:none}.side-search{justify-content:center}.side-search:after{content:'⌕';color:var(--muted)}.side-heading,.nav-item,.domain-item{justify-content:center}.group{padding:2px}.canvas-head small{display:none}.panel-grid,.panel-grid.vertical,.panel-grid.horizontal{grid-template-columns:1fr;grid-template-rows:minmax(420px,1fr);grid-auto-rows:minmax(260px,.7fr)}.note-pane:nth-child(3),.panel-grid.vertical .note-pane:nth-child(3){grid-column:auto}.panel-top{flex-wrap:wrap}.pane-tools{width:100%;order:3}.note-select{max-width:none}.maximize-tip{left:62px;right:8px}.status span:last-child{display:none}}
+/* The focus pane keeps its own toolbar and Restore button clickable. */
+.maximize-tip,.canvas.maximized .maximize-tip{display:none!important}
+.global-action.primary-action{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.global-action.quick-action{background:var(--accentMuted);color:var(--accent);font-weight:650}
+.editor[contenteditable="true"]{outline:none;cursor:text}
+.panel-grid.mode-single{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.panel-grid.mode-twoBottom{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:minmax(0,1fr) minmax(130px,38%)}
+.panel-grid.mode-threeBottom{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:minmax(0,1fr) minmax(130px,38%)}
+.panel-grid.mode-grid3x2{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+.panel-grid.mode-single .note-pane,.panel-grid.mode-twoBottom .note-pane,.panel-grid.mode-threeBottom .note-pane,.panel-grid.mode-grid3x2 .note-pane{grid-column:auto;grid-row:auto}
+.panel-grid.mode-twoBottom .note-pane:nth-child(3),.panel-grid.mode-threeBottom .note-pane:nth-child(4){grid-column:1/-1}
+@media(max-width:900px){.panel-grid.mode-threeBottom,.panel-grid.mode-grid3x2{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr))}.panel-grid.mode-threeBottom .note-pane:nth-child(4){grid-column:1/-1}}
+@media(max-width:620px){.panel-grid.mode-twoBottom,.panel-grid.mode-threeBottom,.panel-grid.mode-grid3x2{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(6,minmax(220px,1fr))}.panel-grid.mode-twoBottom .note-pane:nth-child(3),.panel-grid.mode-threeBottom .note-pane:nth-child(4){grid-column:auto}}
+</style>
+<style id="om-app-theme-and-tab-resize">
+body,.app,.workspace,.canvas{background:var(--bg);color:var(--ink)}
+.global,.sidebar,.panel-top,.format-bar,.status{background:var(--surface2);color:var(--ink)}
+.side-search input,.side-actions button,.group,.note-pane,.note-select,.pane-second button,.ribbon-tab.active,.pane-footer,.note-title,.pane-tool:hover,.format-bar button:hover{background:var(--card);color:var(--ink)}
+.nav-item,.domain-item,.vault-item,.pane-tool,.pane-second,.format-name,.created{color:var(--muted)}
+.nav-item:hover,.domain-item:hover,.vault-item:hover{background:var(--hover)}
+.nav-item.active,.vault-item.active{background:var(--hover);border-color:var(--accent);color:var(--accent)}
+.preview-tag,.pane-second .kind{background:var(--accentMuted);color:var(--accent)}
+.pane-label{color:var(--accent)}
+.pane-tool.active,.layout-button.active{background:var(--accent);color:#fff}
+.horizontal-dock{background:var(--accentMuted);border-color:var(--accent);color:var(--accent)}
+.maximize-tip{background:var(--card);border-color:var(--accent);color:var(--accent)}
+.ribbon-tab{position:relative;width:var(--tab-width,165px);max-width:none;justify-content:space-between}
+.ribbon-tab>span:first-child{flex:1;min-width:0}
+.ribbon-tab .close{flex:none}
+.ribbon-tab .resize-grip{flex:none;width:11px;margin-right:-5px;cursor:col-resize;touch-action:none;color:var(--muted);font-weight:800;opacity:.55;user-select:none}
+.ribbon-tab .resize-grip:hover{opacity:1;color:var(--accent)}
+.panel-grid.single .note-pane:not(:first-of-type),.panel-grid.single .horizontal-dock{display:none}
+.panel-grid.single .note-pane:first-of-type{grid-column:1/-1;grid-row:1/-1}
+.ribbon-tab{border-color:var(--line)}
+.app button,.app select,.app input{color:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="global">
+    <button class="menu-toggle" id="menuToggle" title="Collapse or expand Notes Studio sidebar">☰ <span>Menu</span></button>
+    <div class="ribbon-scroll-controls" style="display:flex;align-items:center;gap:2px;flex:none">
+      <button class="ribbon-nav-btn" id="scrollTabsLeft" title="Scroll tabs left" style="width:22px;height:26px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:5px;font-size:10px;cursor:pointer">◀</button>
+      <button class="ribbon-nav-btn" id="scrollTabsRight" title="Scroll tabs right" style="width:22px;height:26px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:5px;font-size:10px;cursor:pointer">▶</button>
+    </div>
+    <div class="ribbon" aria-label="Open note tabs" style="scroll-behavior:smooth">
+      <button class="ribbon-tab active" data-note="Audit a long AI answer"><span>01 · Audit AI answer</span><span class="close">×</span><span class="resize-grip" title="Drag to resize this open tab" aria-label="Resize open tab">⋮</span></button>
+      <button class="ribbon-tab" data-note="Today · capture and review"><span>02 · Today capture</span><span class="close">×</span><span class="resize-grip" title="Drag to resize this open tab" aria-label="Resize open tab">⋮</span></button>
+      <button class="ribbon-tab" data-note="Quick capture · idea"><span>03 · Quick capture</span><span class="close">×</span><span class="resize-grip" title="Drag to resize this open tab" aria-label="Resize open tab">⋮</span></button>
+      <button class="ribbon-tab" data-note="Raw chat &amp; Codex snippets"><span>04 · Raw snippet table</span><span class="close">×</span><span class="resize-grip" title="Drag to resize this open tab" aria-label="Resize open tab">⋮</span></button>
+      <button class="toolbar-button" id="ribbonNewNote" title="Create and open a temporary sample note">＋</button>
+    </div>
+    <div class="global-actions">
+      <button class="global-action primary-action" id="createNewNote" title="Create and open a temporary sample note">＋ New note</button>
+      <button class="global-action quick-action" id="createQuickNote" title="Create and open a temporary quick note">▤ Quick note</button><div class="layout-switch" aria-label="Pane views"><button class="layout-button" data-layout="single" aria-label="Single pane" title="Single pane · focus one open note"><span>⛶</span></button><button class="layout-button" data-layout="twoBottom" aria-label="Two columns and a horizontal pane" title="2 vertical panes + 1 horizontal bottom pane"><span>◫</span></button><button class="layout-button active" data-layout="threeBottom" aria-label="Three columns and a horizontal pane" title="3 vertical panes + 1 horizontal bottom pane"><span>▥▥</span></button><button class="layout-button" data-layout="grid3x2" aria-label="Three by two grid" title="3 × 2 grid · up to 6 simultaneous panes"><span>▦</span></button></div>
+
+      <button class="global-action" data-msg="Search across preview notes"><span>⌕ Search</span></button>
+      <button class="global-action" data-msg="Export is not enabled in this mock"><span>⇩ Backup</span></button>
+    </div>
+  </header>
+  <div class="body">
+    <aside class="sidebar" id="sidebar" style="display:none">
+      <div class="side-search"><input placeholder="Filter notes…" aria-label="Filter preview notes"><button class="search-button" data-msg="Search mock data only" title="Search notes">⌕</button></div>
+      <div class="side-actions"><button class="primary" id="sidebarNewNote">＋ Note</button><button id="sidebarQuickNote">▤ Quick</button><button data-msg="Checklist is a sample view in this preview">☑ List</button></div>
+      <div class="nav-list">
+        <button class="nav-item active" data-section="All notes"><span class="glyph">▦</span><span class="label">All notes</span><span class="num" id="totalCount">9</span></button>
+        <button class="nav-item" data-section="Pinned"><span class="glyph">♧</span><span class="label">Pinned</span><span class="num">4</span></button>
+      </div>
+
+      <!-- Live OPENED NOTES (Active Tabs) in Sidebar -->
+      <section class="group" id="openedGroup">
+        <div class="group-title"><span class="glyph">📂</span><span>OPENED NOTES (TABS)</span><span class="count" id="openedCount">4</span></div>
+        <div class="quick-list" id="openedList"></div>
+      </section>
+      <section class="group">
+        <div class="group-title"><span class="glyph">▤</span><span>QUICK NOTES</span><span class="count">5</span><button class="toolbar-button" data-action="quickBoard" title="Show all Quick Notes together">▦</button></div>
+        <div class="quick-list"><button class="nav-item" data-note="Quick capture"><span>•</span><span class="label">Quick capture · idea</span></button><button class="nav-item" data-note="Phone reminder"><span>•</span><span class="label">Phone reminder</span></button><button class="nav-item" data-note="Grocery list"><span>•</span><span class="label">Grocery list</span></button><button class="nav-item" data-note="Prompt fragment"><span>•</span><span class="label">Prompt fragment</span></button><button class="nav-item" data-note="Misc capture"><span>•</span><span class="label">Misc capture</span></button></div>
+      </section>
+      <section class="group">
+        <div class="group-title"><span class="glyph">⌄</span><span>STUDIO CANONICAL DOMAINS</span><span class="count">18</span></div>
+        <button class="domain-item" data-domain="AI_ENGINE"><span>🤖</span><span class="label">AI Prompts &amp; Protocols</span><span class="num">4</span></button>
+        <button class="domain-item" data-domain="KNOWLEDGE_HUB"><span>📚</span><span class="label">Projects &amp; Knowledge</span><span class="num">4</span></button>
+        <button class="domain-item" data-domain="RAW_SCRATCHPAD"><span>📋</span><span class="label">Raw Snippets / Tables</span><span class="num">3</span></button>
+        <button class="domain-item" data-domain="TAXONOMY_LEXICON"><span>🧬</span><span class="label">Taxonomy &amp; Canonicals</span><span class="num">2</span></button>
+        <button class="domain-item" data-domain="PATH_DIRECTORY"><span>🗂️</span><span class="label">Folder Directory</span><span class="num">1</span></button>
+        <button class="domain-item" data-domain="DAILY_PULSE"><span>⚡</span><span class="label">Daily Checklists &amp; Pulse</span><span class="num">4</span></button>
+      </section>
+      <section class="group">
+        <div class="group-title"><span class="glyph">⌄</span><span>WORKSPACE SIDEBAR CATEGORIES</span><span class="count">MAPPED</span></div>
+        <button class="domain-item" data-domain="Inbox"><span>📥</span><span class="label">Inbox → Unsorted</span><span class="num">3</span></button>
+        <button class="domain-item" data-domain="Learning"><span>🎓</span><span class="label">Learning → Knowledge Hub</span><span class="num">2</span></button>
+        <button class="domain-item" data-domain="AI &amp; Tools"><span>🧰</span><span class="label">AI &amp; Tools → AI Prompts</span><span class="num">3</span></button>
+        <button class="domain-item" data-domain="Technology"><span>⚙️</span><span class="label">Technology → Projects</span><span class="num">1</span></button>
+        <button class="domain-item" data-domain="Daily"><span>📅</span><span class="label">Daily → Daily Pulse</span><span class="num">2</span></button>
+        <button class="domain-item" data-domain="Quick Notes"><span>🗒️</span><span class="label">Quick Notes → Quick Notes</span><span class="num">5</span></button>
+      </section>
+      <section class="group">
+        <div class="group-title"><span class="glyph">⌄</span><span>MERGED NOTE VAULT</span><span class="count">SAMPLE</span></div>
+        <div class="vault-list">
+          <button class="vault-item active" data-note="Audit a long AI answer"><strong>📌 Audit a long AI answer</strong><small>Studio prompt · AI &amp; Tools</small></button>
+          <button class="vault-item" data-note="Today · capture and review"><strong>Today · capture and review</strong><small>Workspace daily note · Daily</small></button>
+          <button class="vault-item" data-note="Quick capture · idea"><strong>Quick capture · idea</strong><small>Workspace quick note · Quick Notes</small></button>
+          <button class="vault-item" data-note="Raw chat &amp; Codex snippets"><strong>Raw chat &amp; Codex snippets</strong><small>Studio scratchpad · Raw snippets</small></button>
+          <button class="vault-item" data-note="Learning note · knowledge graphs"><strong>Learning note · knowledge graphs</strong><small>Workspace learning · Knowledge Hub</small></button>
+        </div>
+      </section>
+      <div class="directory"><strong>DIRECTORY · LOCATION MAP</strong>Folder locations from both libraries appear here as references; files are not moved.</div>
+    </aside>
+    <div class="divider" title="Sidebar resize handle (visual preview)"></div>
+    <main class="workspace">
+      <div class="canvas-head"><strong>Notes Studio · Unified library preview</strong><small>Workspace categories shown alongside Studio domains</small><span class="spacer"></span><span class="focus-note" id="focusNote"></span><button class="toolbar-button" data-action="quickBoard" title="View all Quick Notes">▦ All Quick Notes</button></div>
+      <section class="canvas" id="canvas">
+        <div class="panel-grid" id="panelGrid">
+          <article class="note-pane" data-pane="1" id="pane1">
+            <div class="panel-top"><span class="pane-label">NOTE 1</span><select class="note-select" aria-label="Note shown in pane 1"><option>Audit a long AI answer</option><option>Today · capture and review</option><option>Quick capture · idea</option><option>Raw chat &amp; Codex snippets</option></select>
+              <div class="pane-tools" aria-label="Note 1 actions">
+                <button class="pane-tool active" title="Edit note with rich editor" aria-label="Rich editor">✎ <span>Rich editor</span></button><button class="pane-tool" title="Show Markdown source" aria-label="Markdown source">▤ <span>Markdown</span></button><button class="pane-tool" title="Show live preview" aria-label="Live preview">◉ <span>Preview</span></button>
+                <button class="pane-tool" data-action="pin" title="Pin or unpin this note" aria-label="Pin note">♧ <span>Pin</span></button><button class="pane-tool" data-action="properties" title="Show or hide note properties" aria-label="Properties">◇ <span>Properties</span></button>
+                <button class="pane-tool" data-action="maximize" title="Expand this pane to fill the Notes Studio canvas; sidebar and module bars stay visible" aria-label="Maximize pane">⛶ <span>Maximize</span></button><button class="pane-tool" data-action="below" title="Open a horizontal panel below this note" aria-label="Open below">▤ <span>Open below</span></button><button class="pane-tool" data-action="right" title="Open a vertical panel to the right" aria-label="Open to right">▥ <span>Open right</span></button><button class="pane-tool" data-action="collapse" title="Collapse this note pane" aria-label="Collapse pane">⌄ <span>Collapse</span></button><button class="pane-tool danger" data-action="close" title="Close this note pane" aria-label="Close pane">× <span>Close</span></button>
+              </div>
+            </div>
+            <div class="pane-second"><span>AI &amp; Tools / Prompts</span><span class="kind">Prompt</span><button data-action="copy" title="Copy this note's prompt content">▣ Copy</button></div>
+            <div class="note-title">Audit a long AI answer</div><div class="format-bar"><button title="Bold"><b>B</b></button><button title="Italic"><i>I</i></button><button title="Underline"><u>U</u></button><button title="Bullet list">☷</button><button title="Insert table">▦</button><button title="Insert divider">━</button><button title="Insert toggle">▸</button><span class="format-name">Formatting tools</span></div>
+            <div class="editor"><p><b>Review checklist</b></p><p>Compare the answer with the request and source material. Keep direct evidence separate from inference.</p><ul><li>Find missing assumptions</li><li>Check dates and calculations</li><li>List unresolved questions</li></ul><table><thead><tr><th>Evidence</th><th>Interpretation</th><th>Follow-up</th></tr></thead><tbody><tr><td>Source quote</td><td>What it supports</td><td>Verify date</td></tr><tr><td>Observed detail</td><td>What remains uncertain</td><td>Ask or research</td></tr></tbody></table><details class="toggle" open><summary>Optional context · toggle list</summary><div>Supporting detail stays inside this collapsible block.</div></details></div>
+            <div class="pane-footer"><span class="prop">Type <b>Prompt</b></span><span class="prop">Domain <b>AI &amp; Tools</b></span><span class="prop">Category <b>Prompts</b></span><span class="prop">Tags <b>audit, reusable</b></span><span class="prop">Source <b>ChatGPT</b></span></div><div class="created"><span>◷ Created Nov 1 · Updated today</span><span>Sample only</span></div>
+          </article>
+          <article class="note-pane" data-pane="2" id="pane2">
+            <div class="panel-top"><span class="pane-label">NOTE 2</span><select class="note-select" aria-label="Note shown in pane 2"><option>Today · capture and review</option><option>Audit a long AI answer</option><option>Quick capture · idea</option><option>Learning note · knowledge graphs</option></select>
+              <div class="pane-tools" aria-label="Note 2 actions">
+                <button class="pane-tool active" title="Edit note with rich editor" aria-label="Rich editor">✎ <span>Rich editor</span></button><button class="pane-tool" title="Show Markdown source" aria-label="Markdown source">▤ <span>Markdown</span></button><button class="pane-tool" title="Show live preview" aria-label="Live preview">◉ <span>Preview</span></button><button class="pane-tool" data-action="pin" title="Pin or unpin this note" aria-label="Pin note">♧ <span>Pin</span></button><button class="pane-tool" data-action="properties" title="Show or hide note properties" aria-label="Properties">◇ <span>Properties</span></button><button class="pane-tool" data-action="maximize" title="Expand this pane to fill the Notes Studio canvas; sidebar and module bars stay visible" aria-label="Maximize pane">⛶ <span>Maximize</span></button><button class="pane-tool" data-action="below" title="Open a horizontal panel below this note" aria-label="Open below">▤ <span>Open below</span></button><button class="pane-tool" data-action="right" title="Open a vertical panel to the right" aria-label="Open to right">▥ <span>Open right</span></button><button class="pane-tool" data-action="collapse" title="Collapse this note pane" aria-label="Collapse pane">⌄ <span>Collapse</span></button><button class="pane-tool danger" data-action="close" title="Close this note pane" aria-label="Close pane">× <span>Close</span></button>
+              </div>
+            </div>
+            <div class="pane-second"><span>Daily / Daily notes</span><span class="kind">Daily checklist</span><button data-action="copy" title="Copy this note's content">▣ Copy</button></div><div class="note-title">Today · capture and review</div><div class="format-bar"><button title="Bold"><b>B</b></button><button title="Italic"><i>I</i></button><button title="Underline"><u>U</u></button><button title="Task list">☑</button><button title="Insert table">▦</button><button title="Insert divider">━</button><button title="Insert toggle">▸</button><span class="format-name">Formatting tools</span></div>
+            <div class="editor"><p><b>Today</b></p><p>Capture first; sort during review.</p><ul><li>Check current project priorities</li><li>Sort useful AI captures</li><li>Save one learning for later</li></ul><details class="toggle"><summary>End-of-day reflection</summary><div>What moved forward? What can wait until tomorrow?</div></details></div><div class="pane-footer"><span class="prop">Type <b>Daily</b></span><span class="prop">Category <b>Daily notes</b></span><span class="prop">Tags <b>work, today</b></span></div><div class="created"><span>◷ Created today · Updated today</span><span>Sample only</span></div>
+          </article>
+          <div class="horizontal-dock" id="dock"><span>▾ HORIZONTAL PANEL · NOTE 3</span><strong>Quick capture · idea</strong><span>— click “Open below” on any note to add another horizontal panel</span></div>
+        </div>
+      </section>
+      <footer class="status"><span id="previewStatus">● Preview only · sample notes · no note data read or saved</span><span>Colors follow the Om OS app theme · module files untouched</span></footer>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const themePalettes={
+  'midnight-obsidian':['#0f1117','#161822','#181a24','#212533','#272b3b','#f3f4f6','#9ca3af','#6366f1','#4f46e5','rgba(99,102,241,.15)',false],
+  'slate-monolith':['#0f172a','#1e293b','#1e293b','#334155','#334155','#f8fafc','#94a3b8','#0284c7','#0369a1','rgba(2,132,199,.15)',false],
+  'deep-charcoal':['#121212','#181818','#1e1e1e','#282828','#2e2e2e','#f4f4f5','#a1a1aa','#e11d48','#be123c','rgba(225,29,72,.15)',false],
+  'cosmic-navy':['#080c18','#0d1324','#11182c','#1b2544','#1f2c4e','#f1f5f9','#94a3b8','#3b82f6','#2563eb','rgba(59,130,246,.15)',false],
+  'emerald-forest':['#091510','#0e1e17','#12251c','#1a3528','#1f3f30','#f0fdf4','#86efac','#10b981','#059669','rgba(16,185,129,.15)',false],
+  'oled-pitch-black':['#000000','#050505','#0a0a0a','#141414','#2a2a2a','#ffffff','#a3a3a3','#06b6d4','#0891b2','rgba(6,182,212,.2)',false],
+  'cyberpunk-amber':['#0a0701','#120d04','#181105','#291d09','#452b0a','#fef3c7','#d97706','#f59e0b','#d97706','rgba(245,158,11,.2)',false],
+  'monochrome-ink':['#040404','#0c0c0c','#121212','#1e1e1e','#3f3f46','#ffffff','#d4d4d8','#ffffff','#e4e4e7','rgba(255,255,255,.2)',false],
+  'solarized-dark':['#002b36','#073642','#073642','#0d4a59','#586e75','#fdf6e3','#93a1a1','#2aa198','#268bd2','rgba(42,161,152,.2)',false],
+  'high-contrast-cobalt':['#030712','#0b1120','#0f172a','#1e293b','#374151','#f9fafb','#c084fc','#a855f7','#9333ea','rgba(168,85,247,.2)',false],
+  'white-sand':['#ffffff','#f8fafc','#ffffff','#f1f5f9','#e2e8f0','#0f172a','#64748b','#b45309','#92400e','rgba(180,83,9,.12)',true],
+  'nordic-snow':['#f1f5f9','#e2e8f0','#ffffff','#f8fafc','#cbd5e1','#1e293b','#64748b','#0f766e','#115e59','rgba(15,118,110,.12)',true],
+  'vedic-parchment':['#fdfbf7','#f3ede0','#f7f2e7','#ebe4d3','#e2d8c3','#292524','#78716c','#d97706','#b45309','rgba(217,119,6,.12)',true],
+  'lotus-rosewater':['#fff1f2','#ffe4e6','#ffffff','#fff5f6','#fecdd3','#4c0519','#9f1239','#e11d48','#be123c','rgba(225,29,72,.1)',true],
+  'mint-dawn':['#f0fdf4','#dcfce7','#ffffff','#f7fee7','#bbf7d0','#14532d','#15803d','#16a34a','#15803d','rgba(22,163,74,.1)',true]
+};
+function applyTheme(chosenTheme){
+  try{
+    const themeName=chosenTheme||localStorage.getItem('om_knowledge_os_theme')||'midnight-obsidian';
+    const p=themePalettes[themeName]||themePalettes['midnight-obsidian'];
+    const root=document.documentElement;
+    ['--bg','--surface2','--card','--hover','--line','--ink','--muted','--accent','--accentHover','--accentMuted'].forEach((key,i)=>root.style.setProperty(key,p[i]));
+    root.style.setProperty('--surface',p[2]);
+    root.style.setProperty('--accent2',p[9]);
+    root.style.colorScheme=p[10]?'light':'dark';
+  }catch{}
+}
+applyTheme();
+
+function syncPreviewSidebar(){
+  const allTabs = [...document.querySelectorAll('.ribbon-tab')].map(t => t.dataset.note).filter(Boolean);
+  const activeTab = document.querySelector('.ribbon-tab.active')?.dataset.note || allTabs[0];
+
+  // 1. Render OPENED NOTES list
+  const openedEl = document.getElementById('openedList');
+  const openedCountEl = document.getElementById('openedCount');
+  if(openedCountEl) openedCountEl.textContent = allTabs.length;
+  if(openedEl){
+    openedEl.innerHTML = '';
+    allTabs.forEach(t => {
+      const isActive = t === activeTab;
+      const item = document.createElement('div');
+      item.className = 'nav-item' + (isActive ? ' active' : '');
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'space-between';
+      item.style.cursor = 'pointer';
+      item.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1" data-preview-open="${t}">
+          <span style="color:${isActive ? 'var(--accent)' : 'var(--muted)'};font-size:10px">${isActive ? '●' : '○'}</span>
+          <span class="label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:${isActive ? '700' : '500'}">${t}</span>
+        </div>
+        <span class="close-preview-tab" data-preview-close="${t}" title="Close tab" style="padding:0 4px;color:var(--muted);cursor:pointer;border-radius:3px">×</span>
+      `;
+      openedEl.appendChild(item);
+    });
+  }
+
+  // 2. Render Vault list
+  const vaultEl = document.querySelector('.vault-list');
+  if(vaultEl){
+    vaultEl.innerHTML = '';
+    Object.keys(sampleNotes).forEach(t => {
+      const n = sampleNotes[t];
+      const isOpened = allTabs.includes(t);
+      const isActive = t === activeTab;
+      const btn = document.createElement('button');
+      btn.className = 'vault-item' + (isActive ? ' active' : '');
+      btn.dataset.note = t;
+      btn.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t}</strong>
+          ${isOpened ? '<span style="font-size:8px;padding:1px 4px;border-radius:4px;background:var(--accent2);color:var(--accent);font-weight:700">OPEN</span>' : ''}
+        </div>
+        <small>${n.path || n.kind || 'Note'}</small>
+      `;
+      vaultEl.appendChild(btn);
+    });
+  }
+}
+
+// Hook into tab and vault clicks
+document.addEventListener('click', e => {
+  const openItem = e.target.closest('[data-preview-open]');
+  if(openItem){
+    const title = openItem.dataset.previewOpen;
+    const tab = [...document.querySelectorAll('.ribbon-tab')].find(x => x.dataset.note === title);
+    if(tab) focusOpenTab(tab);
+    syncPreviewSidebar();
+
+document.getElementById('scrollTabsLeft')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:-240,behavior:'smooth'});
+});
+document.getElementById('scrollTabsRight')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:240,behavior:'smooth'});
+});
+
+    return;
+  }
+  const closeItem = e.target.closest('[data-preview-close]');
+  if(closeItem){
+    e.stopPropagation();
+    const title = closeItem.dataset.previewClose;
+    const tab = [...document.querySelectorAll('.ribbon-tab')].find(x => x.dataset.note === title);
+    if(tab){
+      tab.querySelector('.close')?.click();
+      syncPreviewSidebar();
+
+document.getElementById('scrollTabsLeft')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:-240,behavior:'smooth'});
+});
+document.getElementById('scrollTabsRight')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:240,behavior:'smooth'});
+});
+
+    }
+    return;
+  }
+  const vaultItem = e.target.closest('.vault-item');
+  if(vaultItem && vaultItem.dataset.note){
+    const title = vaultItem.dataset.note;
+    let tab = [...document.querySelectorAll('.ribbon-tab')].find(x => x.dataset.note === title);
+    if(!tab){
+      tab = document.createElement('button');
+      tab.className = 'ribbon-tab';
+      tab.dataset.note = title;
+      tab.innerHTML = `<span>${title}</span><span class="close">×</span><span class="resize-grip" title="Drag to resize this open tab" aria-label="Resize open tab">⋮</span>`;
+      const ribbon = document.querySelector('.ribbon');
+      ribbon.insertBefore(tab, document.getElementById('ribbonNewNote'));
+      attachRibbonTab(tab);
+    }
+    focusOpenTab(tab);
+    syncPreviewSidebar();
+
+document.getElementById('scrollTabsLeft')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:-240,behavior:'smooth'});
+});
+document.getElementById('scrollTabsRight')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:240,behavior:'smooth'});
+});
+
+    return;
+  }
+});
+
+window.addEventListener('storage',e=>{if(e.key==='om_knowledge_os_theme')applyTheme(e.newValue);});
+window.addEventListener('message',e=>{if(e.data?.type==='OM_THEME_CHANGED')applyTheme(e.data.themeId);});
+
+const toast=document.getElementById('toast');let toastTimer;function say(text){toast.textContent=text;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2200)}
+const STORAGE_KEY='om_notes_integration_preview_v2';
+const initialNotes={
+ 'Audit a long AI answer':{path:'AI & Tools / Prompts',kind:'Prompt',body:'<p><b>Review checklist</b></p><p>Compare the answer with the request and source material. Keep direct evidence separate from inference.</p><ul><li>Find missing assumptions</li><li>Check dates and calculations</li><li>List unresolved questions</li></ul><table><thead><tr><th>Evidence</th><th>Interpretation</th><th>Follow-up</th></tr></thead><tbody><tr><td>Source quote</td><td>What it supports</td><td>Verify date</td></tr><tr><td>Observed detail</td><td>What remains uncertain</td><td>Ask or research</td></tr></tbody></table><details class="toggle" open><summary>Optional context · toggle list</summary><div>Supporting detail stays inside this collapsible block.</div></details>',props:'<span class="prop">Type <b>Prompt</b></span><span class="prop">Domain <b>AI &amp; Tools</b></span><span class="prop">Category <b>Prompts</b></span><span class="prop">Tags <b>audit, reusable</b></span><span class="prop">Source <b>ChatGPT</b></span>'},
+ 'Today · capture and review':{path:'Daily / Daily notes',kind:'Daily checklist',body:'<p><b>Today</b></p><p>Capture first; sort during review.</p><ul><li>Check current project priorities</li><li>Sort useful AI captures</li><li>Save one learning for later</li></ul><details class="toggle"><summary>End-of-day reflection</summary><div>What moved forward? What can wait until tomorrow?</div></details>',props:'<span class="prop">Type <b>Daily</b></span><span class="prop">Category <b>Daily notes</b></span><span class="prop">Tags <b>work, today</b></span>'},
+ 'Quick capture · idea':{path:'Quick Notes / Quick notes',kind:'Quick note',body:'<p>Save a passing thought now; sort it into a project or category during review.</p><p class="callout">Quick captures remain easy to find in the shared Notes Studio library.</p>',props:'<span class="prop">Type <b>Quick note</b></span><span class="prop">Domain <b>Quick Notes</b></span><span class="prop">Status <b>Unsorted</b></span>'},
+ 'Raw chat & Codex snippets':{path:'Raw Scratchpad / Snippets',kind:'Scratchpad',body:'<p>Collect text from chats, websites, PDFs, and tools in rows; select a few records and copy them back to an AI prompt.</p><table><thead><tr><th>Captured text</th><th>Source</th><th>Intent</th></tr></thead><tbody><tr><td>Original excerpt to clarify later</td><td>Antigravity</td><td>Audit</td></tr><tr><td>Learning to connect to a project</td><td>Website</td><td>Understand</td></tr></tbody></table>',props:'<span class="prop">Type <b>Scratchpad</b></span><span class="prop">Domain <b>Raw snippets</b></span><span class="prop">Source <b>Mixed</b></span>'},
+ 'Learning note · knowledge graphs':{path:'Learning / Knowledge Hub',kind:'Learning note',body:'<p><b>Learning note</b></p><p>A concept becomes easier to reuse when its source, short explanation, and project connection are saved together.</p><details class="toggle"><summary>Question to revisit</summary><div>Which relationships should become canonical links?</div></details>',props:'<span class="prop">Type <b>Learning</b></span><span class="prop">Domain <b>Knowledge Hub</b></span><span class="prop">Tags <b>concept, research</b></span>'},
+ '01 · AI Prompts & Sovereign Protocols':{path:'AI & Tools / Prompts',kind:'Prompt',body:'<p><b>Sovereign AI Engineering Protocols</b></p><p>Active engineering prompts, system rules, and copyable prompt cards for LLM pair programming.</p><table><thead><tr><th>Standard</th><th>Target</th><th>Verification</th></tr></thead><tbody><tr><td>Engine</td><td>Dexie.js v4 (IndexedDB)</td><td>100% Offline Autonomy</td></tr><tr><td>UI</td><td>React 19 + TypeScript</td><td>tsc -b</td></tr></tbody></table>',props:'<span class="prop">Type <b>Prompt</b></span><span class="prop">Domain <b>AI &amp; Tools</b></span><span class="prop">Author <b>Aditya</b></span>'},
+ '02 · Raw Chat & Codex Snippets (Notepad Table)':{path:'Raw Scratchpad / Notepad Table',kind:'Scratchpad',body:'<p>Quick-capture table for copying raw text while reading AI chats or IDE logs.</p><table><thead><tr><th>SEL</th><th>CAPTURED TEXT</th><th>INTENT</th></tr></thead><tbody><tr><td>☑</td><td>React 19 Action hooks and useOptimistic allow instant local UI mutations.</td><td>Clarify</td></tr><tr><td>☑</td><td>Tailwind v4 uses CSS @theme definitions inside src/index.css.</td><td>Understand</td></tr></tbody></table>',props:'<span class="prop">Type <b>Scratchpad</b></span><span class="prop">Format <b>Notepad Table</b></span>'},
+ '03 · Target Folders & Files Directory Map':{path:'Path Directory / System Architecture',kind:'Directory',body:'<p>Canonical directory map of target folders across PC and Om OS App.</p><table><thead><tr><th>Device</th><th>Path</th></tr></thead><tbody><tr><td>Windows PC</td><td>C:\Users\adity\Ag Folder\om_os_app</td></tr><tr><td>Archive</td><td>C:\Users\adity\Ag Folder\my_notes</td></tr></tbody></table>',props:'<span class="prop">Type <b>Directory</b></span>'},
+ '04 · Daily Pulse Checklists':{path:'Daily Pulse / Checklists',kind:'Checklist',body:'<p>Daily focus tasks and verification steps.</p><ul><li>[x] Pre-edit physical snapshot before multi-file edits</li><li>[x] Verify bundle chunks under 800 kB</li></ul>',props:'<span class="prop">Type <b>Checklist</b></span><span class="prop">Cadence <b>Daily</b></span>'}
+};
+let sampleNotes={...initialNotes};
+try{
+  const stored=localStorage.getItem(STORAGE_KEY);
+  if(stored){
+    const parsed=JSON.parse(stored);
+    if(parsed && typeof parsed==='object') sampleNotes={...initialNotes, ...parsed};
+  }
+}catch{}
+
+let saveTimeout=null;
+function persistAllNotes(){
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(sampleNotes));
+    const st=document.getElementById('previewStatus');
+    if(st) st.textContent='● Autosaved locally to device · 100% sovereign';
+  }catch{}
+}
+function queueSaveNotes(){
+  clearTimeout(saveTimeout);
+  saveTimeout=setTimeout(persistAllNotes,400);
+}
+
+let panes=[...document.querySelectorAll('.note-pane')];
+function setPaneNote(pane,title){
+  const n=sampleNotes[title];if(!n)return;
+  pane.querySelector('.note-select').value=title;
+  pane.querySelector('.note-title').textContent=title;
+  pane.querySelector('.pane-second>span:first-child').textContent=n.path;
+  pane.querySelector('.kind').textContent=n.kind;
+  const editor=pane.querySelector('.editor');
+  editor.innerHTML=n.body;
+  editor.contentEditable='true';
+  pane.querySelector('.pane-footer').innerHTML=n.props;
+  pane.querySelector('.created span:first-child').textContent='◷ Local Note · '+n.kind;
+}
+
+panes.forEach(p=>p.querySelector('.note-select').addEventListener('change',e=>{
+  setPaneNote(p,e.target.value);
+  const tab=[...document.querySelectorAll('.ribbon-tab')].find(x=>x.dataset.note===e.target.value);
+  if(tab)document.querySelectorAll('.ribbon-tab').forEach(x=>x.classList.toggle('active',x===tab));
+}));
+
+function focusOpenTab(tab){
+  document.querySelectorAll('.ribbon-tab').forEach(x=>x.classList.toggle('active',x===tab));
+  const title=tab.dataset.note;
+  const existing=panes.find(p=>!p.hidden&&getComputedStyle(p).display!=='none'&&p.querySelector('.note-select').value===title);
+  if(!existing)setPaneNote(panes[0],title);
+  say('Focused note: '+title);
+}
+
+function attachRibbonTab(tab){
+  tab.addEventListener('click',e=>{
+    if(e.target.closest('.resize-grip')||e.target.closest('.close'))return;
+    focusOpenTab(tab);
+  });
+  const grip=tab.querySelector('.resize-grip');
+  let startX=0,startWidth=0;
+  grip.addEventListener('pointerdown',e=>{
+    e.preventDefault();e.stopPropagation();
+    startX=e.clientX;startWidth=tab.getBoundingClientRect().width;
+    grip.setPointerCapture(e.pointerId);
+  });
+  grip.addEventListener('pointermove',e=>{
+    if(!grip.hasPointerCapture(e.pointerId))return;
+    tab.style.setProperty('--tab-width',Math.max(120,Math.min(420,startWidth+e.clientX-startX))+'px');
+  });
+  grip.addEventListener('pointerup',e=>{
+    if(grip.hasPointerCapture(e.pointerId))grip.releasePointerCapture(e.pointerId);
+  });
+  tab.querySelector('.close').addEventListener('click',e=>{
+    e.stopPropagation();
+    const wasActive=tab.classList.contains('active');
+    tab.remove();
+    if(wasActive){
+      const next=document.querySelector('.ribbon-tab');
+      if(next)focusOpenTab(next);
+    }
+  });
+}
+document.querySelectorAll('.ribbon-tab').forEach(attachRibbonTab);
+
+let newNoteCount=0,quickNoteCount=0;
+function createPreviewNote(quick=false){
+  const title=quick?'Quick note '+(++quickNoteCount):'New note '+(++newNoteCount);
+  const kind=quick?'Quick note':'Note';
+  const path=quick?'Quick Notes / Quick notes':'Inbox / Unsorted';
+  sampleNotes[title]={
+    path,kind,
+    body:'<p>Write your note here. Fully editable and autosaved locally.</p>',
+    props:`<span class="prop">Type <b>${kind}</b></span><span class="prop">Category <b>${quick?'Quick notes':'Unsorted'}</b></span><span class="prop">Status <b>Draft</b></span>`
+  };
+  persistAllNotes();
+  document.querySelectorAll('.note-select').forEach(select=>select.add(new Option(title,title)));
+  const tab=document.createElement('button');
+  tab.className='ribbon-tab';
+  tab.dataset.note=title;
+  tab.innerHTML=`<span>${title}</span><span class="close" title="Close tab">×</span><span class="resize-grip" title="Drag to resize this open tab" aria-label="Resize open tab">⋮</span>`;
+  const ribbon=document.querySelector('.ribbon');
+  ribbon.insertBefore(tab,document.getElementById('ribbonNewNote'));
+  attachRibbonTab(tab);
+  const vaultItem=document.createElement('button');
+  vaultItem.className='vault-item';
+  vaultItem.dataset.note=title;
+  vaultItem.innerHTML=`<strong>${title}</strong><small>${quick?'Quick note · Quick Notes':'New note · Inbox'}</small>`;
+  vaultItem.addEventListener('click',()=>openPreviewNote(title,tab));
+  document.querySelector('.vault-list').prepend(vaultItem);
+  if(quick){
+    const item=document.createElement('button');
+    item.className='nav-item';
+    item.dataset.note=title;
+    item.innerHTML=`<span>•</span><span class="label">${title}</span>`;
+    item.addEventListener('click',()=>openPreviewNote(title,tab));
+    document.querySelector('.quick-list').prepend(item);
+  }
+  openPreviewNote(title,tab);
+  const editor=panes[0].querySelector('.editor');
+  editor.contentEditable='true';
+  editor.focus();
+  say(kind+' created and autosaved!');
+}
+
+function openPreviewNote(title,tab){
+  setPaneNote(panes[0],title);
+  document.querySelectorAll('.vault-item').forEach(x=>x.classList.toggle('active',x.dataset.note===title));
+  if(tab)focusOpenTab(tab);
+}
+
+document.getElementById('createNewNote').addEventListener('click',()=>createPreviewNote(false));
+document.getElementById('createQuickNote').addEventListener('click',()=>createPreviewNote(true));
+document.getElementById('sidebarNewNote').addEventListener('click',()=>createPreviewNote(false));
+document.getElementById('sidebarQuickNote').addEventListener('click',()=>createPreviewNote(true));
+document.getElementById('ribbonNewNote').addEventListener('click',()=>createPreviewNote(false));
+
+// Backup / Export
+document.querySelector('[data-msg="Export is not enabled in this mock"]')?.addEventListener('click',e=>{
+  e.preventDefault();
+  const blob=new Blob([JSON.stringify(sampleNotes,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='om-unified-notes-backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  say('Downloaded complete notes JSON backup!');
+});
+
+document.querySelectorAll('.nav-item[data-section]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.nav-item[data-section]').forEach(x=>x.classList.toggle('active',x===b));
+  say('Filter: '+b.dataset.section);
+}));
+document.querySelectorAll('[data-domain]').forEach(b=>b.addEventListener('click',()=>say('Domain: '+b.dataset.domain)));
+
+const side=document.getElementById('sidebar');
+const menuToggle=document.getElementById('menuToggle');
+side.style.display='none';
+menuToggle.addEventListener('click',()=>{
+  const isClosed = side.style.display==='none' || getComputedStyle(side).display==='none';
+  side.style.display = isClosed ? 'flex' : 'none';
+  menuToggle.classList.toggle('active', isClosed);
+  say(isClosed ? 'Sidebar opened' : 'Sidebar closed');
+});
+
+// Format bar actions
+document.addEventListener('click',e=>{
+  const formatBtn=e.target.closest('.format-bar button');
+  if(!formatBtn)return;
+  e.preventDefault();
+  const pane=formatBtn.closest('.note-pane');
+  const editor=pane?.querySelector('.editor');
+  if(!editor)return;
+  editor.focus();
+  const title=formatBtn.getAttribute('title')||'';
+  if(title==='Bold')document.execCommand('bold',false,null);
+  else if(title==='Italic')document.execCommand('italic',false,null);
+  else if(title==='Underline')document.execCommand('underline',false,null);
+  else if(title==='Bullet list'||title==='Task list')document.execCommand('insertUnorderedList',false,null);
+  else if(title==='Insert divider')document.execCommand('insertHorizontalRule',false,null);
+  else if(title==='Insert table'){
+    document.execCommand('insertHTML',false,'<table><thead><tr><th>Header 1</th><th>Header 2</th></tr></thead><tbody><tr><td>Cell 1</td><td>Cell 2</td></tr></tbody></table><p><br></p>');
+  }else if(title==='Insert toggle'){
+    document.execCommand('insertHTML',false,'<details class="toggle" open><summary>Toggle Header</summary><div>Toggle content here...</div></details><p><br></p>');
+  }
+  const noteTitle=pane.querySelector('.note-select').value;
+  if(sampleNotes[noteTitle]){
+    sampleNotes[noteTitle].body=editor.innerHTML;
+    queueSaveNotes();
+  }
+});
+
+document.getElementById('panelGrid').addEventListener('click',e=>{
+  const b=e.target.closest('[data-action]');
+  if(!b)return;
+  const pane=b.closest('.note-pane'),action=b.dataset.action,title=pane?.querySelector('.note-select').value||'Quick capture · idea';
+  if(action==='maximize'){
+    const canvas=document.getElementById('canvas'),on=pane.classList.toggle('maximized');
+    canvas.classList.toggle('maximized',on);
+    document.getElementById('panelGrid').classList.toggle('maximized-grid',on);
+    b.querySelector('span').textContent=on?'Restore':'Maximize';
+    b.title=on?'Restore this pane to its previous split layout':'Expand this pane to fill the Notes Studio canvas; module boundaries stay visible';
+    document.getElementById('focusNote').textContent=on?'FOCUS · '+title:'';
+    return;
+  }
+  if(action==='below'||action==='right'){
+    const grid=document.getElementById('panelGrid');
+    grid.classList.remove('single','vertical','horizontal');
+    grid.classList.add(action==='below'?'horizontal':'vertical');
+    const clone=pane.cloneNode(true);
+    clone.id='pane-extra-'+Date.now();
+    clone.dataset.pane='extra';
+    clone.classList.remove('maximized');
+    clone.querySelector('.pane-label').textContent=action==='below'?'HORIZONTAL NOTE':'SIDE NOTE';
+    setPaneNote(clone,'Quick capture · idea');
+    grid.appendChild(clone);
+    say(action==='below'?'Added horizontal note panel below '+title:'Added vertical note panel beside '+title);
+    return;
+  }
+  if(action==='properties'){
+    pane.querySelector('.pane-footer').hidden=!pane.querySelector('.pane-footer').hidden;
+    say('Note properties toggled');
+  }else if(action==='pin'){
+    b.classList.toggle('active');
+    say(b.classList.contains('active')?'Pinned note':'Unpinned note');
+  }else if(action==='collapse'){
+    pane.querySelector('.editor').hidden=!pane.querySelector('.editor').hidden;
+    say('Pane content collapsed / expanded');
+  }else if(action==='close'){
+    pane.hidden=true;
+    say('Closed pane');
+  }else if(action==='copy'){
+    const editor=pane.querySelector('.editor');
+    const text=editor.innerText||editor.textContent||'';
+    navigator.clipboard.writeText(text).then(()=>{
+      say('Copied "'+title+'" content to clipboard!');
+    }).catch(()=>{
+      say('Clipboard access copied');
+    });
+  }
+});
+
+const paneTemplate=document.getElementById('pane1');let currentLayout='threeBottom';
+function layoutTitles(mode){
+  const opened=[...document.querySelectorAll('.ribbon-tab')].map(t=>t.dataset.note);
+  if(mode==='single')return [document.querySelector('.ribbon-tab.active')?.dataset.note||opened[0]].filter(Boolean);
+  return opened.slice(0,mode==='twoBottom'?3:mode==='threeBottom'?4:6);
+}
+
+function bindPreviewPane(pane){
+  const select=pane.querySelector('.note-select');
+  select.addEventListener('change',()=>{
+    setPaneNote(pane,select.value);
+    const tab=ensureOpenTab(select.value);
+    focusOpenTab(tab);
+  });
+  const editor=pane.querySelector('.editor');
+  editor.contentEditable='true';
+  editor.addEventListener('input',()=>{
+    const note=sampleNotes[select.value];
+    if(note){
+      note.body=editor.innerHTML;
+      queueSaveNotes();
+    }
+  });
+}
+
+function renderLayout(mode,titles=layoutTitles(mode)){
+  currentLayout=mode;
+  const grid=document.getElementById('panelGrid');
+  document.getElementById('canvas').classList.remove('maximized');
+  document.getElementById('focusNote').textContent='';
+  grid.classList.remove('single','vertical','horizontal','maximized-grid','mode-single','mode-twoBottom','mode-threeBottom','mode-grid3x2');
+  grid.classList.add('mode-'+mode);
+  const entries=titles.map((title,index)=>{
+    const pane=paneTemplate.cloneNode(true);
+    pane.id='preview-pane-'+index;
+    pane.dataset.pane=String(index+1);
+    pane.classList.remove('maximized');
+    pane.hidden=false;
+    pane.querySelector('.pane-label').textContent=mode==='single'?'FOCUS':(mode==='twoBottom'&&index===2)||(mode==='threeBottom'&&index===3)?'BOTTOM DOCK':'NOTE '+(index+1);
+    const select=pane.querySelector('.note-select');
+    select.replaceChildren(...Object.keys(sampleNotes).map(name=>new Option(name,name)));
+    setPaneNote(pane,title);
+    bindPreviewPane(pane);
+    return pane;
+  });
+  grid.replaceChildren(...entries);
+  panes=entries;
+  document.querySelectorAll('[data-layout]').forEach(b=>b.classList.toggle('active',b.dataset.layout===mode));
+  const labels={single:'Single focus pane · other open notes stay in the tab ribbon',twoBottom:'2 vertical panes + 1 horizontal bottom pane',threeBottom:'3 vertical panes + 1 horizontal bottom pane',grid3x2:'3 × 2 grid · up to 6 open notes'};
+  document.querySelector('.canvas-head small').textContent=labels[mode];
+}
+
+focusOpenTab=function(tab){
+  if(!tab)return;
+  document.querySelectorAll('.ribbon-tab').forEach(t=>t.classList.toggle('active',t===tab));
+  const title=tab.dataset.note,visible=layoutTitles(currentLayout);
+  if(currentLayout!=='single'&&!visible.includes(title)){
+    const order=[title,...[...document.querySelectorAll('.ribbon-tab')].map(t=>t.dataset.note).filter(t=>t!==title)];
+    renderLayout(currentLayout,order.slice(0,currentLayout==='twoBottom'?3:currentLayout==='threeBottom'?4:6));
+  }else renderLayout(currentLayout);
+  say('Focused '+title+' · '+panes.length+' visible pane(s)');
+};
+
+function ensureOpenTab(title){
+  let tab=[...document.querySelectorAll('.ribbon-tab')].find(t=>t.dataset.note===title);
+  if(tab)return tab;
+  tab=document.createElement('button');
+  tab.className='ribbon-tab';
+  tab.dataset.note=title;
+  tab.innerHTML=`<span>${title}</span><span class="close" title="Close tab">×</span><span class="resize-grip" title="Drag to resize this open tab" aria-label="Resize open tab">⋮</span>`;
+  document.querySelector('.ribbon').insertBefore(tab,document.getElementById('ribbonNewNote'));
+  attachRibbonTab(tab);
+  return tab;
+}
+
+openPreviewNote=function(title,tab){
+  const chosen=sampleNotes[title]?title:'Quick capture · idea',target=tab||ensureOpenTab(chosen);
+  focusOpenTab(target);
+  document.querySelectorAll('.vault-item').forEach(x=>x.classList.toggle('active',x.dataset.note===chosen));
+};
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-note]:not(.ribbon-tab)');
+  if(b){
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    openPreviewNote(b.dataset.note);
+  }
+  const close=e.target.closest('.ribbon-tab .close');
+  if(close){
+    const tab=close.closest('.ribbon-tab'),wasActive=tab.classList.contains('active');
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    tab.remove();
+    const next=wasActive?document.querySelector('.ribbon-tab'):null;
+    if(next){
+      document.querySelectorAll('.ribbon-tab').forEach(t=>t.classList.toggle('active',t===next));
+      focusOpenTab(next);
+    }else renderLayout(currentLayout);
+  }
+},true);
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-layout]');
+  if(!b)return;
+  e.stopPropagation();e.stopImmediatePropagation();
+  renderLayout(b.dataset.layout);
+  say(b.title);
+},true);
+
+renderLayout('threeBottom');
+  syncPreviewSidebar();
+
+document.getElementById('scrollTabsLeft')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:-240,behavior:'smooth'});
+});
+document.getElementById('scrollTabsRight')?.addEventListener('click',()=>{
+  document.querySelector('.ribbon')?.scrollBy({left:240,behavior:'smooth'});
+});
+
+const st=document.getElementById('previewStatus');
+if(st) st.textContent='● Workable Sovereign Engine · Autosaved locally to device';
+</script>
+</body>
+</html>

@@ -249,7 +249,7 @@ export const DreamSadhanaView: React.FC = () => {
   };
 
   return (
-    <div className={`space-y-6 transition-colors duration-300 ${
+    <div data-ag-id="DreamSadhana_Root_Workspace" className={`space-y-6 transition-colors duration-300 ${
       isNightMode ? 'bg-[#050000] text-red-500 font-mono select-none' : 'text-gray-100'
     }`}>
       {/* Top Header Card */}

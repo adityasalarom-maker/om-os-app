@@ -57,7 +57,7 @@ export const PantryView: React.FC = () => {
   const filteredItems = items.filter(i => selectedCat === 'All' || i.category === selectedCat);
 
   return (
-    <div className="space-y-6 pb-20 md:pb-6">
+    <div data-ag-id="Pantry_Root_Workspace" className="space-y-6 pb-20 md:pb-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#181a24] p-5 rounded-2xl border border-[#272b3b]">
         <div>

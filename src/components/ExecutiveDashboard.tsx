@@ -110,7 +110,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
   return (
     <div data-ag-id="ExecutiveDashboard_Root_Workspace" className="space-y-6 pb-20 md:pb-6">
       {/* Top Banner / Today Focus */}
-      <div data-ag-id="ExecutiveDashboard_Banner_TodayFocus" className="bg-gradient-to-r from-[#1c2030] via-[#202538] to-[#1a1d2c] border border-[#2d3246] rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div data-ag-id="ExecutiveDashboard_Banner_TodayFocus" className="rounded-2xl p-6 shadow-sm relative overflow-hidden border transition-colors" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
@@ -134,7 +134,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
                 <Smartphone size={14} /> Samsung S25 Deploy
               </button>
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Executive Command Center</h2>
+            <h2 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--text-main)' }}>Executive Command Center</h2>
             <p className="text-gray-400 text-sm mt-1 max-w-2xl">
               "Viveka is the anchor: distinguish the essential from the transient, align execution with the Life Pyramid, and act with clarity."
             </p>
@@ -157,7 +157,8 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
             </button>
             <button 
               onClick={() => onNavigate('tasks')}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2"
+              className="hover:opacity-90 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              style={{ backgroundColor: 'var(--accent)' }}
             >
               <span>Task Matrix</span>
               <ArrowUpRight size={14} />
@@ -174,7 +175,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
 
         {/* Quick KPI Stat Strip */}
         <div data-ag-id="ExecutiveDashboard_Stats_KpiStrip" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[#292f44]">
-          <div className="bg-[#141622]/60 rounded-xl p-3 border border-[#262b3d]">
+          <div className="rounded-xl p-3 border transition-colors" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
             <span className="text-xs text-gray-400 block font-medium">Active Tasks</span>
             <span className="text-xl font-bold text-white mt-1 block">{activeTasks.length}</span>
             <span className="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5">
@@ -182,19 +183,19 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
             </span>
           </div>
 
-          <div className="bg-[#141622]/60 rounded-xl p-3 border border-[#262b3d]">
+          <div className="rounded-xl p-3 border transition-colors" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
             <span className="text-xs text-gray-400 block font-medium">Deep Work Queue</span>
             <span className="text-xl font-bold text-amber-300 mt-1 block">{deepWorkTasks.length}</span>
             <span className="text-[10px] text-gray-400 mt-0.5 block">High cognitive impact</span>
           </div>
 
-          <div className="bg-[#141622]/60 rounded-xl p-3 border border-[#262b3d]">
+          <div className="rounded-xl p-3 border transition-colors" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
             <span className="text-xs text-gray-400 block font-medium">Active Projects</span>
             <span className="text-xl font-bold text-indigo-300 mt-1 block">{projects.length}</span>
             <span className="text-[10px] text-indigo-400 mt-0.5 block">All on track</span>
           </div>
 
-          <div className="bg-[#141622]/60 rounded-xl p-3 border border-[#262b3d]">
+          <div className="rounded-xl p-3 border transition-colors" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
             <span className="text-xs text-gray-400 block font-medium">Pantry Reorders</span>
             <span className="text-xl font-bold text-rose-300 mt-1 block">{pantryLow.length}</span>
             <span className="text-[10px] text-rose-400 mt-0.5 block">Needs replenishment</span>
@@ -206,7 +207,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
       <div 
         onClick={() => onNavigate('jyotish')}
         data-ag-id="ExecutiveDashboard_Strip_Panchang"
-        className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/20 via-[#181a24] to-indigo-950/20 border border-amber-500/30 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:border-amber-500/50 transition-all shadow-sm group"
+        className="p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-3 cursor-pointer transition-all shadow-sm group hover:opacity-95" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
       >
         <div className="flex items-center gap-3">
           <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform">
@@ -239,7 +240,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = ({
       <div 
         onClick={() => onNavigate('sadhana')}
         data-ag-id="ExecutiveDashboard_Strip_Sadhana"
-        className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/20 via-[#181a24] to-emerald-950/20 border border-purple-500/30 flex flex-wrap items-center justify-between gap-3 cursor-pointer hover:border-purple-500/50 transition-all shadow-sm group"
+        className="p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-3 cursor-pointer transition-all shadow-sm group hover:opacity-95" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
       >
         <div className="flex items-center gap-3">
           <span className="p-2 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 group-hover:scale-105 transition-transform">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Calendar,
   Clock,
@@ -10,16 +10,16 @@ import {
   Layers,
   TrendingUp,
   ShieldAlert,
+  FolderPlus,
   Play,
   Square,
   ChevronDown,
   ChevronUp,
   Search,
   Plus,
-  Tag,
-  FolderPlus,
+  Sprout,
+  Check,
 } from 'lucide-react';
-import { QuickCaptureBar } from './QuickCaptureBar';
 import { ActiveTimerModal } from './ActiveTimerModal';
 import { RetrospectiveEditorModal } from './RetrospectiveEditorModal';
 import { Visual24hTimeline } from './Visual24hTimeline';
@@ -30,13 +30,13 @@ import { GapReviewWizardModal } from './GapReviewWizardModal';
 import { FailureRecoveryModal } from './FailureRecoveryModal';
 import { db, initializeDailyTrackerIfEmpty } from '../../db';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CANONICAL_ACTIVITIES, seedTracker3DayMockData } from '../../services/trackerMockData';
 import {
   projectDayTimeline,
   evaluatePrimaryStartConflict,
   closePrimaryTimerWithConfirmation,
   recordWakeClosesSleep,
   STARTER_CATEGORIES,
+  type ActivityCategory,
   type ActivityDefinition,
   type ActivityOccurrence,
   type TimeSegment,
@@ -45,109 +45,67 @@ import {
   type TimelineGap,
 } from '../../services/dailyTrackerEngine';
 
-const ACTIVITY_CATEGORY_FALLBACKS: Record<string, string> = {
-  act_wake: 'cat_sleep',
-  act_sleep: 'cat_sleep',
-  act_nap: 'cat_sleep',
-  act_morning: 'cat_morning',
-  act_water: 'cat_morning',
-  act_study: 'cat_work',
-  act_coding: 'cat_work',
-  act_research: 'cat_work',
-  act_breakfast: 'cat_food',
-  act_lunch: 'cat_food',
-  act_tea: 'cat_food',
-  act_dinner: 'cat_food',
-  act_bath: 'cat_care',
-  act_washroom: 'cat_care',
-  act_medicine: 'cat_care',
-  act_exercise: 'cat_fitness',
-  act_pranayama: 'cat_fitness',
-  act_meditation: 'cat_fitness',
-  act_walk: 'cat_fitness',
-  act_music: 'cat_leisure',
-  act_leisure_reading: 'cat_leisure',
-  act_family: 'cat_social',
-  act_calls: 'cat_social',
-  act_commute: 'cat_travel',
-  act_errands: 'cat_chores',
-  act_cleaning: 'cat_chores',
-  act_scrolling: 'cat_distracted',
-};
+// Default starter activities catalog fallback
+const STARTER_ACTIVITIES: ActivityDefinition[] = [
+  { id: 'act_wake', name: 'Wake Up', categoryId: 'cat_sleep', defaultMode: 'EVENT', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_washroom', name: 'Washroom & Hygiene', categoryId: 'cat_care', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_bath', name: 'Bath', categoryId: 'cat_care', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_exercise', name: 'Exercise & Yoga', categoryId: 'cat_physical', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_meditation', name: 'Meditation', categoryId: 'cat_mental', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_breakfast', name: 'Breakfast', categoryId: 'cat_food', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_study', name: 'Architecture & Coding', categoryId: 'cat_work', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_music', name: 'Music / Audio', categoryId: 'cat_entertainment', defaultMode: 'INTERVAL', defaultRole: 'SECONDARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_medicine', name: 'Medicine', categoryId: 'cat_care', defaultMode: 'EVENT', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_sleep', name: 'Night Sleep', categoryId: 'cat_sleep', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_calls', name: 'Calls & Catchup', categoryId: 'cat_social', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_commute', name: 'Commute / Travel', categoryId: 'cat_travel', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_room', name: 'Room Organizing', categoryId: 'cat_home', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_dinner', name: 'Dinner', categoryId: 'cat_food', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+  { id: 'act_errands', name: 'Household Errands', categoryId: 'cat_home', defaultMode: 'INTERVAL', defaultRole: 'PRIMARY', createdAt: 0, updatedAt: 0 },
+];
 
 export function DailyTrackerView() {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [viewType, setViewType] = useState<'CALENDAR_DAY' | 'WAKE_CYCLE'>('CALENDAR_DAY');
-  const [activeSubTab, setActiveSubTab] = useState<'TIMELINE' | 'INTELLIGENCE' | 'CATALOG'>('TIMELINE');
+  const [activeSubTab, setActiveSubTab] = useState<'TIMELINE' | 'INTELLIGENCE'>('TIMELINE');
 
-  // Ensure starter activities & 3-day history are seeded
-  useEffect(() => {
-    initializeDailyTrackerIfEmpty();
-    seedTracker3DayMockData(false);
-  }, []);
+  // Mini Calendar Popover state
+  const [isMiniCalendarOpen, setIsMiniCalendarOpen] = useState(false);
 
-  // Live Queries from Dexie v13 Database
-  const dbActivities = useLiveQuery(() => db.activities.toArray(), []);
-  const dbOccurrences = useLiveQuery(() => db.activityOccurrences.toArray(), []);
-  const dbSegments = useLiveQuery(() => db.timeSegments.toArray(), []);
-
-  const activities = (dbActivities && dbActivities.length > 0) ? dbActivities : CANONICAL_ACTIVITIES;
-  const occurrences = dbOccurrences || [];
-  const segments = dbSegments || [];
-
-  // Active running timer state
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
-
-  // Dedicated Unfolding Category Drawer State (User Request #4)
+  // Category Drawer state
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
-  const [drawerSearch, setDrawerSearch] = useState('');
   const [selectedDrawerCatId, setSelectedDrawerCatId] = useState<string>('ALL');
-  const [customCategories, setCustomCategories] = useState<{ id: string; name: string; icon: string; color: string }[]>(() => {
+  const [drawerSearch, setDrawerSearch] = useState('');
+  const [isAddingNewCat, setIsAddingNewCat] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatColor, setNewCatColor] = useState('#6366f1');
+
+  // Dexie live queries
+  const dexieActivities = useLiveQuery(() => db.activities.toArray(), []);
+  const occurrences = useLiveQuery(() => db.activityOccurrences.toArray(), []) || [];
+  const segments = useLiveQuery(() => db.timeSegments.toArray(), []) || [];
+
+  const [customCategories, setCustomCategories] = useState<ActivityCategory[]>(() => {
     try {
-      const saved = localStorage.getItem('om_os_custom_categories');
+      const saved = localStorage.getItem('om_tracker_custom_categories');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
-  const [isAddingNewCat, setIsAddingNewCat] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatColor, setNewCatColor] = useState('#6366f1');
 
-  const handleCreateNewCategory = () => {
-    if (!newCatName.trim()) return;
-    const newCat = {
-      id: `cat_custom_${Date.now()}`,
-      name: newCatName.trim(),
-      icon: 'Tag',
-      color: newCatColor,
-    };
-    const updated = [...customCategories, newCat];
-    setCustomCategories(updated);
-    localStorage.setItem('om_os_custom_categories', JSON.stringify(updated));
-    setNewCatName('');
-    setIsAddingNewCat(false);
-    showToast(`Created category "${newCat.name}"`);
-  };
+  const activities = dexieActivities && dexieActivities.length > 0 ? dexieActivities : STARTER_ACTIVITIES;
+  const allCategories: ActivityCategory[] = [...STARTER_CATEGORIES, ...customCategories];
 
-  const allCategories = [...STARTER_CATEGORIES, ...customCategories];
+  // Running elapsed timer state
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 
-  const formatTimerClock = (sec: number) => {
-    const hrs = Math.floor(sec / 3600);
-    const mins = Math.floor((sec % 3600) / 60);
-    const secs = sec % 60;
-    if (hrs > 0) {
-      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Modals state
+  // Modal states
   const [isRetrospectiveOpen, setIsRetrospectiveOpen] = useState(false);
-  const [selectedSegmentForEdit, setSelectedSegmentForEdit] = useState<ProjectedSegment | null>(null);
-  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [isGapReviewOpen, setIsGapReviewOpen] = useState(false);
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [isRecoveryOpen, setIsRecoveryOpen] = useState(false);
+  const [selectedSegmentForEdit, setSelectedSegmentForEdit] = useState<ProjectedSegment | null>(null);
 
   const [conflictPrompt, setConflictPrompt] = useState<{
     isOpen: boolean;
@@ -160,14 +118,21 @@ export function DailyTrackerView() {
   // Toast notifications
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Active Primary timer from database (loose check catches both null and undefined)
-  const activeSegment = segments.find((s) => s.role === 'PRIMARY' && s.endAt == null && !s.isPaused) || null;
+  // Initialize Dexie seed tables if clean
+  useEffect(() => {
+    initializeDailyTrackerIfEmpty();
+  }, []);
+
+  const activeSegment = segments.find((s) => s.endAt === undefined && s.role === 'PRIMARY') || null;
   const activeOccurrence = activeSegment ? occurrences.find((o) => o.id === activeSegment.occurrenceId) : null;
   const activeActivity = activeOccurrence ? activities.find((a) => a.id === activeOccurrence.activityId) : null;
 
   // Running elapsed timer tick
   useEffect(() => {
-    if (!activeSegment) return;
+    if (!activeSegment) {
+      setElapsedSeconds(0);
+      return;
+    }
 
     const interval = setInterval(() => {
       const now = Date.now();
@@ -183,9 +148,38 @@ export function DailyTrackerView() {
   const endOfDay = new Date(selectedDate);
   endOfDay.setHours(24, 0, 0, 0);
 
+  // Compute dynamic circadian window bounds for Calendar Day vs Wake Cycle
+  const { windowStart, windowEnd, wakeWindowLabel } = useMemo(() => {
+    if (viewType === 'CALENDAR_DAY') {
+      return {
+        windowStart: startOfDay.getTime(),
+        windowEnd: endOfDay.getTime(),
+        wakeWindowLabel: '00:00 – 24:00',
+      };
+    }
+    // WAKE_CYCLE: anchor to day's wake time (or default 06:30 AM) and span 24 hours
+    const wakeOcc = occurrences.find(
+      (o) =>
+        (o.activityId === 'act_wake' || o.activityId.includes('wake')) &&
+        o.recordedAt >= startOfDay.getTime() &&
+        o.recordedAt <= endOfDay.getTime()
+    );
+    const wakeStart = wakeOcc
+      ? wakeOcc.recordedAt
+      : startOfDay.getTime() + 6.5 * 3600 * 1000; // 06:30 AM fallback
+    const wakeEnd = wakeStart + 24 * 3600 * 1000;
+    const startStr = new Date(wakeStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const endStr = new Date(wakeEnd).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return {
+      windowStart: wakeStart,
+      windowEnd: wakeEnd,
+      wakeWindowLabel: `${startStr} – Next Day ${endStr}`,
+    };
+  }, [viewType, selectedDate, occurrences]);
+
   const projection = projectDayTimeline({
-    windowStart: startOfDay.getTime(),
-    windowEnd: endOfDay.getTime(),
+    windowStart,
+    windowEnd,
     windowType: viewType,
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata',
     occurrences,
@@ -197,13 +191,110 @@ export function DailyTrackerView() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const formatTimerClock = (sec: number) => {
+    const hrs = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const secs = sec % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Seed realistic 3-day demo dataset
+  const handleSeed3DayDemo = async () => {
+    const now = Date.now();
+    const oneDayMs = 86400000;
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
+    const t0 = todayMidnight.getTime();
+
+    const sampleBatches = [
+      // Day 0: Today
+      { dayOffset: 0, name: 'Night Sleep', actId: 'act_sleep', startH: 0, endH: 6.5, conf: 'EXACT' as const },
+      { dayOffset: 0, name: 'Wake Up', actId: 'act_wake', isEvent: true, timeH: 6.5, conf: 'EXACT' as const },
+      { dayOffset: 0, name: 'Bath', actId: 'act_bath', startH: 6.75, endH: 7.25, conf: 'EXACT' as const },
+      { dayOffset: 0, name: 'Breakfast', actId: 'act_breakfast', startH: 7.5, endH: 8.0, conf: 'EXACT' as const },
+      { dayOffset: 0, name: 'Deep Work / Coding', actId: 'act_study', startH: 8.5, endH: 12.5, conf: 'EXACT' as const },
+      { dayOffset: 0, name: 'Exercise & Yoga', actId: 'act_exercise', startH: 13.0, endH: 14.0, conf: 'EXACT' as const },
+      { dayOffset: 0, name: 'Calls & Catchup', actId: 'act_calls', startH: 14.5, endH: 15.5, conf: 'ESTIMATED' as const },
+
+      // Day -1: Yesterday
+      { dayOffset: -1, name: 'Night Sleep', actId: 'act_sleep', startH: 0, endH: 6.25, conf: 'EXACT' as const },
+      { dayOffset: -1, name: 'Wake Up', actId: 'act_wake', isEvent: true, timeH: 6.25, conf: 'EXACT' as const },
+      { dayOffset: -1, name: 'Meditation', actId: 'act_meditation', startH: 6.5, endH: 7.25, conf: 'EXACT' as const },
+      { dayOffset: -1, name: 'Breakfast', actId: 'act_breakfast', startH: 7.5, endH: 8.0, conf: 'EXACT' as const },
+      { dayOffset: -1, name: 'Deep Work / Coding', actId: 'act_study', startH: 8.5, endH: 13.0, conf: 'EXACT' as const },
+      { dayOffset: -1, name: 'Commute / Travel', actId: 'act_commute', startH: 13.25, endH: 14.0, conf: 'EXACT' as const },
+      { dayOffset: -1, name: 'Dinner', actId: 'act_dinner', startH: 19.5, endH: 20.25, conf: 'EXACT' as const },
+
+      // Day -2: 2 Days Ago
+      { dayOffset: -2, name: 'Night Sleep', actId: 'act_sleep', startH: 0, endH: 6.5, conf: 'EXACT' as const },
+      { dayOffset: -2, name: 'Wake Up', actId: 'act_wake', isEvent: true, timeH: 6.5, conf: 'EXACT' as const },
+      { dayOffset: -2, name: 'Exercise & Yoga', actId: 'act_exercise', startH: 7.0, endH: 8.0, conf: 'EXACT' as const },
+      { dayOffset: -2, name: 'Breakfast', actId: 'act_breakfast', startH: 8.25, endH: 8.75, conf: 'EXACT' as const },
+      { dayOffset: -2, name: 'Deep Work / Coding', actId: 'act_study', startH: 9.0, endH: 13.5, conf: 'EXACT' as const },
+      { dayOffset: -2, name: 'Room Organizing', actId: 'act_room', startH: 15.0, endH: 16.0, conf: 'ESTIMATED' as const },
+    ];
+
+    const newOccs: ActivityOccurrence[] = [];
+    const newSegs: TimeSegment[] = [];
+
+    sampleBatches.forEach((b, idx) => {
+      const baseDay = t0 + b.dayOffset * oneDayMs;
+      const occId = `occ_demo_${idx}_${now}`;
+      const segId = `seg_demo_${idx}_${now}`;
+
+      if (b.isEvent) {
+        newOccs.push({
+          id: occId,
+          activityId: b.actId,
+          kind: 'EVENT',
+          source: 'LIVE',
+          status: 'STOPPED',
+          occurredAt: baseDay + (b.timeH || 6.5) * 3600000,
+          recordedAt: baseDay + (b.timeH || 6.5) * 3600000,
+          updatedAt: baseDay + (b.timeH || 6.5) * 3600000,
+          timeZone: 'Asia/Kolkata',
+          utcOffsetMinutes: 330,
+        });
+      } else {
+        const startAt = baseDay + (b.startH || 0) * 3600000;
+        const endAt = baseDay + (b.endH || 1) * 3600000;
+        newOccs.push({
+          id: occId,
+          activityId: b.actId,
+          kind: 'INTERVAL',
+          source: 'LIVE',
+          status: 'STOPPED',
+          recordedAt: startAt,
+          updatedAt: endAt,
+          timeZone: 'Asia/Kolkata',
+          utcOffsetMinutes: 330,
+        });
+        newSegs.push({
+          id: segId,
+          occurrenceId: occId,
+          startAt,
+          endAt,
+          role: 'PRIMARY',
+          startConfidence: b.conf,
+          endConfidence: b.conf,
+        });
+      }
+    });
+
+    await db.transaction('rw', [db.activityOccurrences, db.timeSegments], async () => {
+      await db.activityOccurrences.bulkPut(newOccs);
+      await db.timeSegments.bulkPut(newSegs);
+    });
+
+    showToast('🌱 Seeded 3-day realistic demo timeline into Dexie!');
+  };
+
   // Handle tap on Quick Action button
   const handleTapActivity = async (act: ActivityDefinition) => {
     const now = Date.now();
 
     // 1. If instant event:
     if (act.defaultMode === 'EVENT') {
-      // Special rule: Wake closes Sleep if sleep is running
       const runningSleepSeg = segments.find(
         (s) => s.endAt === undefined && occurrences.find((o) => o.id === s.occurrenceId)?.activityId === 'act_sleep'
       );
@@ -220,17 +311,18 @@ export function DailyTrackerView() {
           utcOffsetMinutes: 330,
         });
 
-        await db.timeSegments.update(runningSleepSeg.id, {
-          endAt: res.closedSleepSegment.endAt,
-          endConfidence: res.closedSleepSegment.endConfidence,
+        await db.transaction('rw', [db.timeSegments, db.activityOccurrences], async () => {
+          await db.timeSegments.update(runningSleepSeg.id, {
+            endAt: res.closedSleepSegment.endAt,
+            endConfidence: res.closedSleepSegment.endConfidence,
+          });
+          await db.activityOccurrences.add(res.wakeOccurrence);
         });
-        await db.activityOccurrences.add(res.wakeOccurrence);
-        setElapsedSeconds(0);
+
         showToast('Wake recorded! Night sleep timer closed.');
         return;
       }
 
-      // Normal instant event
       const newOcc: ActivityOccurrence = {
         id: `occ_evt_${now}`,
         activityId: act.id,
@@ -310,12 +402,40 @@ export function DailyTrackerView() {
   const handleStopActiveTimer = async () => {
     if (!activeSegment) return;
     const now = Date.now();
-    await db.timeSegments.update(activeSegment.id, {
-      endAt: now,
-      endConfidence: 'EXACT',
+    await db.transaction('rw', [db.timeSegments, db.activityOccurrences], async () => {
+      await db.timeSegments.update(activeSegment.id, {
+        endAt: now,
+        endConfidence: 'EXACT',
+      });
+      if (activeOccurrence) {
+        await db.activityOccurrences.update(activeOccurrence.id, {
+          status: 'STOPPED',
+          updatedAt: now,
+        });
+      }
     });
     setElapsedSeconds(0);
     showToast(`Stopped ${activeActivity?.name || 'timer'}`);
+  };
+
+  const handleCreateNewCategory = async () => {
+    if (!newCatName.trim()) return;
+    const now = Date.now();
+    const newCat: ActivityCategory = {
+      id: `cat_custom_${now}`,
+      name: newCatName.trim(),
+      color: newCatColor,
+      icon: 'Folder',
+      description: 'Custom user category',
+    };
+    const updated = [...customCategories, newCat];
+    setCustomCategories(updated);
+    try {
+      localStorage.setItem('om_tracker_custom_categories', JSON.stringify(updated));
+    } catch {}
+    setNewCatName('');
+    setIsAddingNewCat(false);
+    showToast(`Category "${newCat.name}" created!`);
   };
 
   const formatDurationMs = (ms: number) => {
@@ -326,10 +446,10 @@ export function DailyTrackerView() {
     return `${mins}m`;
   };
 
-  // Recent 3 completed entries (excluding running timer, matching Android widget contract)
+  // Recent 3 completed or active entries (matches Android widget contract)
   const recentEntries = occurrences
-    .filter((o) => o.status === 'STOPPED' || (o.kind === 'EVENT'))
-    .sort((a, b) => b.recordedAt - a.recordedAt)
+    .filter((o) => o.status === 'STOPPED' || o.kind === 'EVENT' || (activeOccurrence && o.id === activeOccurrence.id))
+    .sort((a, b) => (b.updatedAt || b.recordedAt) - (a.updatedAt || a.recordedAt))
     .slice(0, 3);
 
   const selectedOccurrenceForEdit = selectedSegmentForEdit
@@ -341,167 +461,196 @@ export function DailyTrackerView() {
     : null;
 
   return (
-    <div data-ag-id="DailyTracker_Root_Workspace" className="space-y-6 animate-in fade-in duration-300 pb-20">
-      {/* Toast Banner */}
+    <div data-ag-id="DailyTracker_Root_Workspace" className="space-y-5 animate-in fade-in duration-300 pb-20">
+      {/* Toast Notification Banner */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 border border-indigo-400 text-xs font-medium animate-in slide-in-from-bottom-2">
-          <CheckCircle2 className="w-4 h-4" />
+          <CheckCircle2 className="w-4 h-4 text-emerald-300" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Header & Day Navigation */}
-      <div data-ag-id="DailyTracker_Header_DateNavigator" className="flex flex-wrap items-center justify-between gap-4 bg-slate-900/70 border border-slate-800 p-4 rounded-2xl backdrop-blur-md">
-        <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Personal Daily Life Tracker</h2>
+      {/* Top Header: Clean Date Selector + View Mode Switcher (Redundant title & TASK-20 tags removed per user request) */}
+      <div 
+        data-ag-id="DailyTracker_Header_DateNavigator" 
+        className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl border transition-colors shadow-sm"
+        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+      >
+        {/* Date Selector & Mini Calendar Trigger */}
+        <div className="relative flex items-center rounded-xl p-1 text-xs border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+          <button
+            onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 86400000))}
+            className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
+            title="Previous Day"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          <button
+            onClick={() => setIsMiniCalendarOpen(!isMiniCalendarOpen)}
+            className="px-3 py-1 font-medium flex items-center gap-2 cursor-pointer hover:opacity-90 rounded-md transition-colors"
+            style={{ color: 'var(--text-main)' }}
+            title="Click to open mini calendar quick-picker"
+          >
+            <Calendar className="w-4 h-4 text-indigo-500" />
+            <span className="font-semibold">{selectedDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+          </button>
+
+          <button
+            onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 86400000))}
+            className="p-1.5 rounded-lg transition-colors cursor-pointer hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
+            title="Next Day"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+
+          {/* Collapsible Mini Calendar Dropdown */}
+          {isMiniCalendarOpen && (
+            <div 
+              className="absolute top-full mt-2 left-0 z-50 p-3.5 rounded-2xl border shadow-2xl space-y-3 min-w-[260px] animate-in fade-in zoom-in-95 duration-150"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            >
+              <div className="flex items-center justify-between text-xs font-bold border-b pb-2" style={{ color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
+                <span>Quick Date Jump</span>
+                <button 
+                  onClick={() => setIsMiniCalendarOpen(false)} 
+                  className="w-5 h-5 flex items-center justify-center rounded-md border text-xs cursor-pointer" 
+                  style={{ borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => { setSelectedDate(new Date()); setIsMiniCalendarOpen(false); }}
+                  className="px-2 py-1.5 rounded-lg text-xs font-semibold text-center border transition-colors cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--accent)' }}
+                >
+                  Today
+                </button>
+                <button
+                  onClick={() => { setSelectedDate(new Date(Date.now() - 86400000)); setIsMiniCalendarOpen(false); }}
+                  className="px-2 py-1.5 rounded-lg text-xs font-medium text-center border transition-colors cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+                >
+                  Yesterday
+                </button>
+                <button
+                  onClick={() => { setSelectedDate(new Date(Date.now() - 86400000 * 2)); setIsMiniCalendarOpen(false); }}
+                  className="px-2 py-1.5 rounded-lg text-xs font-medium text-center border transition-colors cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+                >
+                  2 Days Ago
+                </button>
+                <button
+                  onClick={() => { setSelectedDate(new Date(Date.now() - 86400000 * 3)); setIsMiniCalendarOpen(false); }}
+                  className="px-2 py-1.5 rounded-lg text-xs font-medium text-center border transition-colors cursor-pointer"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+                >
+                  3 Days Ago
+                </button>
+              </div>
+
+              <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+                <label className="text-[10px] uppercase font-bold block mb-1" style={{ color: 'var(--text-muted)' }}>Custom Date</label>
+                <input
+                  type="date"
+                  value={selectedDate.toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const [y, m, d] = e.target.value.split('-').map(Number);
+                      setSelectedDate(new Date(y, m - 1, d, 12, 0, 0));
+                      setIsMiniCalendarOpen(false);
+                    }
+                  }}
+                  className="w-full text-xs p-1.5 rounded-lg border font-mono"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Date Selector & Day Navigation */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-slate-950/70 border border-slate-800 rounded-xl p-1 text-xs">
-            <button
-              onClick={() => setSelectedDate(new Date(selectedDate.getTime() - 86400000))}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="px-3 font-medium text-slate-200 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-              <span>{selectedDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-            </span>
-            <button
-              onClick={() => setSelectedDate(new Date(selectedDate.getTime() + 86400000))}
-              className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="flex bg-slate-950/70 border border-slate-800 rounded-xl p-1 text-xs">
-            <button
-              onClick={() => setViewType('CALENDAR_DAY')}
-              className={`px-3 py-1 rounded-lg transition-colors font-medium ${
-                viewType === 'CALENDAR_DAY' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Calendar Day (24h)
-            </button>
-            <button
-              onClick={() => setViewType('WAKE_CYCLE')}
-              className={`px-3 py-1 rounded-lg transition-colors font-medium ${
-                viewType === 'WAKE_CYCLE' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Wake Cycle
-            </button>
-          </div>
+        {/* View Mode Toggle: Calendar Day (24h) vs Wake Cycle */}
+        <div className="flex rounded-xl p-1 text-xs border" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' }}>
+          <button
+            onClick={() => setViewType('CALENDAR_DAY')}
+            className={`px-3 py-1.5 rounded-lg transition-all font-medium cursor-pointer ${
+              viewType === 'CALENDAR_DAY' 
+                ? 'font-bold shadow-sm' 
+                : 'hover:opacity-80'
+            }`}
+            style={viewType === 'CALENDAR_DAY' ? { backgroundColor: 'var(--accent)', color: '#ffffff' } : { color: 'var(--text-muted)' }}
+          >
+            Calendar Day (24h)
+          </button>
+          <button
+            onClick={() => setViewType('WAKE_CYCLE')}
+            className={`px-3 py-1.5 rounded-lg transition-all font-medium cursor-pointer flex items-center gap-1.5 ${
+              viewType === 'WAKE_CYCLE' 
+                ? 'font-bold shadow-sm' 
+                : 'hover:opacity-80'
+            }`}
+            style={viewType === 'WAKE_CYCLE' ? { backgroundColor: 'var(--accent)', color: '#ffffff' } : { color: 'var(--text-muted)' }}
+            title="Circadian 24-hour horizon anchored to wake time"
+          >
+            <span>Wake Cycle</span>
+            {viewType === 'WAKE_CYCLE' && (
+              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-white/25 rounded font-normal">
+                {wakeWindowLabel}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Subsystem Navigation Bar & Action Tools */}
-      <div data-ag-id="DailyTracker_Bar_SubToolbar" className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveSubTab('TIMELINE')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
-              activeSubTab === 'TIMELINE'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>24h Timeline & Capture</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab('INTELLIGENCE')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all ${
-              activeSubTab === 'INTELLIGENCE'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Time Intelligence & Heatmap</span>
-          </button>
-        </div>
-
-        {/* Action Assistant Tools (PRD §4.11 & §9.4) */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsGapReviewOpen(true)}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-800 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors"
-            title="Smart assistant to review and fill unrecorded time blocks"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Review Gaps ({projection.untrackedGaps.length})</span>
-          </button>
-
-          <button
-            onClick={() => setIsCatalogOpen(true)}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors"
-          >
-            <Layers className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Catalog ({allCategories.length} Categories)</span>
-          </button>
-
-          <button
-            onClick={() => setIsRecoveryOpen(true)}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors"
-          >
-            <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-            <span>Recovery & Backup</span>
-          </button>
-
-          <button
-            onClick={async () => {
-              const res = await seedTracker3DayMockData(true);
-              showToast(res.message);
-            }}
-            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-800 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors"
-            title="Seed 3 days of historical tracking data (Yesterday, 2 days ago, 3 days ago)"
-          >
-            <span>🌱 Seed 3-Day Demo</span>
-          </button>
-        </div>
-      </div>
-
-      {/* VIEW TAB 1: 24h Timeline & Quick Capture */}
-      {activeSubTab === 'TIMELINE' && (
-        <div className="space-y-6">
-          {/* 1. ACTIVE RUNNING TIMER (Matte, clean solid green without glowing or pinging) */}
+      {/* UPPER COCKPIT GRID: Left = Start Activity/Timer & Presets; Right = 2 Parallel Vertical Action Sections (User Comments 2 & 3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        
+        {/* LEFT COLUMN (lg:col-span-7): Start Activity / Timer & 1-Tap Presets & Drawer */}
+        <div className="lg:col-span-7 flex flex-col justify-between space-y-3">
+          
+          {/* Active Running Timer Hero Card (Solid clean green, no glowing or pinging) */}
           {activeSegment && activeActivity && (
-            <div data-ag-id="DailyTracker_HeroCard_ActiveTimer" className="bg-slate-900 border border-emerald-600/40 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-lg bg-emerald-950/40 border border-emerald-600/30 text-emerald-400 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-emerald-400" />
+            <div 
+              data-ag-id="DailyTracker_HeroCard_ActiveTimer" 
+              className="p-3.5 sm:p-4 rounded-2xl border flex flex-wrap items-center justify-between gap-3 shadow-sm transition-colors"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: '#10b981' }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-xs uppercase font-semibold text-emerald-400">
-                      Live Timer Active
+                    <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">
+                      Live Timer Running
                     </span>
-                    <span className="text-xs text-slate-400">
-                      Started at {new Date(activeSegment.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <span className="text-[11px] text-gray-500">
+                      Started {new Date(activeSegment.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <h3 className="text-xl font-bold text-white tracking-tight mt-0.5">
+                  <h3 className="text-base sm:text-lg font-bold tracking-tight mt-0.5" style={{ color: 'var(--text-main)' }}>
                     {activeActivity.name}
                   </h3>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 ml-auto">
                 <div className="text-right">
-                  <div className="text-[10px] text-slate-400 uppercase font-mono">Elapsed</div>
-                  <div className="text-2xl font-mono font-bold text-emerald-400">
+                  <div className="text-[10px] uppercase font-mono" style={{ color: 'var(--text-muted)' }}>Elapsed</div>
+                  <div className="text-xl sm:text-2xl font-mono font-bold text-emerald-600 dark:text-emerald-400">
                     {formatTimerClock(elapsedSeconds)}
                   </div>
                 </div>
                 <button
                   onClick={handleStopActiveTimer}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-medium rounded-lg text-xs flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer"
                 >
                   <Square className="w-3.5 h-3.5 fill-white" />
                   <span>Stop Timer</span>
@@ -510,40 +659,54 @@ export function DailyTrackerView() {
             </div>
           )}
 
-          {/* 2. DEDICATED START BUTTON & ANIMATED UNFOLDING CATEGORY DRAWER */}
-          <div data-ag-id="DailyTracker_Drawer_ActivityCatalog" className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden transition-all duration-300">
+          {/* Dedicated Start Button & Unfolding Category Drawer */}
+          <div 
+            data-ag-id="DailyTracker_Drawer_ActivityCatalog" 
+            className="rounded-2xl border shadow-sm overflow-hidden transition-all duration-300 flex-1 flex flex-col justify-between"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
             {/* Main Action Bar */}
-            <div className="p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-2.5">
               <button
                 onClick={() => setIsCategoryDrawerOpen(!isCategoryDrawerOpen)}
-                className="flex-1 min-w-[240px] px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold rounded-xl text-sm flex items-center justify-between shadow-lg shadow-indigo-600/25 transition-all active:scale-[0.99]"
+                className="flex-1 min-w-[220px] px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-between shadow-md shadow-indigo-600/20 transition-all cursor-pointer active:scale-[0.99]"
               >
-                <div className="flex items-center gap-2.5">
-                  <Play className="w-4 h-4 fill-white" />
-                  <span className="text-base font-bold">Start Activity or Timer</span>
-                  <span className="text-xs font-normal text-indigo-200 bg-indigo-700/50 px-2.5 py-0.5 rounded-full">
-                    {allCategories.length} Categories
-                  </span>
+                <div className="flex items-center gap-2">
+                  <Play className="w-4 h-4 fill-white shrink-0" />
+                  <div className="text-left">
+                    <div className="font-bold">
+                      {activeSegment && activeActivity ? 'Switch Activity or Add Concurrent' : 'Start Activity or Timer'}
+                    </div>
+                    {activeSegment && activeActivity && (
+                      <div className="text-[10px] text-indigo-200 font-normal">
+                        Active: {activeActivity.name}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-indigo-100">
+                <div className="flex items-center gap-1 text-xs text-indigo-100">
                   <span>{isCategoryDrawerOpen ? 'Close Menu' : 'Browse Categories'}</span>
-                  {isCategoryDrawerOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {isCategoryDrawerOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </div>
               </button>
 
               <button
                 onClick={() => setIsRetrospectiveOpen(true)}
-                className="px-4 py-3.5 bg-slate-800 hover:bg-slate-750 text-indigo-300 hover:text-white border border-slate-700 rounded-xl text-xs font-medium flex items-center gap-2 transition-all shadow-sm"
+                className="px-3.5 py-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer shadow-sm hover:opacity-90"
+                style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                 title="Log activities you did earlier today"
               >
-                <History className="w-4 h-4 text-indigo-400" />
-                <span className="font-semibold">+ Log Missed Past Time</span>
+                <History className="w-4 h-4 text-indigo-500" />
+                <span>+ Log Missed Past Time</span>
               </button>
             </div>
 
             {/* Quick 1-Tap Preset Pills Row */}
-            <div className="px-4 pb-3.5 pt-1 border-t border-slate-800/60 flex items-center gap-2 overflow-x-auto scrollbar-none">
-              <span className="text-[11px] font-semibold text-slate-400 whitespace-nowrap uppercase tracking-wider">
+            <div 
+              className="px-3.5 sm:px-4 py-2.5 border-t flex items-center gap-2 overflow-x-auto no-scrollbar"
+              style={{ borderColor: 'var(--border-color)' }}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shrink-0" style={{ color: 'var(--text-muted)' }}>
                 1-Tap Presets:
               </span>
               {activities.slice(0, 9).map((act) => {
@@ -552,48 +715,55 @@ export function DailyTrackerView() {
                   <button
                     key={act.id}
                     onClick={() => handleTapActivity(act)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 border shadow-sm cursor-pointer shrink-0 active:scale-95 ${
                       isRunning
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-indigo-500/50 text-slate-200 hover:text-white'
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/40 font-bold'
+                        : 'hover:opacity-80'
                     }`}
+                    style={!isRunning ? { backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' } : undefined}
                   >
-                    {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                    {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
                     <span>{act.name}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* ANIMATED UNFOLDING COLLAPSIBLE CATEGORY MENU */}
+            {/* ANIMATED UNFOLDING CATEGORY DRAWER */}
             {isCategoryDrawerOpen && (
-              <div className="border-t border-slate-800 bg-slate-950/80 p-5 space-y-4 animate-in slide-in-from-top-4 duration-300 ease-out">
+              <div 
+                className="border-t p-4 sm:p-5 space-y-3.5 animate-in slide-in-from-top-4 duration-250 ease-out"
+                style={{ borderColor: 'var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}
+              >
                 {/* Search Bar & Add Category Toggle */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="relative flex-1 min-w-[220px]">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                     <input
                       type="text"
                       value={drawerSearch}
                       onChange={(e) => setDrawerSearch(e.target.value)}
                       placeholder="Search across all categories & activities..."
-                      className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                      className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border focus:outline-none"
+                      style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                     />
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setIsAddingNewCat(!isAddingNewCat)}
-                      className="px-3.5 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 border cursor-pointer hover:opacity-90"
+                      style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--accent)' }}
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>+ Add New Category</span>
                     </button>
                     <button
                       onClick={() => setIsCatalogOpen(true)}
-                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      className="px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 border cursor-pointer hover:opacity-90"
+                      style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                     >
-                      <Layers className="w-3.5 h-3.5 text-indigo-400" />
+                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
                       <span>Manage All ({activities.length})</span>
                     </button>
                   </div>
@@ -601,49 +771,54 @@ export function DailyTrackerView() {
 
                 {/* Inline Create New Category Form */}
                 {isAddingNewCat && (
-                  <div className="p-4 bg-indigo-950/30 border border-indigo-500/30 rounded-xl space-y-3">
-                    <div className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
-                      <FolderPlus className="w-4 h-4" />
-                      <span>Create New Custom Category</span>
+                  <div 
+                    className="p-3.5 rounded-xl border space-y-2.5 animate-in fade-in duration-200"
+                    style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+                  >
+                    <div className="text-xs font-bold flex items-center gap-1.5" style={{ color: 'var(--text-main)' }}>
+                      <FolderPlus className="w-4 h-4 text-indigo-500" />
+                      <span>Create Custom Category</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       <input
                         type="text"
                         value={newCatName}
                         onChange={(e) => setNewCatName(e.target.value)}
-                        placeholder="Category name (e.g. Creative Projects, Freelancing, Hobbies)..."
-                        className="flex-1 min-w-[200px] px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                        placeholder="Category name..."
+                        className="flex-1 min-w-[180px] px-3 py-1.5 rounded-lg text-xs border"
+                        style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
                       />
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         {['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#ef4444', '#8b5cf6'].map((c) => (
                           <button
                             key={c}
                             type="button"
                             onClick={() => setNewCatColor(c)}
                             style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full transition-transform ${
-                              newCatColor === c ? 'scale-125 ring-2 ring-white' : 'opacity-70 hover:opacity-100'
+                            className={`w-5 h-5 rounded-full transition-transform cursor-pointer ${
+                              newCatColor === c ? 'scale-125 ring-2 ring-indigo-400' : 'opacity-70 hover:opacity-100'
                             }`}
                           />
                         ))}
                       </div>
                       <button
                         onClick={handleCreateNewCategory}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow transition-colors"
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold shadow transition-colors cursor-pointer"
                       >
-                        Save Category
+                        Save
                       </button>
                     </div>
                   </div>
                 )}
 
                 {/* Category Filter Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                   <button
                     onClick={() => setSelectedDrawerCatId('ALL')}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                      selectedDrawerCatId === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white'
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                      selectedDrawerCatId === 'ALL' ? 'font-bold' : 'hover:opacity-80'
                     }`}
+                    style={selectedDrawerCatId === 'ALL' ? { backgroundColor: 'var(--accent)', color: '#ffffff' } : { backgroundColor: 'var(--bg-card)', color: 'var(--text-muted)' }}
                   >
                     All Categories ({allCategories.length})
                   </button>
@@ -651,9 +826,10 @@ export function DailyTrackerView() {
                     <button
                       key={cat.id}
                       onClick={() => setSelectedDrawerCatId(cat.id)}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                        selectedDrawerCatId === cat.id ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 hover:text-white'
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 cursor-pointer ${
+                        selectedDrawerCatId === cat.id ? 'font-bold' : 'hover:opacity-80'
                       }`}
+                      style={selectedDrawerCatId === cat.id ? { backgroundColor: 'var(--accent)', color: '#ffffff' } : { backgroundColor: 'var(--bg-card)', color: 'var(--text-muted)' }}
                     >
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
                       <span>{cat.name}</span>
@@ -661,26 +837,26 @@ export function DailyTrackerView() {
                   ))}
                 </div>
 
-                {/* Scrolling Category Groups with 1-Tap Activity Cards */}
-                <div className="max-h-[380px] overflow-y-auto space-y-4 pr-1">
+                {/* Scrolling Activities List */}
+                <div className="max-h-[300px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
                   {allCategories
                     .filter((cat) => selectedDrawerCatId === 'ALL' || cat.id === selectedDrawerCatId)
                     .map((cat) => {
                       const catActivities = activities.filter(
                         (a) =>
                           !a.isArchived &&
-                          (a.categoryId === cat.id || ACTIVITY_CATEGORY_FALLBACKS[a.id] === cat.id) &&
+                          a.categoryId === cat.id &&
                           a.name.toLowerCase().includes(drawerSearch.toLowerCase())
                       );
                       if (drawerSearch && catActivities.length === 0) return null;
 
                       return (
-                        <div key={cat.id} className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3.5 space-y-2.5">
+                        <div key={cat.id} className="p-3 rounded-xl border space-y-2" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
-                              <span className="text-xs font-bold text-slate-200">{cat.name}</span>
-                              <span className="text-[10px] text-slate-500 font-mono">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                              <span className="text-xs font-bold" style={{ color: 'var(--text-main)' }}>{cat.name}</span>
+                              <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
                                 ({catActivities.length} activities)
                               </span>
                             </div>
@@ -693,28 +869,26 @@ export function DailyTrackerView() {
                                 <button
                                   key={act.id}
                                   onClick={() => handleTapActivity(act)}
-                                  className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between group active:scale-95 ${
+                                  className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between group cursor-pointer active:scale-95 ${
                                     isCurrentlyRunning
-                                      ? 'bg-emerald-950/60 border-emerald-500/60 ring-2 ring-emerald-500/30'
-                                      : 'bg-slate-950 hover:bg-slate-900 border-slate-800 hover:border-slate-700'
+                                      ? 'ring-2 ring-emerald-500/40 font-bold'
+                                      : 'hover:opacity-85'
                                   }`}
+                                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: isCurrentlyRunning ? '#10b981' : 'var(--border-color)' }}
                                 >
                                   <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-slate-100 group-hover:text-indigo-300 truncate">
+                                    <span className="text-xs font-semibold truncate" style={{ color: 'var(--text-main)' }}>
                                       {act.name}
                                     </span>
                                     {isCurrentlyRunning ? (
-                                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
                                     ) : (
-                                      <Play className="w-3 h-3 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
+                                      <Play className="w-3 h-3 text-gray-400 group-hover:text-indigo-500 transition-colors" />
                                     )}
                                   </div>
                                   <div className="flex items-center gap-1.5 mt-2">
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded border font-mono" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
                                       {act.defaultMode === 'EVENT' ? '⚡ Instant' : '⏱ Timer'}
-                                    </span>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-500 border border-slate-800">
-                                      {act.defaultRole}
                                     </span>
                                   </div>
                                 </button>
@@ -722,8 +896,8 @@ export function DailyTrackerView() {
                             })}
 
                             {catActivities.length === 0 && (
-                              <div className="col-span-full py-2 text-center text-xs text-slate-500 italic">
-                                No activities in this category yet. Click "+ Add New Category" or Catalog to add.
+                              <div className="col-span-full py-2 text-center text-xs italic" style={{ color: 'var(--text-muted)' }}>
+                                No activities in this category yet.
                               </div>
                             )}
                           </div>
@@ -735,7 +909,187 @@ export function DailyTrackerView() {
             )}
           </div>
 
-          {/* 3. INTERACTIVE 24-HOUR HORIZON TIMELINE CANVAS */}
+          {/* Relocated Recent Saved Entries (3 Slots — Direct Left Column Placement) */}
+          <div 
+            data-ag-id="DailyTracker_Card_RecentEntries"
+            className="border rounded-2xl p-3.5 space-y-2.5 transition-colors shadow-sm"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
+            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider">
+              <span className="flex items-center gap-1.5">
+                <History className="w-4 h-4 text-indigo-500 shrink-0" />
+                <span style={{ color: 'var(--text-main)' }}>Recent Saved Entries (3 Slots — Android Widget Contract)</span>
+              </span>
+              <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>Auto-updated</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {recentEntries.map((rec) => {
+                const act = activities.find((a) => a.id === rec.activityId);
+                const isRunning = activeOccurrence && activeOccurrence.id === rec.id;
+                return (
+                  <div
+                    key={rec.id}
+                    className={`p-2.5 border rounded-xl flex items-center justify-between text-xs transition-colors ${
+                      isRunning ? 'border-emerald-500/50 bg-emerald-500/10' : ''
+                    }`}
+                    style={!isRunning ? { backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' } : undefined}
+                  >
+                    <div className="min-w-0 pr-1">
+                      <div className="font-bold truncate flex items-center gap-1" style={{ color: 'var(--text-main)' }}>
+                        {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
+                        <span>{act?.name || 'Activity'}</span>
+                      </div>
+                      <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>
+                        {new Date(rec.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <span 
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-mono border font-semibold shrink-0 ${
+                        isRunning ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' : ''
+                      }`}
+                      style={!isRunning ? { backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' } : undefined}
+                    >
+                      {isRunning ? 'RUNNING' : rec.kind}
+                    </span>
+                  </div>
+                );
+              })}
+              {recentEntries.length === 0 && (
+                <div className="col-span-3 text-center py-2 text-xs italic" style={{ color: 'var(--text-muted)' }}>
+                  No recent activities recorded yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN (lg:col-span-5): 2 Parallel Vertical Action Sections (User Comments 2 & 3) */}
+        <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-3 h-full">
+          
+          {/* Section 1: Views / Navigation Modes */}
+          <div 
+            className="p-3.5 rounded-2xl border flex flex-col justify-between space-y-3 transition-colors shadow-sm"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
+                Timeline Views
+              </span>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setActiveSubTab('TIMELINE')}
+                  className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
+                    activeSubTab === 'TIMELINE' ? 'shadow-sm font-bold' : 'hover:opacity-80'
+                  }`}
+                  style={activeSubTab === 'TIMELINE' 
+                    ? { backgroundColor: 'var(--accent)', color: '#ffffff', borderColor: 'var(--accent)' } 
+                    : { backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }
+                  }
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span>24h Timeline & Capture</span>
+                  </div>
+                  {activeSubTab === 'TIMELINE' && <Check className="w-3.5 h-3.5" />}
+                </button>
+
+                <button
+                  onClick={() => setActiveSubTab('INTELLIGENCE')}
+                  className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer ${
+                    activeSubTab === 'INTELLIGENCE' ? 'shadow-sm font-bold' : 'hover:opacity-80'
+                  }`}
+                  style={activeSubTab === 'INTELLIGENCE' 
+                    ? { backgroundColor: 'var(--accent)', color: '#ffffff', borderColor: 'var(--accent)' } 
+                    : { backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }
+                  }
+                >
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Time Intelligence</span>
+                  </div>
+                  {activeSubTab === 'INTELLIGENCE' && <Check className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+              <button
+                onClick={() => setIsRecoveryOpen(true)}
+                className="w-full p-2 rounded-xl text-xs font-medium flex items-center justify-between border transition-all cursor-pointer hover:opacity-85"
+                style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Recovery & Backup</span>
+                </div>
+                <span className="text-[10px] text-gray-400">JSON</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Section 2: Action Assistants & Data Tools */}
+          <div 
+            className="p-3.5 rounded-2xl border flex flex-col justify-between space-y-3 transition-colors shadow-sm"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-wider block mb-2" style={{ color: 'var(--text-muted)' }}>
+                Action Assistants
+              </span>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setIsGapReviewOpen(true)}
+                  className="w-full p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer hover:opacity-90"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>Review Gaps</span>
+                  </div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                    projection.untrackedGaps.length > 0 
+                      ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30' 
+                      : 'text-gray-400'
+                  }`}>
+                    {projection.untrackedGaps.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setIsCatalogOpen(true)}
+                  className="w-full p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between border transition-all cursor-pointer hover:opacity-90"
+                  style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-main)' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-indigo-500" />
+                    <span>Catalog</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+                    {allCategories.length} Cats
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+              <button
+                onClick={handleSeed3DayDemo}
+                className="w-full p-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 transition-all cursor-pointer shadow-sm active:scale-98"
+                title="Populate current day and past 2 days with authentic sample timeline data"
+              >
+                <Sprout className="w-3.5 h-3.5 text-emerald-500" />
+                <span>🌱 Seed 3-Day Demo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* VIEW TAB 1: 24h Timeline & Full Workspace Canvas */}
+      {activeSubTab === 'TIMELINE' && (
+        <div className="space-y-5">
+          {/* INTERACTIVE 24-HOUR HORIZON TIMELINE CANVAS (Overhauled User Comment 1) */}
           <Visual24hTimeline
             windowStart={startOfDay.getTime()}
             windowEnd={endOfDay.getTime()}
@@ -748,154 +1102,142 @@ export function DailyTrackerView() {
             onSelectGap={(_gap) => setIsRetrospectiveOpen(true)}
           />
 
-          {/* 4. TODAY'S ACTIVITY LOG */}
-          <div data-ag-id="DailyTracker_List_ChronologicalSegments" className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 space-y-3">
+          {/* Quality Summary Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="border rounded-xl p-3 space-y-1 transition-colors" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Exact Primary</div>
+              <div className="text-base sm:text-lg font-mono font-bold" style={{ color: 'var(--text-main)' }}>
+                {formatDurationMs(projection.exactPrimaryDurationMs)}
+              </div>
+              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Live Contemporaneous</div>
+            </div>
+
+            <div className="border rounded-xl p-3 space-y-1 transition-colors" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Estimated Primary</div>
+              <div className="text-base sm:text-lg font-mono font-bold" style={{ color: 'var(--text-main)' }}>
+                {formatDurationMs(projection.estimatedPrimaryDurationMs)}
+              </div>
+              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Retrospective / Approx</div>
+            </div>
+
+            <div className="border rounded-xl p-3 space-y-1 transition-colors" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Secondary Overlays</div>
+              <div className="text-base sm:text-lg font-mono font-bold" style={{ color: 'var(--text-main)' }}>
+                {formatDurationMs(projection.secondaryDurationMs)}
+              </div>
+              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Zero primary inflation</div>
+            </div>
+
+            <div className="border rounded-xl p-3 space-y-1 transition-colors" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Untracked Gaps</div>
+              <div className="text-base sm:text-lg font-mono font-bold" style={{ color: 'var(--text-main)' }}>
+                {formatDurationMs(projection.untrackedDurationMs)}
+              </div>
+              <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Honest unrecorded time</div>
+            </div>
+          </div>
+
+          {/* TODAY'S ACTIVITY LOG (Bounded 4-line high-density scroll container - User Comment 5) */}
+          <div 
+            data-ag-id="DailyTracker_List_ChronologicalSegments" 
+            className="border rounded-2xl p-4 sm:p-5 space-y-3 transition-colors shadow-sm" 
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text-main)' }}>
                   Today's Activity Log ({projection.primarySegments.length} Segments Logged)
                 </span>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Click any entry to adjust timestamps, split intervals, or delete.
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Click any entry to inspect or split timestamps. Exactly 4 lines visible with smooth scroll.
                 </p>
               </div>
               {projection.untrackedGaps.length > 0 ? (
                 <button
                   onClick={() => setIsGapReviewOpen(true)}
-                  className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors"
+                  className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                   <span>{projection.untrackedGaps.length} Gaps to Fill</span>
                 </button>
               ) : (
-                <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-semibold">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>100% Complete</span>
+                  <span>100% Accounted</span>
                 </span>
               )}
             </div>
 
-            <div className="space-y-2">
+            {/* Bounded Container: ~4 rows visible without scroll, smooth scroll for the rest */}
+            <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1.5 custom-scrollbar">
               {projection.primarySegments.map((seg) => {
                 const act = activities.find((a) => a.id === seg.activityId);
                 const isRunning = seg.isRunning || seg.endAt == null;
                 const startTimeStr = new Date(seg.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const endTimeStr = isRunning ? 'Running Now' : new Date(seg.endAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const durationMins = Math.max(1, Math.round(seg.durationMs / 60000));
+                const hours = Math.floor(durationMins / 60);
+                const mins = durationMins % 60;
+                const durStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                const cat = allCategories.find((c) => c.id === act?.categoryId);
 
                 return (
                   <div
                     key={seg.segmentId}
                     onClick={() => setSelectedSegmentForEdit(seg)}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between p-2.5 px-3.5 rounded-xl border cursor-pointer transition-all hover:opacity-95 ${
                       isRunning
-                        ? 'bg-emerald-950/40 border-emerald-500/50 hover:bg-emerald-950/60'
-                        : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 hover:bg-slate-950/90'
+                        ? 'bg-emerald-500/10 border-emerald-500/40 ring-1 ring-emerald-500/20'
+                        : ''
                     }`}
+                    style={!isRunning ? { backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)' } : undefined}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-2.5 h-2.5 rounded-full ${isRunning ? 'bg-emerald-400' : 'bg-indigo-500'}`}
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: isRunning ? '#10b981' : (cat?.color || 'var(--accent)') }}
                       />
-                      <div>
-                        <div className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                          <span>{act?.name || 'Activity'}</span>
-                          {isRunning && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
-                              ACTIVE NOW
-                            </span>
-                          )}
-                          {seg.isCrossMidnight && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                              Cross-Midnight
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-slate-400 font-mono mt-0.5">
-                          {startTimeStr} – <span className={isRunning ? 'text-emerald-300 font-bold' : ''}>{endTimeStr}</span>
-                        </div>
+                      <div className="flex items-center gap-2 min-w-0 truncate">
+                        <span className="text-xs font-bold truncate" style={{ color: 'var(--text-main)' }}>
+                          {act?.name || 'Activity'}
+                        </span>
+                        {cat && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-md font-medium border shrink-0 hidden sm:inline" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+                            {cat.name}
+                          </span>
+                        )}
+                        {isRunning && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-bold shrink-0">
+                            LIVE
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      {isRunning ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-bold text-emerald-300">
-                            {durationMins}m Running
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStopActiveTimer();
-                            }}
-                            className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold shadow transition-colors"
-                          >
-                            Stop
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <span className="text-xs font-mono font-medium text-slate-200">
-                            {formatDurationMs(seg.durationMs)}
-                          </span>
-                          <span
-                            className={`text-[10px] px-2.5 py-1 rounded-full font-medium ${
-                              seg.confidenceLabel === 'Exact — Live'
-                                ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-                                : seg.confidenceLabel === 'Exact — Retrospective'
-                                ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30'
-                                : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
-                            }`}
-                          >
-                            {seg.confidenceLabel}
-                          </span>
-                        </>
-                      )}
+                    <div className="flex items-center gap-2.5 shrink-0 text-xs">
+                      <span className="font-mono text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                        {startTimeStr} – {endTimeStr}
+                      </span>
+                      <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--accent)' }}>
+                        {durStr}
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border hidden md:inline" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', color: 'var(--text-muted)' }}>
+                        {seg.confidenceLabel}
+                      </span>
                     </div>
                   </div>
                 );
               })}
 
               {projection.primarySegments.length === 0 && (
-                <div className="py-8 text-center text-slate-500 text-xs">
-                  No activities logged yet for this day. Click "Start Activity or Timer" above to begin tracking.
+                <div className="p-6 text-center text-xs italic" style={{ color: 'var(--text-muted)' }}>
+                  No activity logged yet today. Click "🌱 Seed 3-Day Demo" or start an activity from above.
                 </div>
               )}
             </div>
           </div>
 
-          {/* Android Widget Contract Reference: 3 Recent Saved Entries */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <History className="w-4 h-4 text-indigo-400" />
-                <span>Recent Saved Entries (3 Slots — Android Widget Contract)</span>
-              </span>
-              <span className="text-slate-500 font-normal">Active timer does not displace these slots</span>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {recentEntries.map((rec) => {
-                const act = activities.find((a) => a.id === rec.activityId);
-                return (
-                  <div
-                    key={rec.id}
-                    className="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex items-center justify-between text-xs"
-                  >
-                    <div>
-                      <div className="font-medium text-slate-200">{act?.name || 'Activity'}</div>
-                      <div className="text-[10px] text-slate-400">
-                        {new Date(rec.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 font-mono">
-                      {rec.kind}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       )}
 
@@ -905,12 +1247,12 @@ export function DailyTrackerView() {
           report={projection}
           activities={activities}
           occurrences={occurrences}
-          categories={STARTER_CATEGORIES}
+          categories={allCategories}
         />
       )}
 
-      {/* Modals & Subsystem Overlays */}
-      {/* 1. Active Timer Confirmation Modal */}
+      {/* MODALS & SUBSYSTEM OVERLAYS */}
+      {/* 1. Active Timer Conflict Modal */}
       {conflictPrompt.isOpen && conflictPrompt.pendingActivity && (
         <ActiveTimerModal
           isOpen={conflictPrompt.isOpen}
@@ -1022,7 +1364,7 @@ export function DailyTrackerView() {
         <ActivityCatalogModal
           isOpen={isCatalogOpen}
           activities={activities}
-          categories={STARTER_CATEGORIES}
+          categories={allCategories}
           onClose={() => setIsCatalogOpen(false)}
           onCreateActivity={async (newAct) => {
             const now = Date.now();
