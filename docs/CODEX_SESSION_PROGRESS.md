@@ -1,16 +1,18 @@
 # Codex Session Progress
 
-Last updated: 2026-11-10 21:55 (Asia/Kolkata; 1-by-1 Module Theme Audit, Zero-Flash Pre-Paint Theme Bootstrapper, Universal Slate/Zinc Dynamic Tokens, and 103-Static Canonical UI Landmarks Verified)
+Last updated: 2026-11-10 22:20 (Asia/Kolkata; Live Sovereign GitHub Pages PWA Deployed & Verified at https://adityasalarom-maker.github.io/om-os-app/)
 
 ## Recent Architectural Milestones (2026-11-10)
+- **Live Sovereign GitHub Pages PWA Deployed**: Production PWA bundle compiled with universal relative base (`./`) and deployed directly to `https://adityasalarom-maker.github.io/om-os-app/`. Verified live with HTTP 200 responses across `index.html`, `manifest.json`, `sw.js` (Cache v2.4), and `notes-studio-pro.html`.
+- **Automated Continuous Deployment Workflow**: Added `.github/workflows/deploy.yml` on `master`, triggering automated build & deployment to GitHub Pages on every `git push`. Pushed pre-built bundle to `gh-pages` branch for instant 0-second availability.
+- **S25 Ultra Autonomous Standalone Experience**: Samsung Galaxy S25 Ultra can install the app directly from Chrome or Samsung Internet via "Install App". Runs 100% offline from the phone's internal storage via Service Worker Cache v2.4 and Dexie IndexedDB even when the laptop is off or on mobile 5G, with zero APK reinstall overhead.
 - **1-by-1 Module Theme & UI Audit**: Audited all 24 core subsystem modules across `src/components/`. Verified 139 hex backgrounds and 101 hex borders against `src/index.css`, ensuring 100% theme synchronicity across all 15 themes (5 Dark, 5 High Contrast/AMOLED, 5 Bright Solar).
 - **Zero-Flash Pre-Paint Theme Bootstrapper**: Injected dictionary-backed synchronous theme bootstrapper in `index.html` `<head>`, setting `theme-${id}`, `.light-mode`/`.dark-mode`, CSS variables (`--bg-primary`, `--bg-card`, `--text-main`, `--border-color`), and `<meta name="theme-color">` before the very first paint, preventing any dark default flash on restart/sleep wake.
 - **Dual-Storage Theme Persistence**: Hardened `themeEngine.ts` to simultaneously persist user theme selection to `localStorage` and IndexedDB (`db.syncSettings.app_theme`), with automatic fallback reconciliation in `App.tsx` on startup.
 - **Universal Slate & Zinc Styling Tokens**: Extended dynamic theme mappings in `src/index.css` to cover `bg-slate-950/40..60`, `bg-slate-750`, `bg-zinc-750`, and `border-slate-850/700`, ensuring tracker and dev modals retain pristine contrast across all themes.
-- **Canonical UI Root Landmarks (103 Static, 8 Dynamic)**: Added authoritative `data-ag-id` tags to root workspace containers of 14 modules (`TaskIntelligence_Root_Workspace`, `UniversalInbox_Root_Workspace`, `KnowledgeVault_Root_Workspace`, `GoalsPyramid_Root_Workspace`, `Journal_Root_Workspace`, `HealthTracker_Root_Workspace`, `HimalayanSpatialGis_Root_Workspace`, `Pantry_Root_Workspace`, `GoogleSheetsSync_Root_Workspace`, `Analytics_Root_Workspace`, `Jyotish_Root_Workspace`, `DreamSadhana_Root_Workspace`, `VedicConcordance_Root_Workspace`, `Pranayama_Root_Workspace`).
-- **Full Conversation Archive**: Complete trajectory archive compiled to `docs/FULL_CONVERSATION_ARCHIVE.md` (and artifact mirror), spanning 29 user turns and 1100+ planner steps.
-- **Pre-Edit Snapshot**: `version_backups/snapshot_20261110_214525` (608 files, 11.05 MiB).
-- **Verification**: `npm run build` (Pass, 2019 modules, 5.67s), `npm run test:e2e` (Pass, 72/72 tests, Lighthouse 100/100).
+- **Canonical UI Root Landmarks (103 Static, 8 Dynamic)**: Added authoritative `data-ag-id` tags to root workspace containers of 14 modules.
+- **Pre-Edit Snapshot**: `version_backups/snapshot_20261110_221025` (608 files, 11.06 MiB).
+- **Verification**: `npm run build` (Pass, 2019 modules, 8.52s), `npm run test:e2e` (Pass, 72/72 tests, Lighthouse 100/100).
 
 This file is the durable short handoff for Codex and Antigravity. Refresh it after each Codex work response that changes project state. Never put note contents, pairing tokens, vault passphrases, or generated secrets here.
 
@@ -295,3 +297,12 @@ Design requirement for the notes system:
 - **Target 3 (Notes Studio Pro Vault Sync Drawer)**: Extracted `#sideBackup`, `#sideRestore`, and `#sideSync` from `.nav-list` (`NotesStudioPro_Nav_Filters`) and placed them down into a new dedicated collapsible section `#groupVaultSync` (`NotesStudioPro_Group_VaultSync`), backed by `localStorage` persistence.
 - **Target 4 (Annotation Deck Limits Telemetry)**: Clarified that `formatBatchAnnotationsDirective` has no array cap in software, but recommended optimal single-turn batches of 10–15 items (~1,500–2,500 tokens) for LLM attention fidelity. Deck items persist in `localStorage` under `om_dev_visual_annotations_v1`.
 - **Verification**: `npm run build` passed (4.74s, 2019 modules); `node scripts/audit_ui_ids.mjs` passed (85 static values, 7 dynamic expressions, 0 duplicates); `npm run test:e2e` passed (72/72 tests, 100/100 Lighthouse score).
+
+## Notes Studio Pro Open-Tab Visibility & Resizable/Collapsible Panes — 2026-11-10
+
+- Scope was Notes Studio Pro only. The other note modules were not edited.
+- Diagnosed the missing controls: open tabs were competing for width in the crowded action toolbar; pane splitters were disabled through 1080px; per-note orientation controls were buried in the horizontally scrolling toolbar.
+- Added a dedicated open-notes tab strip while preserving the existing sidebar “Opened Notes” group. Restored pane drag/keyboard resizing above 680px and added splitter chevrons to collapse/restore a row or column. Track weights persist through the encrypted layout payload. Added a fixed orientation button to each note header.
+- Pre-edit snapshot: `version_backups/snapshot_20261110_215502` (608 files, 11.06 MiB).
+- Verification: inline Pro script `node --check` passed; `npm run build` passed (`tsc -b && vite build`, 2019 modules). Live browser accessibility tree showed eight open tabs, orientation controls on each visible pane, and active splitters for columns and the bottom dock at desktop width. No automated UI test suite was run; no APK/deployment was made.
+- Naming reference updated at `C:\Users\adity\Ag Folder\docs\UI_COMPONENT_NAMING.md`; Task 26 ledger updated with the diagnosis and verification scope.
