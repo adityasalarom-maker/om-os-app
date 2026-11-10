@@ -4,6 +4,11 @@ import { ExternalLink, RefreshCw, Sparkles } from 'lucide-react';
 export const NotesStudioPreviewView: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  const previewUrl = `${baseUrl}notes-studio-integration-preview.html`;
+
   useEffect(() => {
     const handleThemeChange = (e: any) => {
       const themeId = e.detail?.id || localStorage.getItem('om_knowledge_os_theme') || 'midnight-obsidian';
@@ -16,12 +21,14 @@ export const NotesStudioPreviewView: React.FC = () => {
 
   const handleRefresh = () => {
     if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
+      const url = new URL(previewUrl, window.location.href);
+      url.searchParams.set('_t', Date.now().toString());
+      iframeRef.current.src = url.toString();
     }
   };
 
   const handlePopOut = () => {
-    window.open('/notes-studio-integration-preview.html', '_blank', 'noopener,noreferrer');
+    window.open(previewUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -89,7 +96,7 @@ export const NotesStudioPreviewView: React.FC = () => {
       {/* Embedded High-Fidelity Module Engine */}
       <iframe
         ref={iframeRef}
-        src="/notes-studio-integration-preview.html"
+        src={previewUrl}
         title="Notes Studio Integration Preview"
         className="flex-1 w-full h-full border-0"
         style={{ backgroundColor: 'var(--bg-primary)' }}

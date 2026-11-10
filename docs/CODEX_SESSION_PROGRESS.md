@@ -1,8 +1,9 @@
 # Codex Session Progress
 
-Last updated: 2026-11-10 22:20 (Asia/Kolkata; Live Sovereign GitHub Pages PWA Deployed & Verified at https://adityasalarom-maker.github.io/om-os-app/)
+Last updated: 2026-11-10 22:30 (Asia/Kolkata; Subpath Iframe Dynamic Base Resolution Verified & Deployed to GitHub Pages)
 
 ## Recent Architectural Milestones (2026-11-10)
+- **Subpath Iframe Dynamic Base Resolution**: Resolved embedded 404 issue in `NotesStudioProView.tsx` and `NotesStudioPreviewView.tsx` where hardcoded root `/notes-studio-pro.html` failed on GitHub Pages (`/om-os-app/`). Switched to `import.meta.env.BASE_URL` dynamic derivation (`${baseUrl}notes-studio-pro.html`), and enhanced `handleRefresh` with timestamp query cache-busting.
 - **Live Sovereign GitHub Pages PWA Deployed**: Production PWA bundle compiled with universal relative base (`./`) and deployed directly to `https://adityasalarom-maker.github.io/om-os-app/`. Verified live with HTTP 200 responses across `index.html`, `manifest.json`, `sw.js` (Cache v2.4), and `notes-studio-pro.html`.
 - **Automated Continuous Deployment Workflow**: Added `.github/workflows/deploy.yml` on `master`, triggering automated build & deployment to GitHub Pages on every `git push`. Pushed pre-built bundle to `gh-pages` branch for instant 0-second availability.
 - **S25 Ultra Autonomous Standalone Experience**: Samsung Galaxy S25 Ultra can install the app directly from Chrome or Samsung Internet via "Install App". Runs 100% offline from the phone's internal storage via Service Worker Cache v2.4 and Dexie IndexedDB even when the laptop is off or on mobile 5G, with zero APK reinstall overhead.
@@ -11,8 +12,8 @@ Last updated: 2026-11-10 22:20 (Asia/Kolkata; Live Sovereign GitHub Pages PWA De
 - **Dual-Storage Theme Persistence**: Hardened `themeEngine.ts` to simultaneously persist user theme selection to `localStorage` and IndexedDB (`db.syncSettings.app_theme`), with automatic fallback reconciliation in `App.tsx` on startup.
 - **Universal Slate & Zinc Styling Tokens**: Extended dynamic theme mappings in `src/index.css` to cover `bg-slate-950/40..60`, `bg-slate-750`, `bg-zinc-750`, and `border-slate-850/700`, ensuring tracker and dev modals retain pristine contrast across all themes.
 - **Canonical UI Root Landmarks (103 Static, 8 Dynamic)**: Added authoritative `data-ag-id` tags to root workspace containers of 14 modules.
-- **Pre-Edit Snapshot**: `version_backups/snapshot_20261110_221025` (608 files, 11.06 MiB).
-- **Verification**: `npm run build` (Pass, 2019 modules, 8.52s), `npm run test:e2e` (Pass, 72/72 tests, Lighthouse 100/100).
+- **Pre-Edit Snapshot**: `version_backups/snapshot_20261110_222353` (608 files, 11.06 MiB).
+- **Verification**: `npm run build` (Pass, 2019 modules, 7.18s), `npm run test:e2e` (Pass, 72/72 tests, Lighthouse 100/100).
 
 This file is the durable short handoff for Codex and Antigravity. Refresh it after each Codex work response that changes project state. Never put note contents, pairing tokens, vault passphrases, or generated secrets here.
 

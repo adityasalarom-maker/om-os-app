@@ -4,6 +4,13 @@ import { ExternalLink, RefreshCw, Sparkles } from 'lucide-react';
 export const NotesStudioProView: React.FC = () => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Compute base-aware URL: adapts cleanly to root (/), subpaths (/om-os-app/), and relative environments
+  const baseUrl = import.meta.env.BASE_URL.endsWith('/')
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  const proUrl = `${baseUrl}notes-studio-pro.html`;
+  const standaloneUrl = `${proUrl}?standalone=1`;
+
   useEffect(() => {
     const handleThemeChange = (e: any) => {
       const themeId = e.detail?.id || localStorage.getItem('om_knowledge_os_theme') || 'midnight-obsidian';
@@ -18,11 +25,11 @@ export const NotesStudioProView: React.FC = () => {
     e?.preventDefault();
     e?.stopPropagation();
     if (iframeRef.current) {
-      iframeRef.current.src = iframeRef.current.src;
+      const url = new URL(proUrl, window.location.href);
+      url.searchParams.set('_t', Date.now().toString());
+      iframeRef.current.src = url.toString();
     }
   };
-
-  const standaloneUrl = `${window.location.origin}/notes-studio-pro.html?standalone=1`;
 
   return (
     <div 
@@ -80,7 +87,7 @@ export const NotesStudioProView: React.FC = () => {
       {/* Embedded High-Fidelity Module Engine */}
       <iframe
         ref={iframeRef}
-        src="/notes-studio-pro.html"
+        src={proUrl}
         title="Notes Studio Pro"
         className="flex-1 w-full h-full border-0"
         style={{ backgroundColor: 'var(--bg-primary)' }}
