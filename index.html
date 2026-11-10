@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#0f1117" />
+    <meta name="theme-color" content="#ffffff" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -19,7 +19,7 @@
       // Zero-latency synchronous theme bootstrapper: applies saved theme before first paint
       (function() {
         try {
-          var saved = localStorage.getItem('om_knowledge_os_theme') || 'midnight-obsidian';
+          var saved = localStorage.getItem('om_knowledge_os_theme') || 'white-sand';
           var themeMap = {
             'midnight-obsidian': { bg: '#0f1117', card: '#181a24', text: '#f3f4f6', border: '#272b3b', light: false },
             'slate-monolith': { bg: '#0f172a', card: '#1e293b', text: '#f8fafc', border: '#334155', light: false },
@@ -37,7 +37,7 @@
             'lotus-rosewater': { bg: '#fff1f2', card: '#ffffff', text: '#4c0519', border: '#fecdd3', light: true },
             'mint-dawn': { bg: '#f0fdf4', card: '#ffffff', text: '#14532d', border: '#bbf7d0', light: true }
           };
-          var t = themeMap[saved] || themeMap['midnight-obsidian'];
+          var t = themeMap[saved] || themeMap['white-sand'];
           var root = document.documentElement;
           root.classList.add('theme-' + saved);
           if (t.light) {
@@ -57,7 +57,7 @@
       })();
     </script>
   </head>
-  <body class="antialiased selection:bg-indigo-500 selection:text-white" style="background-color: var(--bg-primary, #0f1117); color: var(--text-main, #f3f4f6);">
+  <body class="antialiased selection:bg-indigo-500 selection:text-white" style="background-color: var(--bg-primary, #ffffff); color: var(--text-main, #0f172a);">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -169,8 +169,8 @@ const themePalettes={
 };
 function applyTheme(chosenTheme){
   try{
-    const themeName=chosenTheme||localStorage.getItem('om_knowledge_os_theme')||'midnight-obsidian';
-    const p=themePalettes[themeName]||themePalettes['midnight-obsidian'];
+    const themeName=chosenTheme||localStorage.getItem('om_knowledge_os_theme')||'white-sand';
+    const p=themePalettes[themeName]||themePalettes['white-sand'];
     const root=document.documentElement;
     ['--bg','--surface2','--card','--hover','--line','--ink','--muted','--accent','--accentHover','--accentMuted'].forEach((key,i)=>root.style.setProperty(key,p[i]));
     root.style.setProperty('--surface',p[2]);

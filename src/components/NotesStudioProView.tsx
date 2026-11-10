@@ -13,7 +13,7 @@ export const NotesStudioProView: React.FC = () => {
 
   useEffect(() => {
     const handleThemeChange = (e: any) => {
-      const themeId = e.detail?.id || localStorage.getItem('om_knowledge_os_theme') || 'midnight-obsidian';
+      const themeId = e.detail?.id || localStorage.getItem('om_knowledge_os_theme') || 'white-sand';
       iframeRef.current?.contentWindow?.postMessage({ type: 'OM_THEME_CHANGED', themeId }, '*');
     };
 
@@ -92,7 +92,7 @@ export const NotesStudioProView: React.FC = () => {
         className="flex-1 w-full h-full border-0"
         style={{ backgroundColor: 'var(--bg-primary)' }}
         onLoad={() => {
-          const themeId = localStorage.getItem('om_knowledge_os_theme') || 'midnight-obsidian';
+          const themeId = localStorage.getItem('om_knowledge_os_theme') || 'white-sand';
           iframeRef.current?.contentWindow?.postMessage({ type: 'OM_THEME_CHANGED', themeId }, '*');
         }}
       />

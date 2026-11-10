@@ -25,18 +25,33 @@ export const AnnotationPopover: React.FC<AnnotationPopoverProps> = ({ target, on
   const [copied, setCopied] = useState(false);
 
   // 8-Way Draggable & Perimeter-Resizable Engine (throttled via requestAnimationFrame)
-  const { pos, size, isInteracting, activeCursor, handleDragStart, handleResizeStart } =
-    useDraggableResizable({
-      initialPos: () => {
-        const defaultX = Math.max(16, window.innerWidth - 280);
-        return { x: defaultX, y: 96 };
-      },
-      initialSize: { width: 260, height: 275 },
-      minWidth: 210,
-      minHeight: 180,
-      maxWidth: 800,
-      maxHeight: 700,
-    });
+  const {
+    pos,
+    size,
+    isInteracting,
+    activeCursor,
+    handleDragStart,
+    handleTouchDragStart,
+    handleResizeStart,
+    handleTouchResizeStart,
+  } = useDraggableResizable({
+    initialPos: () => {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+      const popoverWidth = isMobile ? Math.min(window.innerWidth - 24, 300) : 260;
+      const defaultX = isMobile
+        ? Math.max(12, Math.round((window.innerWidth - popoverWidth) / 2))
+        : Math.max(16, window.innerWidth - 280);
+      const defaultY = isMobile ? Math.max(64, Math.round((window.innerHeight - 300) / 2)) : 96;
+      return { x: defaultX, y: defaultY };
+    },
+    initialSize: typeof window !== 'undefined' && window.innerWidth < 640
+      ? { width: Math.min(window.innerWidth - 24, 300), height: 290 }
+      : { width: 260, height: 275 },
+    minWidth: 210,
+    minHeight: 180,
+    maxWidth: 800,
+    maxHeight: 700,
+  });
 
   const buildRecord = (): AnnotationRecord => {
     return {
@@ -129,12 +144,17 @@ export const AnnotationPopover: React.FC<AnnotationPopoverProps> = ({ target, on
         className="relative p-2.5 rounded-xl border border-zinc-600/60 bg-zinc-950/95 text-zinc-100 backdrop-blur-md flex flex-col gap-2 select-none animate-in fade-in zoom-in-95 duration-100 pointer-events-auto"
       >
         {/* 8-Way Perimeter Resizing Handles (4 Edges + 4 Corners) */}
-        <ResizeHandles onResizeStart={handleResizeStart} accentClass="hover:bg-zinc-400/50" />
+        <ResizeHandles
+          onResizeStart={handleResizeStart}
+          onTouchResizeStart={handleTouchResizeStart}
+          accentClass="hover:bg-zinc-400/50"
+        />
 
         {/* Header with Drag Handle & Target Badge */}
         <div
           data-ag-id="AnnotationPopover_Header_GripBar"
           onMouseDown={handleDragStart}
+          onTouchStart={handleTouchDragStart}
           className="flex items-center justify-between gap-1.5 border-b pb-1.5 border-zinc-800/80 cursor-grab active:cursor-grabbing select-none"
           title="Click & Drag to move anywhere on screen"
         >
@@ -189,7 +209,7 @@ export const AnnotationPopover: React.FC<AnnotationPopoverProps> = ({ target, on
                   e.stopPropagation();
                   setIntent(item.id);
                 }}
-                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[8.5px] font-medium transition-all cursor-pointer border ${
+                className={`flex items-center gap-1 px-2 py-1 rounded text-[9px] font-medium transition-all cursor-pointer border ${
                   isSelected
                     ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm font-semibold'
                     : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-white'
@@ -226,24 +246,24 @@ export const AnnotationPopover: React.FC<AnnotationPopoverProps> = ({ target, on
         <button
           type="button"
           onClick={handleCopyAndSave}
-          className={`flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-md ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer shadow-md min-h-[38px] active:scale-95 ${
             copied
               ? 'bg-emerald-600 text-white border border-emerald-400'
-              : 'bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white active:scale-95'
+              : 'bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white'
           }`}
           title="Copy formatted directive to clipboard (Ready to Ctrl+V into Antigravity Chat)"
         >
-          {copied ? <Check size={12} /> : <Copy size={12} />}
+          {copied ? <Check size={13} /> : <Copy size={13} />}
           <span className="truncate">{copied ? 'Copied to Clipboard!' : 'Copy AI Directive'}</span>
         </button>
 
         <button
           type="button"
           onClick={handleSaveOnly}
-          className="p-1.5 rounded-lg text-xs border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer shrink-0"
+          className="p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg text-xs border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer shrink-0"
           title="Save to Pending Deck"
         >
-          <Save size={12} />
+          <Save size={13} />
         </button>
       </div>
 

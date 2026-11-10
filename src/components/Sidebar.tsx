@@ -1264,17 +1264,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       closeMobileDrawer();
                       onOpenMobileDeploy();
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold active:scale-98 transition-all min-h-[40px]"
+                    className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border text-xs font-semibold active:scale-98 transition-all min-h-[42px]"
                     style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--accent)' }}
                   >
                     <Smartphone size={14} className="shrink-0" style={{ color: 'var(--accent)' }} />
-                    <span className="truncate">S25 Mobile Hub</span>
+                    <span className="truncate">S25 Hub</span>
+                  </button>
+                )}
+                {onToggleAnnotation && (
+                  <button
+                    onClick={() => {
+                      closeMobileDrawer();
+                      onToggleAnnotation();
+                    }}
+                    data-ag-id="Sidebar_Mobile_Button_AnnotateToggle"
+                    className={`flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border text-xs font-semibold active:scale-98 transition-all min-h-[42px] ${
+                      isAnnotationActive ? 'bg-amber-500 text-zinc-950 border-amber-400 font-bold shadow-sm' : ''
+                    }`}
+                    style={{
+                      backgroundColor: isAnnotationActive ? '#f59e0b' : 'var(--bg-secondary)',
+                      borderColor: isAnnotationActive ? '#f59e0b' : 'var(--border-color)',
+                      color: isAnnotationActive ? '#09090b' : 'var(--accent)',
+                    }}
+                    title="Toggle Visual UI Annotation Overlay"
+                  >
+                    <PenTool size={13} className={isAnnotationActive ? 'text-zinc-950' : 'text-amber-500'} />
+                    <span className="font-mono text-[10px]">{isAnnotationActive ? 'ANN: ON' : 'Annotate'}</span>
                   </button>
                 )}
                 {onToggleCanonicalMode && (
                   <button
                     onClick={onToggleCanonicalMode}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold active:scale-98 transition-all min-h-[40px]"
+                    className="flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl border text-xs font-semibold active:scale-98 transition-all min-h-[42px]"
                     style={{ 
                       backgroundColor: isCanonicalMode ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-secondary)', 
                       borderColor: isCanonicalMode ? '#f59e0b' : 'var(--border-color)', 

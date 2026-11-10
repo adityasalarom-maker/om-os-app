@@ -192,6 +192,13 @@ button:active, .ribbon-tab:active, .nav-item:active, .vault-item:active, .layout
   .pane-tool{min-height:48px;min-width:48px;justify-content:center}
   .pane-splitter{display:none}
   .status{padding-left:max(10px,env(safe-area-inset-left));padding-right:max(10px,env(safe-area-inset-right));min-height:32px;height:auto}
+  .sync-dialog-actions button,.vault-actions button,.vault-card button{min-height:48px;min-width:48px;font-size:11px;padding:10px 14px;touch-action:manipulation}
+  .side-actions button{min-height:44px;touch-action:manipulation;font-size:10.5px}
+  .format-bar button{min-height:38px;min-width:36px;padding:4px 6px;font-size:11px}
+  .group-header{min-height:42px!important;touch-action:manipulation}
+  .nav-item,.domain-item,.vault-item{min-height:42px;touch-action:manipulation}
+  .side-search input,.vault-card input,.sync-card input{font-size:13px;min-height:42px}
+  .editor{-webkit-overflow-scrolling:touch;touch-action:pan-y}
 }
 
 .pane-second{display:flex;align-items:center;gap:5px;padding:4px 9px;border-bottom:1px solid var(--line);color:var(--muted);font-size:9px;background:rgba(0,0,0,.1)}
@@ -459,8 +466,8 @@ const themePalettes={
 
 function applyTheme(chosenTheme){
   try{
-    const themeName=chosenTheme||localStorage.getItem('om_knowledge_os_theme')||'midnight-obsidian';
-    const p=themePalettes[themeName]||themePalettes['midnight-obsidian'];
+    const themeName=chosenTheme||localStorage.getItem('om_knowledge_os_theme')||'white-sand';
+    const p=themePalettes[themeName]||themePalettes['white-sand'];
     const root=document.documentElement;
     ['--bg','--surface2','--card','--hover','--line','--ink','--muted','--accent','--accentHover','--accentMuted'].forEach((key,i)=>root.style.setProperty(key,p[i]));
     root.style.setProperty('--surface',p[2]);

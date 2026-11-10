@@ -11,7 +11,7 @@ export const NotesStudioPreviewView: React.FC = () => {
 
   useEffect(() => {
     const handleThemeChange = (e: any) => {
-      const themeId = e.detail?.id || localStorage.getItem('om_knowledge_os_theme') || 'midnight-obsidian';
+      const themeId = e.detail?.id || localStorage.getItem('om_knowledge_os_theme') || 'white-sand';
       iframeRef.current?.contentWindow?.postMessage({ type: 'OM_THEME_CHANGED', themeId }, '*');
     };
 

@@ -36,7 +36,7 @@ export const THEMES: ThemeDefinition[] = [
     id: 'midnight-obsidian',
     name: 'Midnight Obsidian',
     category: 'Basic Dark',
-    description: 'Deep cosmic obsidian with royal indigo accents (Canonical Default)',
+    description: 'Deep cosmic obsidian with royal indigo accents',
     isLight: false,
     previewColors: { bg: '#0f1117', card: '#181a24', accent: '#6366f1', text: '#f3f4f6' },
     variables: {
@@ -244,7 +244,7 @@ export const THEMES: ThemeDefinition[] = [
     id: 'white-sand',
     name: 'Pure White Sand',
     category: 'Bright Solar',
-    description: 'Crisp clean daylight white with warm dune sandstone ochre and graphite text',
+    description: 'Crisp clean daylight white with warm dune sandstone ochre and graphite text (Canonical Default)',
     isLight: true,
     previewColors: { bg: '#ffffff', card: '#f8fafc', accent: '#b45309', text: '#0f172a' },
     variables: {
@@ -343,16 +343,17 @@ export const THEMES: ThemeDefinition[] = [
 ];
 
 const STORAGE_KEY = 'om_knowledge_os_theme';
+export const DEFAULT_THEME_ID = 'white-sand';
 
 export const getThemeById = (id: string): ThemeDefinition => {
-  return THEMES.find(t => t.id === id) || THEMES[0];
+  return THEMES.find(t => t.id === id) || THEMES.find(t => t.id === DEFAULT_THEME_ID) || THEMES[0];
 };
 
 export const getStoredThemeId = (): string => {
   try {
-    return localStorage.getItem(STORAGE_KEY) || 'midnight-obsidian';
+    return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME_ID;
   } catch {
-    return 'midnight-obsidian';
+    return DEFAULT_THEME_ID;
   }
 };
 

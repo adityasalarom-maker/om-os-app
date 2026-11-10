@@ -74,18 +74,23 @@ export const DevAnnotationOverlay: React.FC<DevAnnotationOverlayProps> = ({
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const [dragBox, setDragBox] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
-  // Anchor geometry for the compact tool bar positioned directly to the LEFT of Annotate icon in the same horizontal zone
+  // Anchor geometry for the compact tool bar positioned directly to the LEFT of Annotate icon (or below on mobile)
   const getAnchorGeometry = useCallback((): { top: number; left: number; width: number; height: number; gap: number } | null => {
     if (typeof document === 'undefined') return null;
     const annotateEl = document.querySelector('[data-ag-id="App_Header_Button_VisualAnnotate"]');
     if (annotateEl) {
       const nRect = annotateEl.getBoundingClientRect();
-      const width = 152;
+      const isMobile = window.innerWidth < 640;
+      const width = isMobile ? 140 : 152;
       const height = 32;
       const gap = 6;
-      // Position to the left of the button, centered vertically in the same horizontal row
-      const left = Math.max(8, Math.round(nRect.left - width - gap));
-      const top = Math.round(nRect.top + (nRect.height - height) / 2);
+      let left = Math.round(nRect.left - width - gap);
+      let top = Math.round(nRect.top + (nRect.height - height) / 2);
+      if (left < 8) {
+        // If left overflows viewport on mobile, position directly beneath the annotate button
+        left = Math.max(8, Math.min(window.innerWidth - width - 8, Math.round(nRect.right - width)));
+        top = Math.round(nRect.bottom + gap);
+      }
       return { top, left, width, height, gap };
     }
     return null;
@@ -594,7 +599,11 @@ export const DevAnnotationOverlay: React.FC<DevAnnotationOverlayProps> = ({
       {/* 1. Bottom-Right Corner: Single Square Icon Deck Button */}
       <div
         data-dev-control="true"
-        className="fixed bottom-4 right-4 z-[99980] flex items-center gap-2 select-none"
+        className="fixed z-[99980] flex items-center gap-2 select-none"
+        style={{
+          bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+          right: 'max(16px, env(safe-area-inset-right, 16px))',
+        }}
       >
         {justSavedNotification && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/90 text-zinc-950 text-xs font-bold shadow-lg animate-in slide-in-from-bottom-2">
@@ -606,7 +615,7 @@ export const DevAnnotationOverlay: React.FC<DevAnnotationOverlayProps> = ({
         <button
           onClick={onToggleDeck}
           data-ag-id="DevAnnotationOverlay_Launcher_DeckButton"
-          className={`relative w-10 h-10 rounded-xl border shadow-2xl transition-all active:scale-95 flex items-center justify-center backdrop-blur-md cursor-pointer ${
+          className={`relative min-w-[44px] min-h-[44px] w-11 h-11 rounded-xl border shadow-2xl transition-all active:scale-95 flex items-center justify-center backdrop-blur-md cursor-pointer ${
             isDeckOpen
               ? 'bg-amber-500 text-zinc-950 border-amber-400 font-bold shadow-amber-500/20 ring-1 ring-amber-400'
               : deckPendingCount >= 15
